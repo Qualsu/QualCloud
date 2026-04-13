@@ -54,7 +54,7 @@ export default function File() {
     }
 
     const currentFile = file?.[0]
-    const url = links.GET_FILE(currentFile?.fileId as Id<"_storage">)
+    const url = links.KENYCLOUD.GET_FILE(currentFile?.fileId as Id<"_storage">)
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center m-3">

@@ -2,7 +2,7 @@
 
 # QualCloud
 
-KenyCloud fork
+The KenyCloud fork
 
 [cloud.qual.su](https://cloud.qual.su)
 

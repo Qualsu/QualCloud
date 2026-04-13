@@ -50,7 +50,7 @@ export const columns: ColumnDef<FavoritedFile>[] = [
   {
     accessorKey: "Actions",
     cell: ({ row }) => {
-        return <div><FileCardActions file={row.original} isFavorited={row.original.isFavorited}/></div>
+        return <div><FileCardActions file={row.original}/></div>
       },
   }
 ]

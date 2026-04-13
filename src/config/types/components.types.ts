@@ -9,6 +9,7 @@ export type FileDoc = Doc<"files"> & {
   avatar?: string;
   username?: string;
 };
+export type FavoritedFile = FileDoc;
 export type FileType = Doc<"files">["type"];
 export type FileFilterType = FileType | "all";
 export type FileSortKey = "date" | "alphabet" | "types";
