@@ -1,0 +1,293 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 270 12% 8%;
+    --foreground: 0 0% 98%;
+    --card: 270 10% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 270 10% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 273 100% 60%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 270 8% 16%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 270 8% 16%;
+    --muted-foreground: 270 5% 55%;
+    --accent: 270 8% 16%;
+    --accent-foreground: 0 0% 90%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 270 10% 18%;
+    --input: 270 10% 18%;
+    --ring: 273 100% 60%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --radius: 0.75rem;
+  }
+}
+
+/* ── Body ─────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  position: relative;
+  min-height: 100vh;
+  color: #fff;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at top, rgba(121, 69, 202, 0.22), transparent 30%),
+    radial-gradient(circle at 80% 20%, rgba(48, 144, 255, 0.1), transparent 18%),
+    linear-gradient(135deg, rgb(25, 17, 24) 0%, rgb(34, 22, 33) 55%, rgb(19, 14, 21) 100%);
+  background-attachment: fixed;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: auto;
+  border-radius: 9999px;
+  pointer-events: none;
+  filter: blur(90px);
+  z-index: -1;
+}
+
+body::before {
+  top: 5rem;
+  left: -4rem;
+  width: 14rem;
+  height: 14rem;
+  background: rgba(129, 72, 196, 0.12);
+}
+
+body::after {
+  right: -5rem;
+  bottom: 8rem;
+  width: 18rem;
+  height: 18rem;
+  background: rgba(33, 181, 255, 0.1);
+}
+
+/* ── Utility classes (matching Qualsu design) ─────────── */
+.surface-panel {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 22px 80px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(24px);
+}
+
+.section-shell {
+  position: relative;
+  overflow: hidden;
+  margin: 1.5rem 1rem;
+  padding: 1.25rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 22px 80px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(24px);
+}
+
+.section-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 35%, transparent 70%, rgba(255, 255, 255, 0.03));
+  pointer-events: none;
+}
+
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 1rem;
+  transition: transform 0.3s ease, border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.primary-button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+}
+
+.nav-link {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.nav-link-active {
+  background: rgba(164, 49, 255, 0.18);
+  color: #fff;
+}
+
+@media (min-width: 640px) {
+  .section-shell {
+    margin: 2rem 1.5rem;
+    padding: 1.5rem;
+    border-radius: 2rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .section-shell {
+    margin: 2.5rem 2rem;
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-shell {
+    margin: 2.5rem 2.5rem;
+    padding: 2.5rem;
+  }
+}
+
+/* ── Clerk overrides ──────────────────────────────────── */
+
+/* Card / modal backgrounds */
+.cl-card,
+.cl-modalContent,
+.cl-signIn-root,
+.cl-signUp-root {
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(24px) !important;
+}
+
+/* Main content area */
+.cl-main,
+.cl-socialButtonsBlockButton,
+.cl-formFieldInput {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #fff !important;
+}
+
+.cl-formFieldInput:focus {
+  border-color: rgba(130, 100, 170, 0.55) !important;
+  box-shadow: 0 0 0 2px rgba(110, 80, 150, 0.18) !important;
+}
+
+/* Labels */
+.cl-formFieldLabel,
+.cl-formFieldLabelRow,
+.cl-identityPreviewText,
+.cl-headerTitle,
+.cl-headerSubtitle,
+.cl-footerActionText,
+.cl-dividerText,
+.cl-socialButtonsBlockButtonText,
+.cl-alternativeMethodsBlockButton,
+.cl-profileSectionTitle,
+.cl-profileSectionTitleText,
+.cl-userButtonPopoverActionButtonText {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.cl-footerActionLink,
+.cl-formResendCodeLink {
+  color: #9b82c0 !important;
+}
+
+/* Primary action button */
+.cl-formButtonPrimary {
+  background: rgba(100, 70, 160, 0.75) !important;
+  border: 1px solid rgba(159, 99, 255, 0.45) !important;
+  color: #fff !important;
+  transition: background 0.2s ease !important;
+}
+
+.cl-formButtonPrimary:hover {
+  background: rgba(110, 80, 170, 0.9) !important;
+}
+
+/* Dropdown / popover */
+.cl-userButtonPopoverCard,
+.cl-organizationListCreateOrganizationActionButton,
+.cl-organizationSwitcherPopoverCard,
+.cl-organizationListCard {
+  background: #1e1126 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.4) !important;
+}
+
+.cl-userButtonPopoverActionButton:hover,
+.cl-organizationListCreateOrganizationActionButton:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Back button & neutral buttons */
+.cl-formButtonReset,
+.cl-identityPreviewEditButton {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Divider line */
+.cl-dividerLine {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Internal legacy overrides */
+.cl-internal-1k7jtru, .cl-internal-15hkgn2 {
+  background: none !important;
+}
+
+.cl-internal-fcx671, .cl-internal-1j1lborб, .cl-internal-1fpq5at, .cl-internal-ej8kgm {
+  display: none;
+}
+
+.cl-internal-13hl4in::before {
+  content: "";
+  display: inline-block;
+  width: 100px;
+  height: 50px;
+  background-image: url("https://id.qual.su/image/logo.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(2px 2px 0.1rem rgba(0, 0, 0, 0.25));
+}
+
+.cl-internal-1dauvpw{
+  display: none;
+}
+
+.cl-userPreviewSecondaryIdentifier {
+  font-size: 12px;
+  color: rgb(199, 199, 199);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply text-foreground;
+  }
+}
