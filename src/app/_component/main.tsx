@@ -2,12 +2,65 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ShieldCheck, Boxes } from "lucide-react";
 
+import { Skeleton } from "@/components/ui/skeleton";
+import { landingFeatureCards } from "@/config/const/components.const";
 import { images } from "@/config/routing/image.route";
 import { pages } from "@/config/routing/pages.route";
+import { useConvexAuth } from "convex/react";
+import { FeatureCards } from "./feature-cards";
+
+function MainSkeleton() {
+    return (
+        <>
+            <section className="section-shell py-16 sm:py-20 md:py-28">
+                <div className="pointer-events-none absolute inset-y-10 left-1/2 hidden w-40 -translate-x-1/2 rounded-full bg-purple-600/10 blur-3xl md:block" />
+
+                <Skeleton className="relative mx-auto h-20 w-full max-w-[600px] rounded-3xl sm:h-24 md:h-28" />
+
+                <div className="mx-auto mt-6 flex max-w-[520px] flex-col items-center gap-3 px-2 sm:mt-8">
+                    <Skeleton className="h-8 w-full max-w-[420px] rounded-xl" />
+                </div>
+
+                <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                    <Skeleton className="h-16 w-40 rounded-xl" />
+                </div>
+            </section>
+
+            <div className="mx-4 sm:mx-6 md:mx-8 lg:mx-10">
+                <hr className="rounded-2xl border-white/10" />
+            </div>
+
+            <section className="section-shell py-16">
+                <div className="grid grid-cols-1 gap-8">
+                    {landingFeatureCards.map((card) => (
+                        <div
+                            key={card.title}
+                            className="relative overflow-hidden rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-600/20 to-purple-900/20 p-8 backdrop-blur-sm"
+                        >
+                            <div className="flex items-start gap-6">
+                                <Skeleton className="h-16 w-16 flex-shrink-0 rounded-xl" />
+                                <div className="flex-1 space-y-3">
+                                    <Skeleton className="h-6 w-40 rounded-lg" />
+                                    <Skeleton className="h-4 w-full max-w-[360px] rounded-lg" />
+                                    <Skeleton className="h-4 w-4/5 max-w-[280px] rounded-lg" />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+        </>
+    );
+}
 
 export default function Main() {
+    const { isAuthenticated, isLoading } = useConvexAuth()
+
+    if (isLoading) {
+        return <MainSkeleton />;
+    }
+
     return (
         <>
             <section className="section-shell py-16 sm:py-20 md:py-28">
@@ -26,7 +79,7 @@ export default function Main() {
                 </h1>
 
                 <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                    <Link href={pages.DASHBOARD.NOTTER} className="primary-button px-8 py-3 text-lg">
+                    <Link href={isAuthenticated ? pages.DASHBOARD.ROOT : pages.AUTH} className="primary-button px-8 py-3 text-lg">
                         Перейти
                     </Link>
                 </div>
@@ -36,51 +89,7 @@ export default function Main() {
                 <hr className="border-white/10 rounded-2xl" />
             </div>
 
-            <section className="section-shell py-16">
-                <div className="grid gap-8 grid-cols-1">
-                    <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600/20 to-purple-900/20 p-8 backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300">
-                        <div className="flex items-start gap-6">
-                            <div className="flex-shrink-0">
-                                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-700">
-                                    <Boxes className="h-8 w-8 text-white" />
-                                </div>
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-white uppercase tracking-wide">Единый доступ</h3>
-                                <p className="mt-2 text-sm text-gray-300">Файлы всех приложений Qualsu в одном месте</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600/20 to-purple-900/20 p-8 backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300">
-                        <div className="flex items-start gap-6">
-                            <div className="flex-shrink-0">
-                                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-700">
-                                    <Image src={images.ICONS.KENYCLOUD} width={100} height={100} alt="KenyCloud icon" className="w-8 h-8"/>
-                                </div>
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-white uppercase tracking-wide">Архив KenyCloud</h3>
-                                <p className="mt-2 text-sm text-gray-300">Если вы пользовались KenyCloud, все ваши файлы сохранены и доступы в QualCloud</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600/20 to-purple-900/20 p-8 backdrop-blur-sm border border-purple-500/20 hover:border-purple-500/40 transition-all duration-300">
-                        <div className="flex items-start gap-6">
-                            <div className="flex-shrink-0">
-                                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-700">
-                                    <ShieldCheck className="h-8 w-8 text-white" />
-                                </div>
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-white uppercase tracking-wide">Безопансность</h3>
-                                <p className="mt-2 text-sm text-gray-300">Файлы защищены и не передаются 3-им лицам</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            <FeatureCards />
             
         </>
     );

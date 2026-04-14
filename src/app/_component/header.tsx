@@ -36,7 +36,15 @@ export function Header({ showMobileMenuButton }: HeaderProps) {
                             width={140}
                             height={36}
                             alt="QualCloud Logo"
-                            className={`h-8 w-auto opacity-95 transition-opacity duration-200 hover:opacity-100 ${pathname !== "/" && "hidden md:block"}`}
+                            className={`h-8 w-auto hidden md:block`}
+                        />
+
+                        <Image
+                            src={images.ICON}
+                            width={40}
+                            height={40}
+                            alt="QualCloud Icon"
+                            className={`h-8 w-auto ${pathname === "/" ? "block md:hidden" : "hidden"}`}
                         />
                     </Link>
                 </div>

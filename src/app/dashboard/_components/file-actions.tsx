@@ -28,7 +28,7 @@ export function FileCardActions({ file, shrtl, notter }: FileCardProps){
 
     const fileLink = shrtl
         ? links.SHRTL.GET_LINK(file.fileId as string)
-        : notter ? links.NOTTER.GET_NOTE(file._id as string)
+        : notter ? links.NOTTER.GET_NOTE(file.noteId || (file._id as string))
         : pages.FILE.COPY(origin, file.linkId || "")
 
     const expired = isFileExpired(file)

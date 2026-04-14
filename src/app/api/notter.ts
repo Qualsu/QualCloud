@@ -7,12 +7,18 @@ import { getMimeType } from "./utils/get-mime";
 export async function getAllFiles(account_id: string) {
   const res = await notter.get(api.NOTTER.GET_ALL(account_id));
   const notterFiles: NotterFileResponse[] = res.data;
-  
-  return notterFiles.map((file) => {
+
+  const uniqueFiles = notterFiles.filter((file, index, files) => {
+    const fileKey = `${file.documentid}:${file.fileid}`;
+    return index === files.findIndex((item) => `${item.documentid}:${item.fileid}` === fileKey);
+  });
+
+  return uniqueFiles.map((file) => {
     const deterministicId = `notter_${file._id}` as unknown as Id<"users">;
+    const uniqueFileId = `notter_${file.documentid}_${file.fileid}` as unknown as Id<"files">;
 
     return {
-      _id: file.documentid as Id<"files">,
+      _id: uniqueFileId,
       _creationTime: new Date(file.created).getTime(),
       name: file.filename,
       orgId: account_id,
@@ -26,6 +32,7 @@ export async function getAllFiles(account_id: string) {
       _expiresInSeconds: 1,
       avatar: file.avatar,
       username: file.username,
+      noteId: file.documentid,
     };
   });
 }

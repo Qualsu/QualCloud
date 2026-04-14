@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Doc, Id } from "../../../convex/_generated/dataModel";
 
@@ -8,6 +9,7 @@ export type FileDoc = Doc<"files"> & {
   isFavorited?: boolean;
   avatar?: string;
   username?: string;
+  noteId?: string;
 };
 export type FavoritedFile = FileDoc;
 export type FileType = Doc<"files">["type"];
@@ -44,4 +46,10 @@ export interface DataTableProps<TData, TValue> {
 
 export interface HeaderProps {
     showMobileMenuButton?: boolean;
+}
+
+export interface LandingFeatureCard {
+  title: string;
+  description: string;
+  icon: ReactNode;
 }
