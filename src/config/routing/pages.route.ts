@@ -10,6 +10,6 @@ export const pages = {
   FILE: {
     ROOT: "/file",
     BY_ID: (id: string) => `/file/${id}`,
-    COPY: (origin: string, linkId: string) => `${origin}/${pages.FILE.BY_ID(linkId)}`
+    COPY: (origin: string, linkId: string) => `${origin}${pages.FILE.BY_ID(linkId)}`
   },
 }
