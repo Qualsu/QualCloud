@@ -1,5 +1,5 @@
 import { pages } from "../routing/pages.route";
-import { Cloud, Files, Heart, Lamp, Link2Icon, Trash2, Upload } from "lucide-react"
+import { Cloud, Files, Heart, House, Lamp, Link2Icon, Trash2, Upload } from "lucide-react"
 import { FileType } from "../types/components.types";
 import { ReactNode } from "react";
 import Image from "next/image";
@@ -61,10 +61,11 @@ export const navItems = [
 ]
 
 export const utilityNavItems = [
-  { id: "upload", label: "Загрузить", icon: Upload },
-  { id: "cloud", label: "Облако", icon: Cloud },
-  { id: "favorites", label: "Избранное", icon: Heart },
-  { id: "trash", label: "Корзина", icon: Trash2 },
+  { id: "home", href: pages.DASHBOARD.ROOT, label: "Главная", icon: House },
+  { id: "upload", href: pages.DASHBOARD.ROOT, label: "Загрузить", icon: Upload },
+  { id: "cloud", href: pages.DASHBOARD.CLOUD, label: "Облако", icon: Cloud },
+  { id: "favorites", href: pages.DASHBOARD.FAVORITES, label: "Избранное", icon: Heart },
+  { id: "trash", href: pages.DASHBOARD.TRASH, label: "Корзина", icon: Trash2 },
 ] as const;
 
 export const landingFeatureCards = [

@@ -2,7 +2,10 @@ export const pages = {
   ROOT: "/",
   AUTH: "/auth/sign-in",
   DASHBOARD: {
-    ROOT: "/dashboard/notter",
+    ROOT: "/dashboard",
+    CLOUD: "/dashboard/cloud",
+    FAVORITES: "/dashboard/favorites",
+    TRASH: "/dashboard/trash",
     KENYCLOUD: "/dashboard/kenycloud",
     NOTTER: "/dashboard/notter",
     SHRTL: "/dashboard/shrtl",

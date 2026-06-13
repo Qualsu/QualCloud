@@ -20,9 +20,9 @@ export function Header({ showMobileMenuButton, showSearch }: HeaderProps) {
     const shouldShowSearch = showSearch ?? pathname.startsWith("/dashboard");
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-10 px-4 pt-3 sm:px-6">
-            <div className="surface-panel flex w-full items-center gap-4 rounded-2xl px-4 py-3 sm:px-5 sm:py-4 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
-                <div className="flex min-w-0 items-center gap-3 md:justify-self-start">
+        <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-3 sm:px-6">
+            <div className="surface-panel relative flex w-full flex-nowrap items-center justify-between gap-2 overflow-visible rounded-2xl px-4 py-3 sm:gap-4 sm:px-5 sm:py-4">
+                <div className="flex min-w-0 items-center gap-3">
                     {showMobileMenuButton && (
                         <button
                             onClick={toggle}
@@ -38,7 +38,7 @@ export function Header({ showMobileMenuButton, showSearch }: HeaderProps) {
                             width={140}
                             height={36}
                             alt="QualCloud Logo"
-                            className={`h-8 w-auto hidden md:block`}
+                            className={`h-8 w-auto hidden lg:block`}
                         />
 
                         <Image
@@ -46,13 +46,15 @@ export function Header({ showMobileMenuButton, showSearch }: HeaderProps) {
                             width={40}
                             height={40}
                             alt="QualCloud Icon"
-                            className={`h-8 w-auto ${pathname === "/" ? "block md:hidden" : "hidden"}`}
+                            className={`h-8 w-auto ${
+                                pathname === "/" ? "block md:hidden" : "hidden md:block lg:hidden"
+                            }`}
                         />
                     </Link>
                 </div>
 
                 {shouldShowSearch && (
-                    <div className="hidden justify-center md:flex md:justify-self-center">
+                    <div className="flex flex-1 justify-center lg:order-none lg:w-auto">
                         <SearchBar syncWithUrl />
                     </div>
                 )}
@@ -60,32 +62,36 @@ export function Header({ showMobileMenuButton, showSearch }: HeaderProps) {
                 {isLoading ? (
                     <Loader2 className="animate-spin text-white/60" size={20} />
                 ) : (
-                    <div className="flex min-w-fit items-center gap-2 md:justify-self-end">
-                        <OrganizationSwitcher
-                            appearance={{
-                                elements: {
-                                    rootBox: "text-white",
-                                    organizationSwitcherTrigger: `text-white/80 hover:text-white hover:bg-white/10 rounded-xl px-3 py-2 ${pathname === "/" && "hidden"}`,
-                                }
-                            }}
-                        />
-                        <UserButton
-                            appearance={{
-                                elements: {
-                                    avatarBox: "w-8 h-8",
-                                }
-                            }}
-                        />
-                        <SignedOut>
-                            <SignInButton>
-                                <Link
-                                    href={pages.AUTH}
-                                    className="primary-button px-4 py-2 text-sm"
-                                >
-                                    Войти
-                                </Link>
-                            </SignInButton>
-                        </SignedOut>
+                    <div className="flex min-w-fit items-center gap-2">
+                        <div className="hidden md:flex">
+                            <OrganizationSwitcher
+                                appearance={{
+                                    elements: {
+                                        rootBox: "text-white",
+                                        organizationSwitcherTrigger: `text-white/80 hover:text-white hover:bg-white/10 rounded-xl px-3 py-2 ${pathname === "/" && "hidden"}`,
+                                    }
+                                }}
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <UserButton
+                                appearance={{
+                                    elements: {
+                                        avatarBox: "w-8 h-8",
+                                    }
+                                }}
+                            />
+                            <SignedOut>
+                                <SignInButton>
+                                    <Link
+                                        href={pages.AUTH}
+                                        className="primary-button px-4 py-2 text-sm"
+                                    >
+                                        Войти
+                                    </Link>
+                                </SignInButton>
+                            </SignedOut>
+                        </div>
                     </div>
                 )}
             </div>

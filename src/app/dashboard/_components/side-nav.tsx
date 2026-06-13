@@ -1,5 +1,6 @@
 'use client'
 
+import { OrganizationSwitcher } from "@clerk/nextjs"
 import { useMobileNav } from "@/components/mobile-nav-context"
 import { navItems, utilityNavItems } from "@/config/const/components.const"
 import { images } from "@/config/routing/image.route"
@@ -50,20 +51,41 @@ export function SideNav() {
     items,
   }: {
     onClick?: () => void
-    items: typeof utilityNavItems
+    items: (typeof utilityNavItems)[number][]
   }) => (
     <>
-      {items.map(({ id, icon: Icon, label }) => (
-        <button
-          key={id}
-          type="button"
-          onClick={onClick}
-          className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-sm text-white/55 transition-all duration-200 hover:bg-white/[0.06] hover:text-white/90"
-        >
-          <Icon size={18} className="shrink-0" />
-          <span>{label}</span>
-        </button>
-      ))}
+      {items.map(({ id, href, icon: Icon, label }) => {
+        const active = Boolean(href) && pathname === href
+        const isPlaceholder = id === "upload"
+
+        if (isPlaceholder) {
+          return (
+            <div
+              key={id}
+              className="flex cursor-default items-center gap-3 rounded-xl px-4 py-3 text-sm text-white/35 opacity-60"
+            >
+              <Icon size={18} className="shrink-0" />
+              <span>{label}</span>
+            </div>
+          )
+        }
+
+        return (
+          <Link
+            key={id}
+            href={href || "#"}
+            onClick={onClick}
+            className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-200 ${
+              active
+                ? "nav-link-active text-white"
+                : "opacity-60 hover:bg-white/[0.06] hover:opacity-100"
+            }`}
+          >
+            <Icon size={18} className="shrink-0" />
+            <span>{label}</span>
+          </Link>
+        )
+      })}
     </>
   )
 
@@ -73,7 +95,6 @@ export function SideNav() {
   const NavContent = ({ onClick }: { onClick?: () => void }) => (
     <div className="flex flex-col gap-1">
       <UtilityButtons onClick={onClick} items={uploadItem} />
-      <div className="my-3 h-px bg-white/10" />
       <SectionLabel>Облако</SectionLabel>
       <UtilityButtons onClick={onClick} items={cloudItems} />
       <div className="my-3 h-px bg-white/10" />
@@ -124,6 +145,18 @@ export function SideNav() {
             </div>
 
             <NavContent onClick={close} />
+
+            <div className="mt-auto border-t border-white/10 px-2 pt-3">
+              <OrganizationSwitcher
+                appearance={{
+                  elements: {
+                    rootBox: "w-full",
+                    organizationSwitcherTrigger:
+                      "w-full justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white/80 hover:bg-white/[0.08] hover:text-white",
+                  },
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>

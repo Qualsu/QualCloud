@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 interface MobileNavContextValue {
     isOpen: boolean;
@@ -18,6 +18,15 @@ const MobileNavContext = createContext<MobileNavContextValue>({
 
 export function MobileNavProvider({ children }: { children: ReactNode }) {
     const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        document.body.style.overflow = isOpen ? "hidden" : "";
+
+        return () => {
+            document.body.style.overflow = "";
+        };
+    }, [isOpen]);
+
     return (
         <MobileNavContext.Provider
             value={{

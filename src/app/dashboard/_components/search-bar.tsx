@@ -118,8 +118,8 @@ export function SearchBar({ query, setQuery, syncWithUrl = false }: SearchBarPro
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-2">
-                <div ref={containerRef} className="relative">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="relative flex items-start gap-2">
+                <div ref={containerRef} className="relative z-50">
                     <FormField
                         control={form.control}
                         name="query"
@@ -128,7 +128,7 @@ export function SearchBar({ query, setQuery, syncWithUrl = false }: SearchBarPro
                                 <FormControl>
                                     <Input
                                         placeholder="Поиск файлов..."
-                                        className="min-w-[220px] border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/20 focus:ring-purple-500/30 md:min-w-[320px]"
+                                        className="w-[140px] min-w-0 border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/20 focus:ring-purple-500/30 sm:w-[180px] md:w-auto md:min-w-[320px]"
                                         autoComplete="off"
                                         {...field}
                                         onFocus={() => setIsFocused(true)}
@@ -168,7 +168,7 @@ export function SearchBar({ query, setQuery, syncWithUrl = false }: SearchBarPro
                                     />
                                 </FormControl>
                                 {showSuggestions && (
-                                    <div className="absolute top-full z-20 mt-2 w-full overflow-hidden rounded-xl border border-white/10 bg-[#211428] shadow-2xl">
+                                    <div className="absolute left-0 top-[calc(100%+0.5rem)] z-[60] w-full overflow-hidden rounded-xl border border-white/10 bg-[#211428] shadow-2xl">
                                         <ul className="py-1">
                                             {filteredSuggestions.map((suggestion, index) => (
                                                 <li key={suggestion}>
