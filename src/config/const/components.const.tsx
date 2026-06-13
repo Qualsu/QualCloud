@@ -1,5 +1,5 @@
 import { pages } from "../routing/pages.route";
-import { Files, Lamp, Link2Icon } from "lucide-react"
+import { Cloud, Files, Heart, Lamp, Link2Icon, Trash2, Upload } from "lucide-react"
 import { FileType } from "../types/components.types";
 import { ReactNode } from "react";
 import Image from "next/image";
@@ -44,14 +44,14 @@ export const fileTypeOptions = [
 ] as const;
 
 export const fileSortOptions = [
-  { value: "date", label: "Дате" },
-  { value: "alphabet", label: "Алфавиту" },
-  { value: "types", label: "Типу файла" },
+  { value: "date", label: "По дате" },
+  { value: "alphabet", label: "По алфавиту" },
+  { value: "types", label: "По типу файла" },
 ] as const;
 
 export const fileSortDirectionOptions = [
-  { value: "new", label: "Новизне" },
-  { value: "reverse", label: "Убыванию" },
+  { value: "new", label: "Сначала новые" },
+  { value: "reverse", label: "В обратном порядке" },
 ] as const;
 
 export const navItems = [
@@ -59,6 +59,13 @@ export const navItems = [
   { href: pages.DASHBOARD.SHRTL, image: images.ICONS.SHRTL, label: "Shrtl" },
   { href: pages.DASHBOARD.KENYCLOUD, image: images.ICONS.KENYCLOUD, label: "KenyCloud" },
 ]
+
+export const utilityNavItems = [
+  { id: "upload", label: "Загрузить", icon: Upload },
+  { id: "cloud", label: "Облако", icon: Cloud },
+  { id: "favorites", label: "Избранное", icon: Heart },
+  { id: "trash", label: "Корзина", icon: Trash2 },
+] as const;
 
 export const landingFeatureCards = [
   {
@@ -81,7 +88,7 @@ export const landingFeatureCards = [
   },
   {
     title: "Безопасность",
-    description: "Файлы защищены и не передаются 3-им лицам",
+    description: "Файлы защищены и не передаются третьим лицам",
     icon: <ShieldCheck className="h-8 w-8 text-white" />,
   },
 ] as const;

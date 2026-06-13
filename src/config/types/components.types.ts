@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Doc, Id } from "../../../convex/_generated/dataModel";
 
@@ -46,6 +46,13 @@ export interface DataTableProps<TData, TValue> {
 
 export interface HeaderProps {
     showMobileMenuButton?: boolean;
+    showSearch?: boolean;
+}
+
+export interface SearchBarProps {
+  query?: string;
+  setQuery?: Dispatch<SetStateAction<string>>;
+  syncWithUrl?: boolean;
 }
 
 export interface LandingFeatureCard {

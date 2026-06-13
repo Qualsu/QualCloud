@@ -11,16 +11,18 @@ import { images } from "@/config/routing/image.route";
 import { useMobileNav } from "@/components/mobile-nav-context";
 import { HeaderProps } from "@/config/types/components.types";
 import { usePathname } from "next/navigation";
+import { SearchBar } from "../dashboard/_components/search-bar";
 
-export function Header({ showMobileMenuButton }: HeaderProps) {
+export function Header({ showMobileMenuButton, showSearch }: HeaderProps) {
     const { isLoading } = useConvexAuth();
     const { toggle } = useMobileNav();
     const pathname = usePathname()
+    const shouldShowSearch = showSearch ?? pathname.startsWith("/dashboard");
 
     return (
         <header className="fixed top-0 left-0 right-0 z-10 px-4 pt-3 sm:px-6">
-            <div className="surface-panel mx-auto flex max-w-[1400px] items-center justify-between rounded-2xl px-4 py-3 sm:px-5 sm:py-4">
-                <div className="flex items-center gap-3">
+            <div className="surface-panel flex w-full items-center gap-4 rounded-2xl px-4 py-3 sm:px-5 sm:py-4 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+                <div className="flex min-w-0 items-center gap-3 md:justify-self-start">
                     {showMobileMenuButton && (
                         <button
                             onClick={toggle}
@@ -49,10 +51,16 @@ export function Header({ showMobileMenuButton }: HeaderProps) {
                     </Link>
                 </div>
 
+                {shouldShowSearch && (
+                    <div className="hidden justify-center md:flex md:justify-self-center">
+                        <SearchBar syncWithUrl />
+                    </div>
+                )}
+
                 {isLoading ? (
                     <Loader2 className="animate-spin text-white/60" size={20} />
                 ) : (
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-fit items-center gap-2 md:justify-self-end">
                         <OrganizationSwitcher
                             appearance={{
                                 elements: {

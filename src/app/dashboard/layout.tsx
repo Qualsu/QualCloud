@@ -37,10 +37,10 @@ export default function DashboardLayout({
         ) : (
           <MobileNavProvider>
             <div className="relative isolate min-h-screen text-white">
-              <Header showMobileMenuButton />
+              <Header showMobileMenuButton showSearch />
               <div className="h-20 md:h-24" />
               <main className="mx-4 sm:mx-6 md:mx-8 lg:mx-10 py-6">
-                <div className="mx-auto flex max-w-[1400px] gap-6 md:gap-8">
+                <div className="flex w-full gap-6 md:gap-8">
                   <SideNav />
                   <div className="min-w-0 flex-1">
                     {children}
