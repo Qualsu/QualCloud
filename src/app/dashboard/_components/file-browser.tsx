@@ -4,11 +4,12 @@ import { useOrganization, useUser } from "@clerk/nextjs";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { useQuery } from "convex/react";
 import { Loader2, PackageOpen } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { getAllFiles as getNotterFiles } from "@/app/api/notter";
 import { getAllFiles as getShrtlFiles } from "@/app/api/shrtl";
+import { useSearchSuggestions } from "@/components/search-suggestions-context";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
@@ -50,6 +51,7 @@ export function Placeholder() {
 
 export function FilesBrowser({ title, shrtl, notter }: FilesBrowserProps) {
   const searchParams = useSearchParams();
+  const { setSuggestions } = useSearchSuggestions();
   const organization = useOrganization();
   const user = useUser();
   const [type, setType] = useState<FileFilterType>("all");
@@ -103,6 +105,26 @@ export function FilesBrowser({ title, shrtl, notter }: FilesBrowserProps) {
       ...file,
     })) ?? [];
 
+  const autocompleteFiles = (() => {
+    let filesToSuggest = modifiedFiles;
+
+    if (type !== "all") {
+      filesToSuggest = filesToSuggest.filter((file) => file.type === type);
+    }
+
+    if (shrtl && !checked) {
+      filesToSuggest = filesToSuggest.filter((file) => {
+        const expiresInSeconds =
+          "_expiresInSeconds" in file
+            ? ((file._expiresInSeconds as number | null | undefined) ?? null)
+            : null;
+        return expiresInSeconds !== null;
+      });
+    }
+
+    return filesToSuggest;
+  })();
+
   const sortedFiles = (() => {
     let filesToSort = modifiedFiles;
 
@@ -150,6 +172,31 @@ export function FilesBrowser({ title, shrtl, notter }: FilesBrowserProps) {
 
     return typeSort === "reverse" ? [...result].reverse() : result;
   })();
+
+  const autocompleteSuggestions = useMemo(
+    () =>
+      [...new Set(autocompleteFiles.map((file) => file.name.trim()).filter(Boolean))].sort((first, second) =>
+        first.localeCompare(second)
+      ),
+    [autocompleteFiles]
+  );
+
+  useEffect(() => {
+    setSuggestions((currentSuggestions) => {
+      if (
+        currentSuggestions.length === autocompleteSuggestions.length &&
+        currentSuggestions.every((suggestion, index) => suggestion === autocompleteSuggestions[index])
+      ) {
+        return currentSuggestions;
+      }
+
+      return autocompleteSuggestions;
+    });
+  }, [autocompleteSuggestions, setSuggestions]);
+
+  useEffect(() => {
+    return () => setSuggestions([]);
+  }, [setSuggestions]);
 
   return (
     <div>
