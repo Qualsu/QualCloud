@@ -75,7 +75,7 @@ export default function Main() {
                 />
 
                 <h1 className="relative mx-auto mt-6 px-2 text-center text-2xl leading-tight text-white/80 sm:mt-8">
-                    Единый доступ к файлам проектов Qualsu
+                    Единый доступ к файлам проектов QualCloud
                 </h1>
 
                 <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">

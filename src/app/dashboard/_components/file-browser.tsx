@@ -1,25 +1,14 @@
 "use client";
 
 import { useOrganization, useUser } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { useQuery } from "convex/react";
 import { Loader2, PackageOpen } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 
 import { getAllFiles as getNotterFiles } from "@/app/api/notter";
 import { getAllFiles as getShrtlFiles } from "@/app/api/shrtl";
-import { useSearchSuggestions } from "@/components/search-suggestions-context";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
   fileSortDirectionOptions,
   fileSortOptions,
@@ -33,23 +22,37 @@ import type {
   FileSortDirection,
   FileSortKey,
 } from "@/config/types/components.types";
+import { useSearchSuggestions } from "@/components/search-suggestions-context";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { api } from "../../../../convex/_generated/api";
 import { columns } from "./columns";
-import { FileCard, FileCardSkeleton } from "./file-card";
+import { FileCard } from "./file-card";
 import { DataTable } from "./file-table";
 
 export function Placeholder() {
   return (
     <div className="my-12 flex w-full flex-col items-center gap-6 text-zinc-500">
       <PackageOpen className="h-32 w-32" />
-      <div className="text-center text-2xl font-bold">
-        {"Тут ничего нет."}
-      </div>
+      <div className="text-center text-2xl font-bold">Тут ничего нет.</div>
     </div>
   );
 }
 
-export function FilesBrowser({ title, shrtl, notter }: FilesBrowserProps) {
+export function FilesBrowser({
+  title,
+  shrtl,
+  notter,
+  hideWhenNoConvexUser,
+}: FilesBrowserProps) {
   const searchParams = useSearchParams();
   const { setSuggestions } = useSearchSuggestions();
   const organization = useOrganization();
@@ -61,7 +64,7 @@ export function FilesBrowser({ title, shrtl, notter }: FilesBrowserProps) {
   const [apiFiles, setApiFiles] = useState<FileDoc[] | undefined>(undefined);
   const query = searchParams.get("q")?.trim() ?? "";
 
-  let orgId: string | undefined = undefined;
+  let orgId: string | undefined;
   if (organization.isLoaded && user.isLoaded) {
     orgId = organization.organization?.id ?? user.user?.id;
   }
@@ -75,6 +78,11 @@ export function FilesBrowser({ title, shrtl, notter }: FilesBrowserProps) {
           query,
         }
       : "skip"
+  );
+
+  const currentConvexUser = useQuery(
+    api.users.getMe,
+    !shrtl && !notter && hideWhenNoConvexUser ? {} : "skip"
   );
 
   const handleCheckedChange = (nextChecked: CheckedState) => {
@@ -97,8 +105,16 @@ export function FilesBrowser({ title, shrtl, notter }: FilesBrowserProps) {
     }
   }, [shrtl, notter, orgId]);
 
+  const shouldShowEmptyState =
+    Boolean(hideWhenNoConvexUser) && currentConvexUser === null;
   const files = shrtl || notter ? apiFiles : queryFiles;
-  const isLoading = files === undefined;
+  const isLoading =
+    !shouldShowEmptyState &&
+    (files === undefined ||
+      (hideWhenNoConvexUser &&
+        !shrtl &&
+        !notter &&
+        currentConvexUser === undefined));
 
   const modifiedFiles: FileDoc[] =
     files?.map((file) => ({
@@ -175,9 +191,8 @@ export function FilesBrowser({ title, shrtl, notter }: FilesBrowserProps) {
 
   const autocompleteSuggestions = useMemo(
     () =>
-      [...new Set(autocompleteFiles.map((file) => file.name.trim()).filter(Boolean))].sort((first, second) =>
-        first.localeCompare(second)
-      ),
+      [...new Set(autocompleteFiles.map((file) => file.name.trim()).filter(Boolean))]
+        .sort((first, second) => first.localeCompare(second)),
     [autocompleteFiles]
   );
 
@@ -185,7 +200,9 @@ export function FilesBrowser({ title, shrtl, notter }: FilesBrowserProps) {
     setSuggestions((currentSuggestions) => {
       if (
         currentSuggestions.length === autocompleteSuggestions.length &&
-        currentSuggestions.every((suggestion, index) => suggestion === autocompleteSuggestions[index])
+        currentSuggestions.every(
+          (suggestion, index) => suggestion === autocompleteSuggestions[index]
+        )
       ) {
         return currentSuggestions;
       }
@@ -204,108 +221,124 @@ export function FilesBrowser({ title, shrtl, notter }: FilesBrowserProps) {
         <h1 className="text-3xl font-semibold tracking-tight text-white">{title}</h1>
       </div>
 
-      <Tabs defaultValue="grid">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="type-select" className="text-sm text-white/60">
-              {"Показать"}
-            </Label>
-            <Select value={type} onValueChange={(newType) => setType(newType as FileFilterType)}>
-              <SelectTrigger
-                className="w-[180px] border-white/10 bg-white/5 text-white hover:bg-white/10"
-                id="type-select"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="border-white/10 bg-[#211428] text-white">
-                {fileTypeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value} className="focus:bg-white/10">
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="sort-select" className="text-sm text-white/60">
-              {"Сортировать"}
-            </Label>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Select value={sort} onValueChange={(newSort) => setSort(newSort as FileSortKey)}>
+      {shouldShowEmptyState ? (
+        <Placeholder />
+      ) : (
+        <Tabs defaultValue="grid">
+          <div className="mb-6 flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="type-select" className="text-sm text-white/60">
+                {"Показать"}
+              </Label>
+              <Select value={type} onValueChange={(newType) => setType(newType as FileFilterType)}>
                 <SelectTrigger
                   className="w-[180px] border-white/10 bg-white/5 text-white hover:bg-white/10"
-                  id="sort-select"
+                  id="type-select"
                 >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="border-white/10 bg-[#211428] text-white">
-                  {fileSortOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="focus:bg-white/10">
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={typeSort}
-                onValueChange={(newSort) => setTypeSort(newSort as FileSortDirection)}
-              >
-                <SelectTrigger
-                  className="w-[160px] border-white/10 bg-white/5 text-white hover:bg-white/10"
-                  id="sort-direction-select"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="border-white/10 bg-[#211428] text-white">
-                  {fileSortDirectionOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="focus:bg-white/10">
+                  {fileTypeOptions.map((option) => (
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="focus:bg-white/10"
+                    >
                       {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {shrtl && (
-            <div className="flex items-center gap-2 pb-1">
-              <Label htmlFor="expired-checkbox" className="shrink-0 text-sm text-white/60">
-                {"Истекшие"}
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="sort-select" className="text-sm text-white/60">
+                {"Сортировать"}
               </Label>
-              <Checkbox
-                id="expired-checkbox"
-                name="expired-checkbox"
-                checked={checked}
-                onCheckedChange={handleCheckedChange}
-              />
-            </div>
-          )}
-        </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Select value={sort} onValueChange={(newSort) => setSort(newSort as FileSortKey)}>
+                  <SelectTrigger
+                    className="w-[180px] border-white/10 bg-white/5 text-white hover:bg-white/10"
+                    id="sort-select"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-white/10 bg-[#211428] text-white">
+                    {fileSortOptions.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="focus:bg-white/10"
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-        {isLoading ? (
-          <div className="flex min-h-[320px] items-center justify-center">
-            <Loader2 className="h-16 w-16 animate-spin text-white/50" />
-          </div>
-        ) : (
-          <>
-            <TabsContent value="grid">
-              <div className="mr-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {sortedFiles.map((file) => (
-                  <FileCard key={file._id} file={file} shrtl={shrtl} notter={notter} />
-                ))}
+                <Select
+                  value={typeSort}
+                  onValueChange={(newSort) => setTypeSort(newSort as FileSortDirection)}
+                >
+                  <SelectTrigger
+                    className="w-[160px] border-white/10 bg-white/5 text-white hover:bg-white/10"
+                    id="sort-direction-select"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-white/10 bg-[#211428] text-white">
+                    {fileSortDirectionOptions.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="focus:bg-white/10"
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="table">
-              <DataTable columns={columns} data={sortedFiles} />
-            </TabsContent>
-          </>
-        )}
-      </Tabs>
+            {shrtl && (
+              <div className="flex items-center gap-2 pb-1">
+                <Label htmlFor="expired-checkbox" className="shrink-0 text-sm text-white/60">
+                  {"Истекшие"}
+                </Label>
+                <Checkbox
+                  id="expired-checkbox"
+                  name="expired-checkbox"
+                  checked={checked}
+                  onCheckedChange={handleCheckedChange}
+                />
+              </div>
+            )}
+          </div>
 
-      {!isLoading && sortedFiles.length === 0 && <Placeholder />}
+          {isLoading ? (
+            <div className="flex min-h-[320px] items-center justify-center">
+              <Loader2 className="h-16 w-16 animate-spin text-white/50" />
+            </div>
+          ) : (
+            <>
+              <TabsContent value="grid">
+                <div className="mr-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {sortedFiles.map((file) => (
+                    <FileCard key={file._id} file={file} shrtl={shrtl} notter={notter} />
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="table">
+                <DataTable columns={columns} data={sortedFiles} />
+              </TabsContent>
+            </>
+          )}
+        </Tabs>
+      )}
+
+      {!shouldShowEmptyState && !isLoading && sortedFiles.length === 0 && <Placeholder />}
     </div>
   );
 }

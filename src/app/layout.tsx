@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "QualCloud",
-  description: "Единый доступ к файлам проектов Qualsu",
+  description: "Единый доступ к файлам проектов QualCloud",
   manifest: images.MANIFEST,
   icons: {
     icon: images.ICON,

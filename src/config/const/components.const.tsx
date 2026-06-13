@@ -71,12 +71,12 @@ export const utilityNavItems = [
 export const landingFeatureCards = [
   {
     title: "Единый доступ",
-    description: "Файлы всех приложений Qualsu в одном месте",
+    description: "Файлы всех приложений QualCloud в одном месте",
     icon: <Boxes className="h-8 w-8 text-white" />,
   },
   {
     title: "Архив KenyCloud",
-    description: "Если вы пользовались KenyCloud, все ваши файлы сохранены и доступны в QualCloud",
+    description: "Если вы пользовались KenyCloud, все ваши файлы сохранены и доступны в QualCloud.",
     icon: (
       <Image
         src={images.ICONS.KENYCLOUD}

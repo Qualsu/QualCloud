@@ -21,6 +21,7 @@ export interface FilesBrowserProps {
   title: string;
   shrtl?: boolean;
   notter?: boolean;
+  hideWhenNoConvexUser?: boolean;
 }
 
 export interface FileCardProps {
