@@ -4,7 +4,7 @@ import { useOrganization, useUser } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { useQuery } from "convex/react";
-import { Loader2, PackageOpen } from "lucide-react";
+import { LayoutGrid, Loader2, PackageOpen, Table as TableIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { getAllFiles as getNotterFiles } from "@/app/api/notter";
@@ -32,9 +32,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "../../../../convex/_generated/api";
-import { columns } from "./columns";
+import { createColumns } from "./columns";
 import { FileCard } from "./file-card";
 import { DataTable } from "./file-table";
 
@@ -189,6 +189,11 @@ export function FilesBrowser({
     return typeSort === "reverse" ? [...result].reverse() : result;
   })();
 
+  const fileColumns = useMemo(
+    () => createColumns({ shrtl, notter }),
+    [shrtl, notter]
+  );
+
   const autocompleteSuggestions = useMemo(
     () =>
       [...new Set(autocompleteFiles.map((file) => file.name.trim()).filter(Boolean))]
@@ -225,69 +230,21 @@ export function FilesBrowser({
         <Placeholder />
       ) : (
         <Tabs defaultValue="grid">
-          <div className="mb-6 flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="type-select" className="text-sm text-white/60">
-                {"Показать"}
-              </Label>
-              <Select value={type} onValueChange={(newType) => setType(newType as FileFilterType)}>
-                <SelectTrigger
-                  className="w-[180px] border-white/10 bg-white/5 text-white hover:bg-white/10"
-                  id="type-select"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="border-white/10 bg-[#211428] text-white">
-                  {fileTypeOptions.map((option) => (
-                    <SelectItem
-                      key={option.value}
-                      value={option.value}
-                      className="focus:bg-white/10"
-                    >
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="sort-select" className="text-sm text-white/60">
-                {"Сортировать"}
-              </Label>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Select value={sort} onValueChange={(newSort) => setSort(newSort as FileSortKey)}>
+          <div className="mb-6 flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end md:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="type-select" className="text-sm text-white/60">
+                  {"Показать"}
+                </Label>
+                <Select value={type} onValueChange={(newType) => setType(newType as FileFilterType)}>
                   <SelectTrigger
                     className="w-[180px] border-white/10 bg-white/5 text-white hover:bg-white/10"
-                    id="sort-select"
+                    id="type-select"
                   >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="border-white/10 bg-[#211428] text-white">
-                    {fileSortOptions.map((option) => (
-                      <SelectItem
-                        key={option.value}
-                        value={option.value}
-                        className="focus:bg-white/10"
-                      >
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select
-                  value={typeSort}
-                  onValueChange={(newSort) => setTypeSort(newSort as FileSortDirection)}
-                >
-                  <SelectTrigger
-                    className="w-[160px] border-white/10 bg-white/5 text-white hover:bg-white/10"
-                    id="sort-direction-select"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="border-white/10 bg-[#211428] text-white">
-                    {fileSortDirectionOptions.map((option) => (
+                    {fileTypeOptions.map((option) => (
                       <SelectItem
                         key={option.value}
                         value={option.value}
@@ -299,22 +256,89 @@ export function FilesBrowser({
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="sort-select" className="text-sm text-white/60">
+                  {"Сортировать"}
+                </Label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Select value={sort} onValueChange={(newSort) => setSort(newSort as FileSortKey)}>
+                    <SelectTrigger
+                      className="w-[180px] border-white/10 bg-white/5 text-white hover:bg-white/10"
+                      id="sort-select"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="border-white/10 bg-[#211428] text-white">
+                      {fileSortOptions.map((option) => (
+                        <SelectItem
+                          key={option.value}
+                          value={option.value}
+                          className="focus:bg-white/10"
+                        >
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={typeSort}
+                    onValueChange={(newSort) => setTypeSort(newSort as FileSortDirection)}
+                  >
+                    <SelectTrigger
+                      className="w-[160px] border-white/10 bg-white/5 text-white hover:bg-white/10"
+                      id="sort-direction-select"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="border-white/10 bg-[#211428] text-white">
+                      {fileSortDirectionOptions.map((option) => (
+                        <SelectItem
+                          key={option.value}
+                          value={option.value}
+                          className="focus:bg-white/10"
+                        >
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {shrtl && (
+                <div className="flex items-center gap-2 pb-1">
+                  <Label htmlFor="expired-checkbox" className="shrink-0 text-sm text-white/60">
+                    {"Истекшие"}
+                  </Label>
+                  <Checkbox
+                    id="expired-checkbox"
+                    name="expired-checkbox"
+                    checked={checked}
+                    onCheckedChange={handleCheckedChange}
+                    className="border-white/10 bg-white/5 data-[state=checked]:border-primary data-[state=checked]:bg-primary hover:bg-white/10"
+                  />
+                </div>
+              )}
             </div>
 
-            {shrtl && (
-              <div className="flex items-center gap-2 pb-1">
-                <Label htmlFor="expired-checkbox" className="shrink-0 text-sm text-white/60">
-                  {"Истекшие"}
-                </Label>
-                <Checkbox
-                  id="expired-checkbox"
-                  name="expired-checkbox"
-                  checked={checked}
-                  onCheckedChange={handleCheckedChange}
-                  className="border-white/10 bg-white/5 data-[state=checked]:border-primary data-[state=checked]:bg-primary hover:bg-white/10"
-                />
-              </div>
-            )}
+            <TabsList className="h-10 gap-1 rounded-xl border border-white/10 bg-white/5 p-1">
+              <TabsTrigger
+                value="grid"
+                className="rounded-lg px-3 py-1.5 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                aria-label="Сетка"
+              >
+                <LayoutGrid size={16} />
+              </TabsTrigger>
+              <TabsTrigger
+                value="table"
+                className="rounded-lg px-3 py-1.5 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                aria-label="Таблица"
+              >
+                <TableIcon size={16} />
+              </TabsTrigger>
+            </TabsList>
           </div>
 
           {isLoading ? (
@@ -332,7 +356,7 @@ export function FilesBrowser({
               </TabsContent>
 
               <TabsContent value="table">
-                <DataTable columns={columns} data={sortedFiles} />
+                <DataTable columns={fileColumns} data={sortedFiles} />
               </TabsContent>
             </>
           )}

@@ -3,54 +3,120 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { formatRelative } from "date-fns"
 import { useQuery } from "convex/react"
+import { useUser } from "@clerk/nextjs"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import type { FavoritedFile, UserCellProps } from "@/config/types/components.types"
+import type { FileDoc } from "@/config/types/components.types"
+import { typeIcons } from "@/config/const/components.const"
 import { api } from "../../../../convex/_generated/api"
 import { FileCardActions } from "./file-actions"
 
-function UserCell({ userId }: UserCellProps){
-    const userProfile = useQuery(api.users.getUserProfile, {
-        userId: userId
-    })
-    return (
-        <div className="flex gap-2 text-white/50 items-center">
-            <Avatar className="w-7 h-7">
-                <AvatarImage src={userProfile?.image} />
-                <AvatarFallback className="text-xs bg-white/10 text-white/60">
-                    {userProfile?.name?.charAt(0) ?? "?"}
-                </AvatarFallback>
-            </Avatar>
-            {userProfile?.name}
-        </div>
-    )
+function formatExpiresIn(seconds: number | null): string {
+  if (seconds === null) return "Истек";
+
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  return `Осталось: ${days}д ${hours}ч ${minutes}м`;
 }
 
-export const columns: ColumnDef<FavoritedFile>[] = [
-  {
-    accessorKey: "name",
-    header: "Name",
-  },
-  {
-    accessorKey: "type",
-    header: "Type",
-  },
-  {
-    accessorKey: "User",
-    cell: ({ row }) => {
-        return <UserCell userId={row.original.userId}/>
-      },
-  },
-  {
-    accessorKey: "Uploaded On",
-    cell: ({ row }) => {
-        return <div>{formatRelative(new Date(row.original._creationTime), new Date())}</div>
-      },
-  },
-  {
-    accessorKey: "Actions",
-    cell: ({ row }) => {
-        return <div><FileCardActions file={row.original}/></div>
-      },
+function UserCell({ file, shrtl, notter }: { file: FileDoc; shrtl?: boolean; notter?: boolean }) {
+  const { user } = useUser();
+  const isFromApi = "_isFromApi" in file && file._isFromApi;
+  const userProfile = useQuery(
+    api.users.getUserProfile,
+    !isFromApi ? { userId: file.userId } : "skip"
+  );
+
+  const avatar = shrtl
+    ? user?.imageUrl
+    : notter
+    ? file.avatar
+    : userProfile?.image;
+
+  const username = shrtl
+    ? user?.username
+    : notter
+    ? file.username
+    : userProfile?.name;
+
+  return (
+    <div className="flex items-center gap-2 text-white/50">
+      <Avatar className="h-7 w-7">
+        <AvatarImage src={avatar} />
+        <AvatarFallback className="bg-white/10 text-xs text-white/60">
+          {username?.charAt(0) ?? "?"}
+        </AvatarFallback>
+      </Avatar>
+      <span>{username}</span>
+    </div>
+  );
+}
+
+function TypeCell({ file }: { file: FileDoc }) {
+  return (
+    <div className="flex items-center gap-2 text-white/70">
+      <span className="shrink-0 text-zinc-400">{typeIcons[file.type]}</span>
+      <span className="capitalize">{file.type}</span>
+    </div>
+  );
+}
+
+function DateCell({ file, shrtl }: { file: FileDoc; shrtl?: boolean }) {
+  if (shrtl) {
+    const expiresInSeconds =
+      "_expiresInSeconds" in file
+        ? ((file._expiresInSeconds as number | null | undefined) ?? null)
+        : null;
+    return <div className="text-white/50">{formatExpiresIn(expiresInSeconds)}</div>;
   }
-]
+
+  return (
+    <div className="text-white/50">
+      {formatRelative(new Date(file._creationTime), new Date())}
+    </div>
+  );
+}
+
+export function createColumns({
+  shrtl,
+  notter,
+}: {
+  shrtl?: boolean;
+  notter?: boolean;
+}): ColumnDef<FileDoc>[] {
+  return [
+    {
+      accessorKey: "name",
+      header: "Название",
+      cell: ({ row }) => (
+        <div className="font-medium text-white/80">{row.original.name}</div>
+      ),
+    },
+    {
+      accessorKey: "type",
+      header: "Тип",
+      cell: ({ row }) => <TypeCell file={row.original} />,
+    },
+    {
+      accessorKey: "userId",
+      header: "Пользователь",
+      cell: ({ row }) => (
+        <UserCell file={row.original} shrtl={shrtl} notter={notter} />
+      ),
+    },
+    {
+      accessorKey: "_creationTime",
+      header: shrtl ? "Истекает" : "Загружено",
+      cell: ({ row }) => <DateCell file={row.original} shrtl={shrtl} />,
+    },
+    {
+      id: "actions",
+      header: "Действия",
+      cell: ({ row }) => (
+        <FileCardActions file={row.original} shrtl={shrtl} notter={notter} />
+      ),
+    },
+  ];
+}
