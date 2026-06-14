@@ -1,3 +1,6 @@
+"use client";
+
+import { ColumnDef } from "@tanstack/react-table";
 import {
   Avatar,
   AvatarFallback,
@@ -11,9 +14,15 @@ import {
   Files,
   HardDrive,
   Heart,
+  LayoutGrid,
+  Table as TableIcon,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataTable } from "../_components/file-table";
 
 const storageStats = [
   {
@@ -104,6 +113,50 @@ const recentFiles: {
   },
 ];
 
+const recentColumns: ColumnDef<(typeof recentFiles)[number]>[] = [
+  {
+    accessorKey: "name",
+    header: "Название",
+    cell: ({ row }) => (
+      <div className="font-medium text-white/80">{row.original.name}</div>
+    ),
+  },
+  {
+    accessorKey: "type",
+    header: "Тип",
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2 text-white/70">
+        <span className="shrink-0 text-zinc-400">
+          {typeIcons[row.original.type]}
+        </span>
+        <span className="capitalize">{row.original.type}</span>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "owner",
+    header: "Владелец",
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2 text-white/50">
+        <Avatar className="h-7 w-7">
+          <AvatarImage alt={row.original.owner} />
+          <AvatarFallback className="bg-white/10 text-xs text-white/60">
+            {row.original.ownerInitial}
+          </AvatarFallback>
+        </Avatar>
+        <span>{row.original.owner}</span>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "uploadedAt",
+    header: "Загружено",
+    cell: ({ row }) => (
+      <div className="text-white/50">{row.original.uploadedAt}</div>
+    ),
+  },
+];
+
 function StatCard({
   label,
   value,
@@ -173,6 +226,8 @@ function RecentFileCard({
 }
 
 export default function Home() {
+  const [view, setView] = useState<"grid" | "table">("grid");
+
   return (
     <div className="space-y-10">
       <section className="space-y-5">
@@ -193,19 +248,47 @@ export default function Home() {
       </section>
 
       <section className="space-y-5">
-        <div className="flex items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className="text-xl font-semibold text-white">
-              Недавние файлы
-            </h2>
-          </div>
-        </div>
+        <Tabs
+          value={view}
+          onValueChange={(value) => setView(value as "grid" | "table")}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold text-white">
+                Недавние файлы
+              </h2>
+            </div>
 
-        <div className="mr-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {recentFiles.map((file) => (
-            <RecentFileCard key={file.id} {...file} />
-          ))}
-        </div>
+            <TabsList className="h-10 gap-1 rounded-xl border border-white/10 bg-white/5 p-1">
+              <TabsTrigger
+                value="grid"
+                className="rounded-lg px-3 py-1.5 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                aria-label="Сетка"
+              >
+                <LayoutGrid size={16} />
+              </TabsTrigger>
+              <TabsTrigger
+                value="table"
+                className="rounded-lg px-3 py-1.5 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                aria-label="Таблица"
+              >
+                <TableIcon size={16} />
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="grid" className="mt-5">
+            <div className="mr-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {recentFiles.map((file) => (
+                <RecentFileCard key={file.id} {...file} />
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="table" className="mt-5">
+            <DataTable columns={recentColumns} data={recentFiles} />
+          </TabsContent>
+        </Tabs>
       </section>
     </div>
   );

@@ -196,7 +196,7 @@ export function FilesBrowser({
 
   const autocompleteSuggestions = useMemo(
     () =>
-      [...new Set(autocompleteFiles.map((file) => file.name.trim()).filter(Boolean))]
+      Array.from(new Set(autocompleteFiles.map((file) => file.name.trim()).filter(Boolean)))
         .sort((first, second) => first.localeCompare(second)),
     [autocompleteFiles]
   );

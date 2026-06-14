@@ -34,7 +34,7 @@ export default function ConvexClientProvider({
         },
       }}
     >
-      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+      <ConvexProviderWithClerk client={convex} useAuth={useAuth as never}>
         {children}
       </ConvexProviderWithClerk>
     </ClerkProvider>
