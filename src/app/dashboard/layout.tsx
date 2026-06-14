@@ -2,13 +2,14 @@
 
 import { useUser } from '@clerk/nextjs'
 import { redirect } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 import { pages } from '@/config/routing/pages.route';
 import { Header } from '../_component/header';
 import { SideNav } from "./_components/side-nav"
 import { MobileNavProvider } from '@/components/mobile-nav-context';
 import { SearchSuggestionsProvider } from '@/components/search-suggestions-context';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Loader2 } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -16,43 +17,32 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
 
-  const { isSignedIn } = useUser()
-  const [showPage, setShowPage] = useState(false)
+  const { isLoaded, isSignedIn } = useUser()
 
-  useEffect(() => {
-    if (process.env.SERVER_STATE === "True" || !isSignedIn) {
-      const timer = setTimeout(() => {
-        setShowPage(true)
-      }, 1000)
+  if (!isLoaded) {
+    return <Loader2 className='m-auto h-screen animate-spin text/white/50'/>
+  }
 
-      return () => clearTimeout(timer)
-    }
-
-    setShowPage(false)
-  }, [isSignedIn])
+  if (!isSignedIn) {
+    redirect(pages.AUTH)
+  }
 
   return (
-      <>
-        {showPage ? (
-          redirect(pages.AUTH)
-        ) : (
-          <MobileNavProvider>
-            <SearchSuggestionsProvider>
-              <div className="relative isolate min-h-screen text-white">
-                <Header showMobileMenuButton showSearch />
-                <div className="h-20 md:h-24" />
-                <main className="mx-4 sm:mx-6 md:mx-8 lg:mx-10 py-6">
-                  <div className="flex w-full gap-6 md:gap-8">
-                    <SideNav />
-                    <div className="min-w-0 flex-1">
-                      {children}
-                    </div>
-                  </div>
-                </main>
+    <MobileNavProvider>
+      <SearchSuggestionsProvider>
+        <div className="relative isolate min-h-screen text-white">
+          <Header showMobileMenuButton showSearch />
+          <div className="h-20 md:h-24" />
+          <main className="mx-4 sm:mx-6 md:mx-8 lg:mx-10 py-6">
+            <div className="flex w-full gap-6 md:gap-8">
+              <SideNav />
+              <div className="min-w-0 flex-1">
+                {children}
               </div>
-            </SearchSuggestionsProvider>
-          </MobileNavProvider>
-        )}
-      </>
+            </div>
+          </main>
+        </div>
+      </SearchSuggestionsProvider>
+    </MobileNavProvider>
   );
 }

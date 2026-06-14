@@ -311,6 +311,7 @@ export function FilesBrowser({
                   name="expired-checkbox"
                   checked={checked}
                   onCheckedChange={handleCheckedChange}
+                  className="border-white/10 bg-white/5 data-[state=checked]:border-primary data-[state=checked]:bg-primary hover:bg-white/10"
                 />
               </div>
             )}
