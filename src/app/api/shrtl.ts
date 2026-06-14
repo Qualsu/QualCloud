@@ -23,7 +23,8 @@ export async function getAllFiles(account_id: string) {
       isFavorited: false,
       _isFromApi: true,
       _expiresInSeconds: file.expires_in_seconds,
-      downloads: file.downloads
+      downloads: file.downloads,
+      fileUrl: file.file_url,
     };
   });
 }

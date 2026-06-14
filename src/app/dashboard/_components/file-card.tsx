@@ -75,7 +75,7 @@ export function FileCard({ file, shrtl, notter }: FileCardProps){
     } : "skip")
 
     const fileLink = shrtl 
-        ? links.SHRTL.GET_FILE(file.fileId as string) 
+        ? (file.fileUrl ?? links.SHRTL.GET_FILE(file.fileId as string))
         : notter ? links.NOTTER.GET_FILE(file.fileId as string)
         : links.KENYCLOUD.GET_FILE(file.fileId as Id<"_storage">);
 
@@ -109,6 +109,7 @@ export function FileCard({ file, shrtl, notter }: FileCardProps){
                         height={300}
                         className="max-w-[120px] max-h-[150px] rounded-sm object-contain"
                         src={fileLink}
+                        unoptimized
                     />
                 ) : (
                     <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-500">

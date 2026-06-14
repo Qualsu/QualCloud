@@ -5,6 +5,7 @@ export interface ShrtlFileResponse {
   file_type: string;
   downloads: number;
   expires_in_seconds: number | null;
+  file_url?: string;
 }
 
 export interface NotterFileResponse {

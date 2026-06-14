@@ -10,6 +10,7 @@ export type FileDoc = Doc<"files"> & {
   avatar?: string;
   username?: string;
   noteId?: string;
+  fileUrl?: string;
 };
 export type FavoritedFile = FileDoc;
 export type FileType = Doc<"files">["type"];

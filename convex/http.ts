@@ -65,19 +65,51 @@ http.route({
   }),
 });
 
+async function detectMimeType(blob: Blob): Promise<string> {
+  const arr = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+  if (arr.length < 4) return "application/octet-stream";
+
+  if (arr[0] === 0xff && arr[1] === 0xd8 && arr[2] === 0xff) return "image/jpeg";
+  if (arr[0] === 0x89 && arr[1] === 0x50 && arr[2] === 0x4e && arr[3] === 0x47) return "image/png";
+  if (arr[0] === 0x47 && arr[1] === 0x49 && arr[2] === 0x46) return "image/gif";
+  if (arr[0] === 0x52 && arr[1] === 0x49 && arr[2] === 0x46 && arr[3] === 0x46) return "image/webp";
+  if (arr[0] === 0x42 && arr[1] === 0x4d) return "image/bmp";
+  if (arr[0] === 0x49 && arr[1] >= 0x49 && arr[2] === 0x2a && arr[3] === 0x00) return "image/tiff";
+  if (arr[0] === 0x4d && arr[1] === 0x4d && arr[2] === 0x00 && arr[3] === 0x2a) return "image/tiff";
+  if (arr[0] === 0x00 && arr[1] === 0x00 && arr[2] === 0x01 && arr[3] === 0x00) return "image/x-icon";
+  if (arr[0] === 0x1a && arr[1] === 0x45 && arr[2] === 0xdf && arr[3] === 0xa3) return "video/webm";
+  if (arr[0] === 0x66 && arr[1] === 0x74 && arr[2] === 0x79 && arr[3] === 0x70) return "video/mp4";
+  if (arr[0] === 0x49 && arr[1] === 0x44 && arr[2] === 0x33) return "audio/mpeg";
+  if (arr[0] === 0x25 && arr[1] === 0x50 && arr[2] === 0x44 && arr[3] === 0x46) return "application/pdf";
+
+  return "application/octet-stream";
+}
+
 http.route({
   path: "/getImage",
   method: "GET",
   handler: httpAction(async (ctx, request) => {
-    const { searchParams } = new URL(request.url);
-    const storageId = searchParams.get("storageId")! as Id<"_storage">;
-    const blob = await ctx.storage.get(storageId);
-    if (blob === null) {
-      return new Response("Image not found", {
-        status: 404,
+    try {
+      const { searchParams } = new URL(request.url);
+      const storageId = searchParams.get("storageId")! as Id<"_storage">;
+
+      const blob = await ctx.storage.get(storageId);
+      if (blob === null) {
+        return new Response("Image not found", { status: 404 });
+      }
+
+      const contentType = await detectMimeType(blob);
+
+      return new Response(blob, {
+        headers: {
+          "Content-Type": contentType,
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
       });
+    } catch (error) {
+      console.error("Error serving image:", error);
+      return new Response("Internal Server Error", { status: 500 });
     }
-    return new Response(blob);
   }),
 });
 

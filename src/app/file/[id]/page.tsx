@@ -67,6 +67,7 @@ export default function File() {
                             alt={currentFile?.name || "Файл"}
                             width={200}
                             height={200}
+                            unoptimized
                         />
                     ) : (
                         <div className="text-sm text-muted-foreground">Предпросмотр недоступен</div>
