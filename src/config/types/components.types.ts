@@ -22,6 +22,7 @@ export interface FilesBrowserProps {
   title: string;
   shrtl?: boolean;
   notter?: boolean;
+  kenycloud?: boolean;
   favorites?: boolean;
   deletedOnly?: boolean;
   hideWhenNoConvexUser?: boolean;

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function KenyCloud() {
   return (
     <div>
-      <FilesBrowser title="KenyCloud (Архив)" hideWhenNoConvexUser />
+      <FilesBrowser title="KenyCloud (Архив)" kenycloud hideWhenNoConvexUser />
     </div>
   );
 }

@@ -36,6 +36,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "../../../../convex/_generated/api";
 import { createColumns } from "./columns";
+import { CreateFolderDialog } from "./create-folder-dialog";
 import { FileCard } from "./file-card";
 import { DataTable } from "./file-table";
 
@@ -54,6 +55,7 @@ export function FilesBrowser({
   title,
   shrtl,
   notter,
+  kenycloud,
   favorites,
   deletedOnly,
   hideWhenNoConvexUser,
@@ -341,22 +343,25 @@ export function FilesBrowser({
             )}
           </div>
 
-          <TabsList className="h-10 gap-1 rounded-xl border border-white/10 bg-white/5 p-1">
-            <TabsTrigger
-              value="grid"
-              className="rounded-lg px-3 py-1.5 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-              aria-label="Сетка"
-            >
-              <LayoutGrid size={16} />
-            </TabsTrigger>
-            <TabsTrigger
-              value="table"
-              className="rounded-lg px-3 py-1.5 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-              aria-label="Таблица"
-            >
-              <TableIcon size={16} />
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex flex-wrap items-end justify-end gap-3">
+            <TabsList className="h-10 gap-1 rounded-xl border border-white/10 bg-white/5 p-1">
+              <TabsTrigger
+                value="grid"
+                className="rounded-lg px-3 py-1.5 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                aria-label="Сетка"
+              >
+                <LayoutGrid size={16} />
+              </TabsTrigger>
+              <TabsTrigger
+                value="table"
+                className="rounded-lg px-3 py-1.5 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                aria-label="Таблица"
+              >
+                <TableIcon size={16} />
+              </TabsTrigger>
+            </TabsList>
+            {!shrtl && !notter && !kenycloud && <CreateFolderDialog />}
+          </div>
         </div>
 
         {isLoading ? (

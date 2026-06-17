@@ -4,7 +4,8 @@ import { OrganizationSwitcher } from "@clerk/nextjs"
 import { useMobileNav } from "@/components/mobile-nav-context"
 import { navItems, utilityNavItems } from "@/config/const/components.const"
 import { images } from "@/config/routing/image.route"
-import { X } from "lucide-react"
+import { Upload, X } from "lucide-react"
+import { UploadDialog } from "./upload-dialog"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -56,19 +57,6 @@ export function SideNav() {
     <>
       {items.map(({ id, href, icon: Icon, label }) => {
         const active = Boolean(href) && pathname === href
-        const isPlaceholder = id === "upload"
-
-        if (isPlaceholder) {
-          return (
-            <div
-              key={id}
-              className="flex cursor-default items-center gap-3 rounded-xl px-4 py-3 text-sm text-white/35 opacity-60"
-            >
-              <Icon size={18} className="shrink-0" />
-              <span>{label}</span>
-            </div>
-          )
-        }
 
         return (
           <Link
@@ -89,12 +77,23 @@ export function SideNav() {
     </>
   )
 
-  const uploadItem = utilityNavItems.filter(({ id }) => id === "upload")
   const cloudItems = utilityNavItems.filter(({ id }) => id !== "upload")
+
+  const UploadNavButton = ({ onClick }: { onClick?: () => void }) => (
+    <UploadDialog>
+      <button
+        onClick={onClick}
+        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm opacity-60 transition-all duration-200 hover:bg-white/[0.06] hover:opacity-100"
+      >
+        <Upload size={18} className="shrink-0" />
+        <span>Загрузить</span>
+      </button>
+    </UploadDialog>
+  )
 
   const NavContent = ({ onClick }: { onClick?: () => void }) => (
     <div className="flex flex-col gap-1">
-      <UtilityButtons onClick={onClick} items={uploadItem} />
+      <UploadNavButton onClick={onClick} />
       <SectionLabel>Облако</SectionLabel>
       <UtilityButtons onClick={onClick} items={cloudItems} />
       <div className="my-3 h-px bg-white/10" />
