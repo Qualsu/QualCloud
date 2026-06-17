@@ -20,11 +20,13 @@ import { createFolder } from "@/app/api/files";
 
 interface CreateFolderDialogProps {
   account_id?: string;
+  parent?: string | null;
   onCreated?: () => void;
 }
 
 export function CreateFolderDialog({
   account_id,
+  parent,
   onCreated,
 }: CreateFolderDialogProps) {
   const [open, setOpen] = useState(false);
@@ -37,7 +39,7 @@ export function CreateFolderDialog({
 
     setIsLoading(true);
     try {
-      await createFolder(account_id, trimmed);
+      await createFolder(account_id, trimmed, parent ?? null);
       toast.success(`Папка «${trimmed}» создана`);
       setFolderName("");
       setOpen(false);
@@ -59,9 +61,13 @@ export function CreateFolderDialog({
       </DialogTrigger>
       <DialogContent className="border-white/10 bg-[#1e1126] text-white sm:rounded-xl">
         <DialogHeader>
-          <DialogTitle>Создать папку</DialogTitle>
+          <DialogTitle>
+            {parent ? `Создать папку в «${parent}»` : "Создать папку"}
+          </DialogTitle>
           <DialogDescription className="text-white/60">
-            Введите название для новой папки.
+            {parent
+              ? "Введите название для новой вложенной папки."
+              : "Введите название для новой папки."}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

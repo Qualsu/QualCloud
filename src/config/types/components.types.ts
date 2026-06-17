@@ -15,6 +15,9 @@ export type FileDoc = Omit<Doc<"files">, "type"> & {
   folder?: string | null;
   isDeleted?: boolean;
   isFolder?: boolean;
+  updatedBy?: string | null;
+  updatedAt?: number | null;
+  displayName?: string;
 };
 export type FavoritedFile = FileDoc;
 export type FileType = Doc<"files">["type"] | "folder";

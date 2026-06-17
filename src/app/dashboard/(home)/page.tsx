@@ -1,18 +1,10 @@
 "use client";
 
 import { useUser, useOrganization } from "@clerk/nextjs";
-import { ColumnDef } from "@tanstack/react-table";
-import { useEffect, useState } from "react";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
-import { typeIcons } from "@/config/const/components.const";
+import { useEffect, useState, useCallback } from "react";
 import { pages } from "@/config/routing/pages.route";
-import type { FileDoc, FileType } from "@/config/types/components.types";
+import type { FileDoc } from "@/config/types/components.types";
 import {
-  Clock3,
   Files,
   HardDrive,
   Heart,
@@ -26,8 +18,11 @@ import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFilesView } from "../_components/files-view-context";
 import { DataTable } from "../_components/file-table";
+import { FileCard } from "../_components/file-card";
+import { createColumns } from "../_components/columns";
 import { getUserStats, getRecentFiles } from "@/app/api/files";
 import { FilesUserStatsResponse } from "@/config/types/api.types";
+import { formatTimeRemaining } from "@/lib/utils";
 
 function formatSize(bytes: number): string {
   if (bytes === 0) return "0 Б";
@@ -37,16 +32,8 @@ function formatSize(bytes: number): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
-function formatTimeAgo(timestamp: number): string {
-  const seconds = Math.floor((Date.now() - timestamp) / 1000);
-  if (seconds < 60) return "только что";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} мин. назад`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} ч. назад`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days} д. назад`;
-  return "давно";
+function formatDays(days: number): string {
+  return `${days.toFixed(1)} д.`;
 }
 
 function StatCard({
@@ -81,80 +68,6 @@ function StatCard({
     </Link>
   );
 }
-
-function RecentFileCard({
-  name,
-  type,
-  uploadedAt,
-}: {
-  name: string;
-  type: FileType;
-  uploadedAt: string;
-}) {
-  return (
-    <div className="group surface-panel relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_24px_70px_rgba(0,0,0,0.35)]">
-      <div className={`pointer-events-none absolute inset-x-0 top-0 h-24`} />
-
-      <div className="relative flex items-start justify-between gap-2 px-5 pb-3 pt-5">
-        <div className="flex min-w-0 items-center gap-2 break-all text-sm font-medium text-white/80">
-          <span className="shrink-0 text-zinc-400">{typeIcons[type]}</span>
-          <span className="truncate">{name}</span>
-        </div>
-        <Clock3 size={16} className="shrink-0 text-white/30" />
-      </div>
-
-      <div className="flex h-[160px] items-center justify-center px-5 py-2">
-        <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-500">
-          {typeIcons[type]}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between border-t border-white/[0.08] px-5 py-3">
-        <div className="flex items-center gap-2 text-xs text-white/50">
-          <Avatar className="h-6 w-6">
-            <AvatarImage alt="" />
-            <AvatarFallback className="bg-white/10 text-xs text-white/60">
-              ?
-            </AvatarFallback>
-          </Avatar>
-          <span>Вы</span>
-        </div>
-        <div className="text-xs text-white/30">{uploadedAt}</div>
-      </div>
-    </div>
-  );
-}
-
-const recentColumns: ColumnDef<FileDoc>[] = [
-  {
-    accessorKey: "name",
-    header: "Название",
-    cell: ({ row }) => (
-      <div className="font-medium text-white/80">{row.original.name}</div>
-    ),
-  },
-  {
-    accessorKey: "type",
-    header: "Тип",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2 text-white/70">
-        <span className="shrink-0 text-zinc-400">
-          {typeIcons[row.original.type]}
-        </span>
-        <span className="capitalize">{row.original.type}</span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "_creationTime",
-    header: "Загружено",
-    cell: ({ row }) => (
-      <div className="text-white/50">
-        {formatTimeAgo(row.original._creationTime)}
-      </div>
-    ),
-  },
-];
 
 export default function Home() {
   const [view, setView] = useFilesView();
@@ -195,13 +108,30 @@ export default function Home() {
     };
   }, [orgId]);
 
+  const refreshRecentFiles = useCallback(() => {
+    if (!orgId) return Promise.resolve();
+    return getRecentFiles(orgId).then(setRecentFiles);
+  }, [orgId]);
+
+  const recentColumns = createColumns({
+    useFilesApi: true,
+    onRefresh: refreshRecentFiles,
+  });
+
+  const occupiedSize =
+    (stats?.used_size ?? 0) + (stats?.trash_size ?? 0);
+
   const storageStats = [
     {
       label: "Занято",
-      value: stats ? formatSize(stats.total_size) : "—",
-      hint: stats?.storage_limit
-        ? `из ${formatSize(stats.storage_limit)}`
-        : "облачное хранилище",
+      value: stats ? formatSize(occupiedSize) : "—",
+      hint: stats?.limit_size
+        ? `из ${formatSize(stats.limit_size)} (${
+            ((occupiedSize / stats.limit_size) * 100).toFixed(1)
+          }%), корзина ${formatSize(stats.trash_size ?? 0)}`
+        : `облачное хранилище, корзина ${formatSize(
+            stats?.trash_size ?? 0
+          )}`,
       icon: HardDrive,
       href: pages.DASHBOARD.CLOUD,
     },
@@ -214,15 +144,15 @@ export default function Home() {
     },
     {
       label: "В избранном",
-      value: "—",
+      value: stats ? String(stats.total_favorites) : "—",
       hint: "быстрый доступ",
       icon: Heart,
       href: pages.DASHBOARD.FAVORITES,
     },
     {
       label: "Корзина",
-      value: "—",
-      hint: "удаленные файлы",
+      value: stats ? formatTimeRemaining(stats.trash_empty_in_seconds) : "—",
+      hint: "до автоочистки",
       icon: Trash2,
       href: pages.DASHBOARD.TRASH,
     },
@@ -288,11 +218,11 @@ export default function Home() {
           <TabsContent value="grid" className="mt-5">
             <div className="mr-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {recentFiles.map((file) => (
-                <RecentFileCard
+                <FileCard
                   key={file._id}
-                  name={file.name}
-                  type={file.type}
-                  uploadedAt={formatTimeAgo(file._creationTime)}
+                  file={file}
+                  useFilesApi
+                  onRefresh={refreshRecentFiles}
                 />
               ))}
             </div>

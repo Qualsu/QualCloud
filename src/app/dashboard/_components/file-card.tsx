@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { formatRelative } from 'date-fns'
 import { useQuery } from "convex/react"
 import Image from "next/image"
-import { Star } from "lucide-react"
+import { Heart } from "lucide-react"
 import { useState } from "react"
 import { api } from "../../../../convex/_generated/api"
 import { FileCardActions } from "./file-actions"
@@ -30,10 +30,8 @@ function formatExpiresIn(seconds: number | null): string {
 }
 
 export function isFileExpired(file: FileCardProps["file"]): boolean {
-    const isFromApi = "_isFromApi" in file && file._isFromApi;
-    if (!isFromApi) return false;
-    
-    const expiresInSeconds = "_expiresInSeconds" in file ? (file._expiresInSeconds as number | null | undefined) ?? null : null;
+    const expiresInSeconds = file._expiresInSeconds;
+    if (expiresInSeconds === undefined) return false;
     return expiresInSeconds === null || expiresInSeconds <= 0;
 }
 
@@ -150,8 +148,9 @@ export function FileCard({
 }: FileCardProps){
     const { user } = useUser()
     const isFromApi = "_isFromApi" in file && file._isFromApi;
+    const isApiSource = shrtl || notter || useFilesApi || isFromApi;
     const isFolder = file.isFolder;
-    const userProfile = useQuery(api.users.getUserProfile, !isFromApi ? {
+    const userProfile = useQuery(api.users.getUserProfile, !isApiSource ? {
         userId: file.userId
     } : "skip")
 
@@ -162,7 +161,7 @@ export function FileCard({
         : notter
         ? links.NOTTER.GET_FILE(file.fileId as string)
         : useFilesApi
-        ? (file.fileUrl ?? links.KENYCLOUD.GET_FILE(file.fileId as Id<"_storage">))
+        ? (file.fileUrl ?? links.FILES.GET_FILE(file.fileId as string))
         : links.KENYCLOUD.GET_FILE(file.fileId as Id<"_storage">);
 
     const avatar = isFolder
@@ -176,7 +175,7 @@ export function FileCard({
         : userProfile?.image
 
     const username = isFolder
-        ? "Папка"
+        ? (file.updatedBy ?? "Папка")
         : shrtl
         ? user?.username
         : notter
@@ -185,7 +184,7 @@ export function FileCard({
         ? (user?.username ?? user?.fullName ?? "Вы")
         : userProfile?.name
 
-    const displayName = file.name?.trim() || "Без названия";
+    const displayName = file.displayName?.trim() || file.name?.trim() || "Без названия";
     const canFavorite = useFilesApi && !isFolder && !deletedOnly && !isFileExpired(file);
 
     const handleToggleFavorite = async (e: React.MouseEvent) => {
@@ -232,13 +231,13 @@ export function FileCard({
                             onClick={handleToggleFavorite}
                             className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors hover:bg-white/10 ${
                                 file.isFavorited
-                                    ? "text-yellow-400"
-                                    : "text-white/40 hover:text-yellow-400"
+                                    ? "text-red-500"
+                                    : "text-white/40 hover:text-red-500"
                             }`}
                             title={file.isFavorited ? "Убрать из избранного" : "В избранное"}
                             aria-label={file.isFavorited ? "Убрать из избранного" : "В избранное"}
                         >
-                            <Star className={`h-4 w-4 ${file.isFavorited ? "fill-current" : ""}`} />
+                            <Heart className={`h-4 w-4 ${file.isFavorited ? "fill-current" : ""}`} />
                         </button>
                     )}
                     <FileCardActions
@@ -274,7 +273,11 @@ export function FileCard({
                     <span>{username}</span>
                 </div>
                 <div className="text-xs text-white/30">
-                    {isFolder ? "" : getFileTimeDisplay(file, shrtl)}
+                    {isFolder
+                        ? (file.updatedAt
+                            ? formatRelative(new Date(file.updatedAt), new Date())
+                            : "")
+                        : getFileTimeDisplay(file, shrtl)}
                 </div>
             </div>
         </div>

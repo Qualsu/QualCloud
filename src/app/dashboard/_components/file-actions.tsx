@@ -1,12 +1,14 @@
 import {
+    Copy,
     Download,
     FileIcon,
+    FolderInput,
     FolderOpen,
     Heart,
     MoreVertical,
+    Pencil,
     RotateCcw,
     Share2Icon,
-    Star,
     Trash,
     Trash2,
 } from "lucide-react"
@@ -20,33 +22,24 @@ import { pages } from "@/config/routing/pages.route"
 import type { FileCardProps } from "@/config/types/components.types"
 import { useOrigin } from "../../../components/hooks/use-origin"
 import toast from "react-hot-toast"
+import { useState } from "react"
 import { links } from "@/config/routing/links.route"
 import { DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu"
 import { isFileExpired } from "./file-card"
+import { RenameDialog } from "./rename-dialog"
+import { MoveToFolderDialog } from "./move-to-folder-dialog"
 import {
     addToFavorites,
     removeFromFavorites,
     moveToTrash,
     restoreFromTrash,
     deleteFilePermanently,
-    downloadFile,
     deleteFolder,
 } from "@/app/api/files"
 
 const copyTextToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text)
     toast.success("Ссылка скопирована")
-}
-
-function triggerDownload(blob: Blob, filename: string) {
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
 }
 
 export function FileCardActions({
@@ -59,15 +52,25 @@ export function FileCardActions({
     onOpenFolder,
 }: FileCardProps) {
     const origin = useOrigin()
+    const [isRenameOpen, setIsRenameOpen] = useState(false);
+    const [isMoveOpen, setIsMoveOpen] = useState(false);
     const isFolder = file.isFolder;
 
-    const fileLink = shrtl
+    const openLink = shrtl
         ? links.SHRTL.GET_LINK(file.fileId as string)
         : notter
         ? links.NOTTER.GET_NOTE(file.noteId || (file._id as string))
         : useFilesApi
-        ? (file.fileUrl || "")
+        ? pages.FILE.BY_ID(file.fileId as string)
         : pages.FILE.COPY(origin, file.linkId || "")
+
+    const downloadLink = useFilesApi
+        ? (file.fileUrl || links.FILES.GET_FILE(file.fileId as string))
+        : undefined
+
+    const shareLink = useFilesApi
+        ? pages.FILE.COPY(origin, file.linkId || (file._id as string))
+        : openLink
 
     const expired = isFileExpired(file)
 
@@ -116,26 +119,37 @@ export function FileCardActions({
         }
     };
 
-    const handleDownload = async () => {
-        try {
-            const blob = await downloadFile(file._id as string);
-            triggerDownload(blob, file.name);
-        } catch {
-            toast.error("Не удалось скачать файл");
+    const handleDownload = () => {
+        if (!downloadLink) {
+            toast.error("Ссылка для скачивания недоступна");
+            return;
         }
+        window.open(downloadLink, "_blank");
     };
+
+    const folderDisplayName = file.displayName ?? file.name;
 
     const handleDeleteFolder = async () => {
         try {
             await deleteFolder(file.orgId, file.name);
-            toast.success(`Папка «${file.name}» удалена`);
+            toast.success(`Папка «${folderDisplayName}» удалена`);
             onRefresh?.();
         } catch {
             toast.error("Не удалось удалить папку");
         }
     };
 
+    const handleCopyFolderPath = async () => {
+        try {
+            await navigator.clipboard.writeText(file.name);
+            toast.success("Путь к папке скопирован");
+        } catch {
+            toast.error("Не удалось скопировать путь");
+        }
+    };
+
     return (
+        <>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <button className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/10 hover:text-white">
@@ -151,6 +165,24 @@ export function FileCardActions({
                         >
                             <FolderOpen className="w-4 h-4" /> Открыть
                         </DropdownMenuItem>
+                        <DropdownMenuItem
+                            className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                            onClick={() => setIsRenameOpen(true)}
+                        >
+                            <Pencil className="w-4 h-4" /> Переименовать
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                            onClick={() => setIsMoveOpen(true)}
+                        >
+                            <FolderInput className="w-4 h-4" /> Переместить в папку
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                            onClick={handleCopyFolderPath}
+                        >
+                            <Copy className="w-4 h-4" /> Копировать путь
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />
                         <DropdownMenuItem
                             className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
@@ -161,17 +193,17 @@ export function FileCardActions({
                     </>
                 ) : (
                     <>
-                        {!expired && fileLink && (
+                        {!expired && openLink && (
                             <>
                                 <DropdownMenuItem className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white" onClick={() => {
-                                    window.open(fileLink, "_blank")
+                                    window.open(openLink, "_blank")
                                 }}>
                                     <FileIcon className="w-4 h-4" /> Открыть {notter && 'заметку'}
                                 </DropdownMenuItem>
 
                                 {!notter && (
                                     <DropdownMenuItem className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white" onClick={() => {
-                                        copyTextToClipboard(fileLink)
+                                        copyTextToClipboard(shareLink)
                                     }}>
                                         <Share2Icon className="w-4 h-4" /> Поделиться
                                     </DropdownMenuItem>
@@ -192,9 +224,27 @@ export function FileCardActions({
                                             </>
                                         ) : (
                                             <>
-                                                <Star className="w-4 h-4" /> В избранное
+                                                <Heart className="w-4 h-4" /> В избранное
                                             </>
                                         )}
+                                    </DropdownMenuItem>
+                                )}
+
+                                {!expired && !deletedOnly && (
+                                    <DropdownMenuItem
+                                        className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                        onClick={() => setIsRenameOpen(true)}
+                                    >
+                                        <Pencil className="w-4 h-4" /> Переименовать
+                                    </DropdownMenuItem>
+                                )}
+
+                                {!expired && !deletedOnly && (
+                                    <DropdownMenuItem
+                                        className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                        onClick={() => setIsMoveOpen(true)}
+                                    >
+                                        <FolderInput className="w-4 h-4" /> Переместить в папку
                                     </DropdownMenuItem>
                                 )}
 
@@ -223,7 +273,7 @@ export function FileCardActions({
                                     </>
                                 ) : (
                                     <>
-                                        {!expired && fileLink && <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />}
+                                        {!expired && openLink && <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />}
                                         <DropdownMenuItem
                                             className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
                                             onClick={handleMoveToTrash}
@@ -248,5 +298,20 @@ export function FileCardActions({
                 )}
             </DropdownMenuContent>
         </DropdownMenu>
+
+        <RenameDialog
+            file={file}
+            open={isRenameOpen}
+            onOpenChange={setIsRenameOpen}
+            onRenamed={onRefresh}
+        />
+        <MoveToFolderDialog
+            file={file}
+            currentFolder={file.folder ?? null}
+            open={isMoveOpen}
+            onOpenChange={setIsMoveOpen}
+            onMoved={onRefresh}
+        />
+        </>
     )
 }

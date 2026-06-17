@@ -34,9 +34,9 @@ export function SideNav() {
             href={href}
             onClick={onClick}
             className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-200 ${
-              active
+                active
                 ? "nav-link-active text-white"
-                : "opacity-60 hover:bg-white/[0.06] hover:opacity-100"
+                : "text-white/60 hover:bg-white/[0.06] hover:text-white"
             }`}
           >
             <Image src={image} alt="nav icon" width={16} height={16} className="h-5 w-5" />
@@ -64,9 +64,9 @@ export function SideNav() {
             href={href || "#"}
             onClick={onClick}
             className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-200 ${
-              active
+                active
                 ? "nav-link-active text-white"
-                : "opacity-60 hover:bg-white/[0.06] hover:opacity-100"
+                : "text-white/60 hover:bg-white/[0.06] hover:text-white"
             }`}
           >
             <Icon size={18} className="shrink-0" />
@@ -83,7 +83,7 @@ export function SideNav() {
     <UploadDialog>
       <button
         onClick={onClick}
-        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm opacity-60 transition-all duration-200 hover:bg-white/[0.06] hover:opacity-100"
+        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-white/60 transition-all duration-200 hover:bg-white/[0.06] hover:text-white"
       >
         <Upload size={18} className="shrink-0" />
         <span>Загрузить</span>

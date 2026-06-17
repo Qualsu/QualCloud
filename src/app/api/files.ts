@@ -5,7 +5,14 @@ import {
   FilesFileResponse,
   FilesFolderCreateBody,
   FilesFolderDeleteBody,
+  FilesFolderItem,
+  FilesFolderMoveBody,
+  FilesFolderRenameBody,
+  FilesFoldersResponse,
+  FilesListItem,
+  FilesListResponse,
   FilesMoveBody,
+  FilesRenameBody,
   FilesRestoreBody,
   FilesTrashBody,
   FilesUploadResponse,
@@ -15,17 +22,18 @@ import { FileDoc } from "@/config/types/components.types";
 import { Id } from "../../../convex/_generated/dataModel";
 import { getMimeType } from "./utils/get-mime";
 
-function mapFile(file: FilesFileResponse): FileDoc {
-  const deterministicId = `files_${file.account_id}` as unknown as Id<"users">;
+function mapFile(file: FilesFileResponse, fallbackAccountId?: string): FileDoc {
+  const accountId = file.account_id ?? fallbackAccountId ?? "";
+  const deterministicId = `files_${accountId}` as unknown as Id<"users">;
 
   return {
     _id: file.file_id as Id<"files">,
-    _creationTime: file.created_at
-      ? new Date(file.created_at).getTime()
+    _creationTime: file.uploaded_at
+      ? new Date(file.uploaded_at).getTime()
       : Date.now(),
-    name: file.name,
-    orgId: file.account_id,
-    type: getMimeType(file.type),
+    name: file.file_name,
+    orgId: accountId,
+    type: getMimeType(file.file_type),
     fileId: file.file_id as Id<"_storage">,
     userId: deterministicId,
     linkId: file.file_id,
@@ -33,9 +41,51 @@ function mapFile(file: FilesFileResponse): FileDoc {
     isDeleted: file.is_deleted ?? false,
     _isFromApi: true,
     downloads: 0,
-    _expiresInSeconds: null,
-    fileUrl: file.url,
+    fileUrl: file.file_url || undefined,
     folder: file.folder ?? null,
+    updatedBy: file.updated_by,
+    updatedAt: file.updated_at
+      ? new Date(file.updated_at).getTime()
+      : file.uploaded_at
+      ? new Date(file.uploaded_at).getTime()
+      : undefined,
+  };
+}
+
+function isFolderItem(item: FilesListItem): item is FilesFolderItem {
+  return item.type === "folder";
+}
+
+function mapFolder(
+  folder: FilesFolderItem,
+  fallbackAccountId?: string,
+  currentFolder?: string | null
+): FileDoc {
+  const accountId = fallbackAccountId ?? "";
+  const deterministicId = `files_${accountId}` as unknown as Id<"users">;
+
+  const displayName = folder.name.split("/").pop() || folder.name;
+
+  return {
+    _id: `folder_${folder.name}` as unknown as Id<"files">,
+    _creationTime: folder.created_at
+      ? new Date(folder.created_at).getTime()
+      : Date.now(),
+    name: folder.name,
+    displayName,
+    orgId: accountId,
+    type: "folder",
+    fileId: "" as Id<"_storage">,
+    userId: deterministicId,
+    linkId: folder.name,
+    isFolder: true,
+    folder: currentFolder ?? null,
+    updatedBy: folder.updated_by,
+    updatedAt: folder.updated_at
+      ? new Date(folder.updated_at).getTime()
+      : folder.created_at
+      ? new Date(folder.created_at).getTime()
+      : undefined,
   };
 }
 
@@ -54,9 +104,22 @@ export async function getAllFiles(
       deleted: options?.deleted,
     },
   });
-  const filesResponse: FilesFileResponse[] = res.data.files ?? res.data;
+  const data: FilesListResponse = res.data;
+  let items: FilesListItem[] = [];
 
-  return filesResponse.map(mapFile);
+  if (Array.isArray(data.items) && data.items.length > 0) {
+    items = data.items;
+  } else if (Array.isArray(data.files)) {
+    items = data.files;
+  } else if (Array.isArray(data)) {
+    items = data as FilesFileResponse[];
+  }
+
+  return items.map((item) =>
+    isFolderItem(item)
+      ? mapFolder(item, account_id, options?.folder)
+      : mapFile(item, account_id)
+  );
 }
 
 export async function uploadFile(
@@ -105,7 +168,7 @@ export async function getRecentFiles(account_id: string): Promise<FileDoc[]> {
   const res = await files.get(api.FILES.GET_RECENT(account_id));
   const filesResponse: FilesFileResponse[] = res.data.files ?? res.data;
 
-  return filesResponse.map(mapFile);
+  return filesResponse.map((file) => mapFile(file, account_id));
 }
 
 export async function getFileInfo(file_id: string): Promise<FilesFileResponse> {
@@ -126,6 +189,15 @@ export async function moveFile(
 ): Promise<unknown> {
   const body: FilesMoveBody = { file_id, folder };
   const res = await files.post(api.FILES.MOVE, body);
+  return res.data;
+}
+
+export async function renameFile(
+  file_id: string,
+  file_name: string
+): Promise<FilesFileResponse> {
+  const body: FilesRenameBody = { file_id, file_name };
+  const res = await files.post(api.FILES.RENAME, body);
   return res.data;
 }
 
@@ -160,10 +232,31 @@ export async function deleteFilePermanently(file_id: string): Promise<unknown> {
 
 export async function createFolder(
   account_id: string,
-  name: string
+  name: string,
+  parent?: string | null
 ): Promise<unknown> {
-  const body: FilesFolderCreateBody = { account_id, name };
+  const body: FilesFolderCreateBody = { account_id, name, parent };
   const res = await files.post(api.FILES.FOLDER, body);
+  return res.data;
+}
+
+export async function renameFolder(
+  account_id: string,
+  old_name: string,
+  new_name: string
+): Promise<unknown> {
+  const body: FilesFolderRenameBody = { account_id, old_name, new_name };
+  const res = await files.post(api.FILES.FOLDER_RENAME, body);
+  return res.data;
+}
+
+export async function moveFolder(
+  account_id: string,
+  name: string,
+  parent?: string | null
+): Promise<unknown> {
+  const body: FilesFolderMoveBody = { account_id, name, parent };
+  const res = await files.post(api.FILES.FOLDER_MOVE, body);
   return res.data;
 }
 
@@ -188,16 +281,22 @@ export async function getUserStats(
   return res.data;
 }
 
-export async function getFolders(account_id: string): Promise<string[]> {
-  const allFiles = await getAllFiles(account_id);
-  const folders = new Set<string>();
-
-  allFiles.forEach((file) => {
-    const folder = (file as FileDoc).folder;
-    if (folder) {
-      folders.add(folder);
-    }
+export async function getFolders(
+  account_id: string,
+  folder?: string | null
+): Promise<FilesFolderItem[]> {
+  const res = await files.get(api.FILES.GET_FOLDERS(account_id), {
+    params: { folder },
   });
+  const data: FilesFoldersResponse = res.data;
 
-  return Array.from(folders).sort((a, b) => a.localeCompare(b));
+  return (data.folders ?? []).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function getFolderNames(
+  account_id: string,
+  folder?: string | null
+): Promise<string[]> {
+  const folders = await getFolders(account_id, folder);
+  return folders.map((item) => item.name);
 }

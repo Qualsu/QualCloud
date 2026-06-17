@@ -15,10 +15,6 @@ export const notter = axios.create({
   baseURL: API_NOTTER,
 });
 
-export const API_FILES =
-  process.env.NEXT_PUBLIC_FILES_API ||
-  process.env.NEXT_PUBLIC_API ||
-  "";
 export const files = axios.create({
-  baseURL: API_FILES,
+  baseURL: API,
 });

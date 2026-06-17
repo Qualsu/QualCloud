@@ -6,7 +6,7 @@ import { FileIcon, Loader2, Upload, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
 
-import { uploadFile, uploadMultipleFiles, getFolders } from "@/app/api/files";
+import { uploadFile, uploadMultipleFiles } from "@/app/api/files";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,15 +17,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useFilesRefresh } from "./files-refresh-context";
+import { FolderTree } from "./folder-tree";
 
 interface UploadFile {
   id: string;
@@ -50,7 +44,6 @@ export function UploadDialog({
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [folder, setFolder] = useState<string>(folderProp ?? "/");
-  const [folders, setFolders] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -58,21 +51,6 @@ export function UploadDialog({
   const previewUrlsRef = useRef<Record<string, string>>({});
 
   const account_id = accountIdProp ?? user?.id;
-
-  useEffect(() => {
-    if (!open || !account_id) {
-      setFolders([]);
-      return;
-    }
-
-    getFolders(account_id)
-      .then((folderList) => {
-        setFolders(folderList);
-      })
-      .catch(() => {
-        setFolders([]);
-      });
-  }, [open, account_id]);
 
   useEffect(() => {
     return () => {
@@ -293,31 +271,12 @@ export function UploadDialog({
           )}
 
           <div className="grid gap-2">
-            <Label htmlFor="upload-folder" className="text-sm text-white/80">
-              Папка назначения
-            </Label>
-            <Select value={folder} onValueChange={setFolder}>
-              <SelectTrigger
-                id="upload-folder"
-                className="border-white/10 bg-white/5 text-white hover:bg-white/10"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="border-white/10 bg-[#211428] text-white">
-                <SelectItem value="/" className="focus:bg-white/10">
-                  /
-                </SelectItem>
-                {folders.map((folderName) => (
-                  <SelectItem
-                    key={folderName}
-                    value={folderName}
-                    className="focus:bg-white/10"
-                  >
-                    {folderName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-sm text-white/80">Папка назначения</Label>
+            <FolderTree
+              account_id={account_id}
+              value={folder}
+              onChange={setFolder}
+            />
           </div>
         </div>
 

@@ -21,26 +21,37 @@ function formatExpiresIn(seconds: number | null): string {
   return `Осталось: ${days}д ${hours}ч ${minutes}м`;
 }
 
-function UserCell({ file, shrtl, notter }: { file: FileDoc; shrtl?: boolean; notter?: boolean }) {
+function UserCell({
+  file,
+  shrtl,
+  notter,
+  useFilesApi,
+}: {
+  file: FileDoc;
+  shrtl?: boolean;
+  notter?: boolean;
+  useFilesApi?: boolean;
+}) {
   const { user } = useUser();
   const isFromApi = "_isFromApi" in file && file._isFromApi;
+  const isApiSource = shrtl || notter || useFilesApi || isFromApi;
   const userProfile = useQuery(
     api.users.getUserProfile,
-    !isFromApi ? { userId: file.userId } : "skip"
+    !isApiSource ? { userId: file.userId } : "skip"
   );
 
   if (file.isFolder) {
-    return <div className="text-white/50">—</div>;
+    return <div className="text-white/50">{file.updatedBy ?? "—"}</div>;
   }
 
-  const avatar = shrtl
+  const avatar = shrtl || useFilesApi
     ? user?.imageUrl
     : notter
     ? file.avatar
     : userProfile?.image;
 
-  const username = shrtl
-    ? user?.username
+  const username = shrtl || useFilesApi
+    ? (user?.username ?? user?.fullName ?? "Вы")
     : notter
     ? file.username
     : userProfile?.name;
@@ -65,7 +76,7 @@ function NameCell({
   file: FileDoc;
   onOpenFolder?: (folderName: string) => void;
 }) {
-  const displayName = file.name?.trim() || "Без названия";
+  const displayName = file.displayName?.trim() || file.name?.trim() || "Без названия";
 
   if (file.isFolder) {
     return (
@@ -99,7 +110,13 @@ function TypeCell({ file }: { file: FileDoc }) {
 
 function DateCell({ file, shrtl }: { file: FileDoc; shrtl?: boolean }) {
   if (file.isFolder) {
-    return <div className="text-white/50">—</div>;
+    return (
+      <div className="text-white/50">
+        {file.updatedAt
+          ? formatRelative(new Date(file.updatedAt), new Date())
+          : "—"}
+      </div>
+    );
   }
 
   if (shrtl) {
@@ -147,12 +164,17 @@ export function createColumns({
       accessorKey: "userId",
       header: "Пользователь",
       cell: ({ row }) => (
-        <UserCell file={row.original} shrtl={shrtl} notter={notter} />
+        <UserCell
+          file={row.original}
+          shrtl={shrtl}
+          notter={notter}
+          useFilesApi={useFilesApi}
+        />
       ),
     },
     {
       accessorKey: "_creationTime",
-      header: shrtl ? "Истекает" : "Загружено",
+      header: shrtl ? "Истекает" : "Дата",
       cell: ({ row }) => <DateCell file={row.original} shrtl={shrtl} />,
     },
     {
