@@ -19,9 +19,9 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useFilesView } from "../_components/files-view-context";
 import { DataTable } from "../_components/file-table";
 
 const storageStats = [
@@ -226,7 +226,7 @@ function RecentFileCard({
 }
 
 export default function Home() {
-  const [view, setView] = useState<"grid" | "table">("grid");
+  const [view, setView] = useFilesView();
 
   return (
     <div className="space-y-10">

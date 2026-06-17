@@ -66,7 +66,14 @@ http.route({
 });
 
 async function detectMimeType(blob: Blob): Promise<string> {
-  const arr = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+  if (blob.size === 0 || blob.size > 1024 * 1024) {
+    return "application/octet-stream";
+  }
+
+  // Avoid `blob.slice()` — it can throw "offset is out of bounds" on Convex
+  // storage Blobs. Read the whole buffer (small files only) and take the
+  // first bytes from the resulting Uint8Array.
+  const arr = new Uint8Array(await blob.arrayBuffer()).slice(0, 4);
   if (arr.length < 4) return "application/octet-stream";
 
   if (arr[0] === 0xff && arr[1] === 0xd8 && arr[2] === 0xff) return "image/jpeg";
@@ -91,14 +98,19 @@ http.route({
   handler: httpAction(async (ctx, request) => {
     try {
       const { searchParams } = new URL(request.url);
-      const storageId = searchParams.get("storageId")! as Id<"_storage">;
+      const storageId = searchParams.get("storageId") as Id<"_storage"> | null;
+
+      if (!storageId) {
+        return new Response("Missing storageId", { status: 400 });
+      }
 
       const blob = await ctx.storage.get(storageId);
       if (blob === null) {
         return new Response("Image not found", { status: 404 });
       }
 
-      const contentType = await detectMimeType(blob);
+      const metadata = await ctx.storage.getMetadata(storageId);
+      const contentType = metadata?.contentType ?? (await detectMimeType(blob));
 
       return new Response(blob, {
         headers: {

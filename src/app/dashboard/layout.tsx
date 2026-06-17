@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { pages } from '@/config/routing/pages.route';
 import { Header } from '../_component/header';
 import { SideNav } from "./_components/side-nav"
+import { FilesViewProvider } from "./_components/files-view-context";
 import { MobileNavProvider } from '@/components/mobile-nav-context';
 import { SearchSuggestionsProvider } from '@/components/search-suggestions-context';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,7 +38,9 @@ export default function DashboardLayout({
             <div className="flex w-full gap-6 md:gap-8">
               <SideNav />
               <div className="min-w-0 flex-1">
-                {children}
+                <FilesViewProvider>
+                  {children}
+                </FilesViewProvider>
               </div>
             </div>
           </main>

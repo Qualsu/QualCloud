@@ -4,7 +4,7 @@ import { Metadata } from 'next';
 import { images } from '@/config/routing/image.route';
 
 export const metadata: Metadata = {
-  title: "QualCloud | Qual ID Auth",
+  title: "Qual ID Auth",
   description: "SignIn",
   icons: {
     icon: images.QUAL_ID,

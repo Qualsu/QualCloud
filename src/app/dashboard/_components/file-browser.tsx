@@ -23,6 +23,7 @@ import type {
   FileSortKey,
 } from "@/config/types/components.types";
 import { useSearchSuggestions } from "@/components/search-suggestions-context";
+import { useFilesView } from "./files-view-context";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
@@ -38,11 +39,13 @@ import { createColumns } from "./columns";
 import { FileCard } from "./file-card";
 import { DataTable } from "./file-table";
 
-export function Placeholder() {
+export function Placeholder({ message }: { message?: string }) {
   return (
     <div className="my-12 flex w-full flex-col items-center gap-6 text-zinc-500">
       <PackageOpen className="h-32 w-32" />
-      <div className="text-center text-2xl font-bold">Тут ничего нет.</div>
+      <div className="text-center text-2xl font-bold">
+        {message ?? "Тут ничего нет."}
+      </div>
     </div>
   );
 }
@@ -51,6 +54,8 @@ export function FilesBrowser({
   title,
   shrtl,
   notter,
+  favorites,
+  deletedOnly,
   hideWhenNoConvexUser,
 }: FilesBrowserProps) {
   const searchParams = useSearchParams();
@@ -61,6 +66,7 @@ export function FilesBrowser({
   const [sort, setSort] = useState<FileSortKey>("date");
   const [typeSort, setTypeSort] = useState<FileSortDirection>("new");
   const [checked, setChecked] = useState<boolean>(false);
+  const [view, setView] = useFilesView();
   const [apiFiles, setApiFiles] = useState<FileDoc[] | undefined>(undefined);
   const query = searchParams.get("q")?.trim() ?? "";
 
@@ -71,11 +77,13 @@ export function FilesBrowser({
 
   const queryFiles = useQuery(
     api.files.getFiles,
-    !shrtl && orgId
+    !shrtl && !notter && orgId
       ? {
           orgId,
           type: type === "all" ? undefined : type,
           query,
+          favorites,
+          deletedOnly,
         }
       : "skip"
   );
@@ -108,6 +116,13 @@ export function FilesBrowser({
   const shouldShowEmptyState =
     Boolean(hideWhenNoConvexUser) && currentConvexUser === null;
   const files = shrtl || notter ? apiFiles : queryFiles;
+
+  const emptyMessage = (() => {
+    if (deletedOnly) return "Корзина пуста";
+    if (favorites) return "В избранном пока ничего нет";
+    if (query) return "Ничего не найдено по запросу";
+    return "Тут ничего нет.";
+  })();
   const isLoading =
     !shouldShowEmptyState &&
     (files === undefined ||
@@ -226,7 +241,7 @@ export function FilesBrowser({
         <h1 className="text-3xl font-semibold tracking-tight text-white">{title}</h1>
       </div>
 
-      <Tabs defaultValue="grid">
+      <Tabs value={view} onValueChange={(value) => setView(value as "grid" | "table")}>
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end md:justify-between">
           <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
             <div className="flex flex-col gap-2">
@@ -318,6 +333,12 @@ export function FilesBrowser({
                 />
               </div>
             )}
+
+            {deletedOnly && (
+              <div className="flex items-center gap-2 pb-1 text-sm text-white/60">
+                <span>Файлы будут удалены через 30 дней</span>
+              </div>
+            )}
           </div>
 
           <TabsList className="h-10 gap-1 rounded-xl border border-white/10 bg-white/5 p-1">
@@ -359,7 +380,11 @@ export function FilesBrowser({
         ) : null}
       </Tabs>
 
-      {!isLoading && (shouldShowEmptyState || sortedFiles.length === 0) && <Placeholder />}
+      {!isLoading &&
+        view !== "table" &&
+        (shouldShowEmptyState || sortedFiles.length === 0) && (
+          <Placeholder message={emptyMessage} />
+        )}
     </div>
   );
 }

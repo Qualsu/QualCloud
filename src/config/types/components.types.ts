@@ -22,6 +22,8 @@ export interface FilesBrowserProps {
   title: string;
   shrtl?: boolean;
   notter?: boolean;
+  favorites?: boolean;
+  deletedOnly?: boolean;
   hideWhenNoConvexUser?: boolean;
 }
 

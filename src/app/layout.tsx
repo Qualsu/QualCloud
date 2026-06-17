@@ -10,7 +10,10 @@ import { Toaster } from "react-hot-toast";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "QualCloud",
+  title: {
+    template: "QualCloud | %s",
+    default: "QualCloud",
+  },
   description: "Единый доступ к файлам проектов QualCloud",
   manifest: images.MANIFEST,
   icons: {
