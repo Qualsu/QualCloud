@@ -29,6 +29,10 @@ function UserCell({ file, shrtl, notter }: { file: FileDoc; shrtl?: boolean; not
     !isFromApi ? { userId: file.userId } : "skip"
   );
 
+  if (file.isFolder) {
+    return <div className="text-white/50">—</div>;
+  }
+
   const avatar = shrtl
     ? user?.imageUrl
     : notter
@@ -54,16 +58,50 @@ function UserCell({ file, shrtl, notter }: { file: FileDoc; shrtl?: boolean; not
   );
 }
 
+function NameCell({
+  file,
+  onOpenFolder,
+}: {
+  file: FileDoc;
+  onOpenFolder?: (folderName: string) => void;
+}) {
+  const displayName = file.name?.trim() || "Без названия";
+
+  if (file.isFolder) {
+    return (
+      <button
+        onClick={() => onOpenFolder?.(file.name)}
+        className="flex items-center gap-2 font-medium text-white/80 transition-colors hover:text-white"
+        title={displayName}
+      >
+        <span className="shrink-0 text-yellow-400">{typeIcons.folder}</span>
+        <span>{displayName}</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 font-medium text-white/80" title={displayName}>
+      <span className="shrink-0 text-zinc-400">{typeIcons[file.type]}</span>
+      <span>{displayName}</span>
+    </div>
+  );
+}
+
 function TypeCell({ file }: { file: FileDoc }) {
   return (
     <div className="flex items-center gap-2 text-white/70">
       <span className="shrink-0 text-zinc-400">{typeIcons[file.type]}</span>
-      <span className="capitalize">{file.type}</span>
+      <span className="capitalize">{file.isFolder ? "Папка" : file.type}</span>
     </div>
   );
 }
 
 function DateCell({ file, shrtl }: { file: FileDoc; shrtl?: boolean }) {
+  if (file.isFolder) {
+    return <div className="text-white/50">—</div>;
+  }
+
   if (shrtl) {
     const expiresInSeconds =
       "_expiresInSeconds" in file
@@ -82,17 +120,23 @@ function DateCell({ file, shrtl }: { file: FileDoc; shrtl?: boolean }) {
 export function createColumns({
   shrtl,
   notter,
+  useFilesApi,
+  deletedOnly,
+  onRefresh,
+  onOpenFolder,
 }: {
   shrtl?: boolean;
   notter?: boolean;
+  useFilesApi?: boolean;
+  deletedOnly?: boolean;
+  onRefresh?: () => void;
+  onOpenFolder?: (folderName: string) => void;
 }): ColumnDef<FileDoc>[] {
   return [
     {
       accessorKey: "name",
       header: "Название",
-      cell: ({ row }) => (
-        <div className="font-medium text-white/80">{row.original.name}</div>
-      ),
+      cell: ({ row }) => <NameCell file={row.original} onOpenFolder={onOpenFolder} />,
     },
     {
       accessorKey: "type",
@@ -115,7 +159,15 @@ export function createColumns({
       id: "actions",
       header: "Действия",
       cell: ({ row }) => (
-        <FileCardActions file={row.original} shrtl={shrtl} notter={notter} />
+        <FileCardActions
+          file={row.original}
+          shrtl={shrtl}
+          notter={notter}
+          useFilesApi={useFilesApi}
+          deletedOnly={deletedOnly}
+          onRefresh={onRefresh}
+          onOpenFolder={onOpenFolder}
+        />
       ),
     },
   ];

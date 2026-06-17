@@ -30,10 +30,12 @@ function mapFile(file: FilesFileResponse): FileDoc {
     userId: deterministicId,
     linkId: file.file_id,
     isFavorited: file.is_favorite ?? false,
+    isDeleted: file.is_deleted ?? false,
     _isFromApi: true,
     downloads: 0,
     _expiresInSeconds: null,
     fileUrl: file.url,
+    folder: file.folder ?? null,
   };
 }
 
@@ -184,4 +186,18 @@ export async function getUserStats(
 ): Promise<FilesUserStatsResponse> {
   const res = await files.get(api.FILES.USER_STATS(account_id));
   return res.data;
+}
+
+export async function getFolders(account_id: string): Promise<string[]> {
+  const allFiles = await getAllFiles(account_id);
+  const folders = new Set<string>();
+
+  allFiles.forEach((file) => {
+    const folder = (file as FileDoc).folder;
+    if (folder) {
+      folders.add(folder);
+    }
+  });
+
+  return Array.from(folders).sort((a, b) => a.localeCompare(b));
 }

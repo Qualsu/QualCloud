@@ -4,11 +4,16 @@ import { useOrganization, useUser } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { useQuery } from "convex/react";
-import { LayoutGrid, Loader2, PackageOpen, Table as TableIcon } from "lucide-react";
+import { LayoutGrid, Loader2, PackageOpen, Table as TableIcon, ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { getAllFiles as getNotterFiles } from "@/app/api/notter";
 import { getAllFiles as getShrtlFiles } from "@/app/api/shrtl";
+import {
+  getAllFiles as getCloudFiles,
+  emptyTrash,
+  getFolders,
+} from "@/app/api/files";
 import {
   fileSortDirectionOptions,
   fileSortOptions,
@@ -18,12 +23,15 @@ import {
 import type {
   FileDoc,
   FileFilterType,
+  FileType,
   FilesBrowserProps,
   FileSortDirection,
   FileSortKey,
 } from "@/config/types/components.types";
 import { useSearchSuggestions } from "@/components/search-suggestions-context";
 import { useFilesView } from "./files-view-context";
+import { toast } from "react-hot-toast";
+import { useFilesRefresh } from "./files-refresh-context";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
@@ -35,6 +43,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "../../../../convex/_generated/api";
+import { Id } from "../../../../convex/_generated/dataModel";
 import { createColumns } from "./columns";
 import { CreateFolderDialog } from "./create-folder-dialog";
 import { FileCard } from "./file-card";
@@ -69,7 +78,10 @@ export function FilesBrowser({
   const [typeSort, setTypeSort] = useState<FileSortDirection>("new");
   const [checked, setChecked] = useState<boolean>(false);
   const [view, setView] = useFilesView();
+  const { refreshKey, refreshFiles } = useFilesRefresh();
   const [apiFiles, setApiFiles] = useState<FileDoc[] | undefined>(undefined);
+  const [folders, setFolders] = useState<string[]>([]);
+  const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const query = searchParams.get("q")?.trim() ?? "";
 
   let orgId: string | undefined;
@@ -77,12 +89,17 @@ export function FilesBrowser({
     orgId = organization.organization?.id ?? user.user?.id;
   }
 
+  const useFilesApi = !shrtl && !notter && !kenycloud;
+
+  const convexType: Exclude<FileType, "folder" | "all"> | undefined =
+    kenycloud && type !== "all" && type !== "folder" ? type : undefined;
+
   const queryFiles = useQuery(
     api.files.getFiles,
-    !shrtl && !notter && orgId
+    kenycloud && orgId
       ? {
           orgId,
-          type: type === "all" ? undefined : type,
+          type: convexType,
           query,
           favorites,
           deletedOnly,
@@ -113,16 +130,31 @@ export function FilesBrowser({
     if (notter) {
       getNotterFiles(orgId).then(setApiFiles);
     }
-  }, [shrtl, notter, orgId]);
+
+    if (useFilesApi) {
+      getCloudFiles(orgId, {
+        folder: currentFolder,
+        favorite: favorites ?? null,
+        deleted: deletedOnly ?? false,
+      }).then(setApiFiles);
+
+      if (currentFolder === null && !favorites && !deletedOnly) {
+        getFolders(orgId).then(setFolders).catch(() => setFolders([]));
+      } else {
+        setFolders([]);
+      }
+    }
+  }, [shrtl, notter, useFilesApi, orgId, favorites, deletedOnly, refreshKey, currentFolder]);
 
   const shouldShowEmptyState =
     Boolean(hideWhenNoConvexUser) && currentConvexUser === null;
-  const files = shrtl || notter ? apiFiles : queryFiles;
+  const files = shrtl || notter || useFilesApi ? apiFiles : queryFiles;
 
   const emptyMessage = (() => {
     if (deletedOnly) return "Корзина пуста";
     if (favorites) return "В избранном пока ничего нет";
     if (query) return "Ничего не найдено по запросу";
+    if (currentFolder) return `Папка «${currentFolder}» пуста`;
     return "Тут ничего нет.";
   })();
   const isLoading =
@@ -133,20 +165,64 @@ export function FilesBrowser({
         !notter &&
         currentConvexUser === undefined));
 
-  const modifiedFiles: FileDoc[] =
-    files?.map((file) => ({
-      ...file,
-    })) ?? [];
+  const modifiedFiles = useMemo<FileDoc[]>(
+    () => (files ?? []).map((file) => ({ ...file, name: file.name ?? "" })),
+    [files]
+  );
 
-  const autocompleteFiles = (() => {
-    let filesToSuggest = modifiedFiles;
+  const folderDocs = useMemo<FileDoc[]>(() => {
+    if (!useFilesApi || favorites || deletedOnly || currentFolder !== null) {
+      return [];
+    }
 
-    if (type !== "all") {
-      filesToSuggest = filesToSuggest.filter((file) => file.type === type);
+    const folderSet = new Set<string>(folders);
+    modifiedFiles.forEach((file) => {
+      if (file.folder && !file.isDeleted) {
+        folderSet.add(file.folder);
+      }
+    });
+
+    return Array.from(folderSet).sort((a, b) => a.localeCompare(b)).map((folderName) => {
+      const filesInFolder = modifiedFiles.filter(
+        (file) => file.folder === folderName && !file.isDeleted
+      );
+      const creationTime = filesInFolder.length
+        ? Math.max(...filesInFolder.map((file) => file._creationTime))
+        : Date.now();
+
+      return {
+        _id: `folder_${folderName}` as Id<"files">,
+        _creationTime: creationTime,
+        name: folderName,
+        orgId: orgId ?? "",
+        type: "folder" as const,
+        fileId: "" as Id<"_storage">,
+        userId: currentConvexUser?._id ?? ("" as Id<"users">),
+        isFolder: true,
+        folder: null,
+      };
+    });
+  }, [useFilesApi, favorites, deletedOnly, currentFolder, modifiedFiles, orgId, currentConvexUser, folders]);
+
+  const filteredFiles = (() => {
+    let result = [...folderDocs, ...modifiedFiles];
+
+    if (query) {
+      result = result.filter((file) =>
+        file.name.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+
+    if (useFilesApi) {
+      if (currentFolder === null) {
+        result = result.filter((file) => !file.folder || file.isFolder);
+      } else {
+        result = result.filter((file) => file.folder === currentFolder);
+      }
     }
 
     if (shrtl && !checked) {
-      filesToSuggest = filesToSuggest.filter((file) => {
+      result = result.filter((file) => {
         const expiresInSeconds =
           "_expiresInSeconds" in file
             ? ((file._expiresInSeconds as number | null | undefined) ?? null)
@@ -155,43 +231,25 @@ export function FilesBrowser({
       });
     }
 
-    return filesToSuggest;
-  })();
-
-  const sortedFiles = (() => {
-    let filesToSort = modifiedFiles;
-
-    if (shrtl || notter) {
-      if (type !== "all") {
-        filesToSort = filesToSort.filter((file) => file.type === type);
-      }
-
-      if (query) {
-        filesToSort = filesToSort.filter((file) =>
-          file.name.toLowerCase().includes(query.toLowerCase())
-        );
-      }
-
-      if (shrtl && !checked) {
-        filesToSort = filesToSort.filter((file) => {
-          const expiresInSeconds =
-            "_expiresInSeconds" in file
-              ? ((file._expiresInSeconds as number | null | undefined) ?? null)
-              : null;
-          return expiresInSeconds !== null;
-        });
-      }
+    if (type !== "all") {
+      result = result.filter((file) => file.type === type);
     }
 
-    const sortedByAlphabet = [...filesToSort].sort((a, b) =>
+    return result;
+  })();
+
+  const autocompleteFiles = filteredFiles;
+
+  const sortedFiles = (() => {
+    const sortedByAlphabet = [...filteredFiles].sort((a, b) =>
       a.name.localeCompare(b.name)
     );
 
-    const sortedByType = [...filesToSort].sort(
+    const sortedByType = [...filteredFiles].sort(
       (a, b) => fileTypeOrder.indexOf(a.type) - fileTypeOrder.indexOf(b.type)
     );
 
-    const sortedByDate = [...filesToSort].sort(
+    const sortedByDate = [...filteredFiles].sort(
       (a, b) =>
         new Date(b._creationTime).valueOf() - new Date(a._creationTime).valueOf()
     );
@@ -207,8 +265,16 @@ export function FilesBrowser({
   })();
 
   const fileColumns = useMemo(
-    () => createColumns({ shrtl, notter }),
-    [shrtl, notter]
+    () =>
+      createColumns({
+        shrtl,
+        notter,
+        useFilesApi,
+        deletedOnly,
+        onRefresh: refreshFiles,
+        onOpenFolder: setCurrentFolder,
+      }),
+    [shrtl, notter, useFilesApi, deletedOnly, refreshFiles]
   );
 
   const autocompleteSuggestions = useMemo(
@@ -337,8 +403,24 @@ export function FilesBrowser({
             )}
 
             {deletedOnly && (
-              <div className="flex items-center gap-2 pb-1 text-sm text-white/60">
+              <div className="flex items-center gap-3 pb-1 text-sm text-white/60">
                 <span>Файлы будут удалены через 30 дней</span>
+                {orgId && modifiedFiles.length > 0 && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await emptyTrash(orgId);
+                        toast.success("Корзина очищена");
+                        refreshFiles();
+                      } catch {
+                        toast.error("Не удалось очистить корзину");
+                      }
+                    }}
+                    className="text-red-400 transition-colors hover:text-red-300"
+                  >
+                    Очистить корзину
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -360,9 +442,26 @@ export function FilesBrowser({
                 <TableIcon size={16} />
               </TabsTrigger>
             </TabsList>
-            {!shrtl && !notter && !kenycloud && <CreateFolderDialog />}
+            {!shrtl && !notter && !kenycloud && !favorites && !deletedOnly && currentFolder === null && (
+              <CreateFolderDialog
+                account_id={orgId}
+                onCreated={refreshFiles}
+              />
+            )}
           </div>
         </div>
+
+        {currentFolder !== null && (
+          <div className="mb-4">
+            <button
+              onClick={() => setCurrentFolder(null)}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <ArrowLeft size={16} />
+              Назад к папкам
+            </button>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="flex min-h-[320px] items-center justify-center">
@@ -373,7 +472,16 @@ export function FilesBrowser({
             <TabsContent value="grid">
               <div className="mr-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {sortedFiles.map((file) => (
-                  <FileCard key={file._id} file={file} shrtl={shrtl} notter={notter} />
+                  <FileCard
+                    key={file._id}
+                    file={file}
+                    shrtl={shrtl}
+                    notter={notter}
+                    useFilesApi={useFilesApi}
+                    deletedOnly={deletedOnly}
+                    onRefresh={refreshFiles}
+                    onOpenFolder={setCurrentFolder}
+                  />
                 ))}
               </div>
             </TabsContent>

@@ -2,7 +2,8 @@ import type { Dispatch, ReactNode, SetStateAction } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Doc, Id } from "../../../convex/_generated/dataModel";
 
-export type FileDoc = Doc<"files"> & {
+export type FileDoc = Omit<Doc<"files">, "type"> & {
+  type: FileType;
   downloads?: number;
   _expiresInSeconds?: number | null;
   _isFromApi?: boolean;
@@ -11,9 +12,12 @@ export type FileDoc = Doc<"files"> & {
   username?: string;
   noteId?: string;
   fileUrl?: string;
+  folder?: string | null;
+  isDeleted?: boolean;
+  isFolder?: boolean;
 };
 export type FavoritedFile = FileDoc;
-export type FileType = Doc<"files">["type"];
+export type FileType = Doc<"files">["type"] | "folder";
 export type FileFilterType = FileType | "all";
 export type FileSortKey = "date" | "alphabet" | "types";
 export type FileSortDirection = "new" | "reverse";
@@ -32,6 +36,10 @@ export interface FileCardProps {
   file: FileDoc;
   shrtl?: boolean;
   notter?: boolean;
+  useFilesApi?: boolean;
+  deletedOnly?: boolean;
+  onRefresh?: () => void;
+  onOpenFolder?: (folderName: string) => void;
 }
 
 export interface UserCellProps {

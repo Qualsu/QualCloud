@@ -7,6 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { formatRelative } from 'date-fns'
 import { useQuery } from "convex/react"
 import Image from "next/image"
+import { Star } from "lucide-react"
+import { useState } from "react"
 import { api } from "../../../../convex/_generated/api"
 import { FileCardActions } from "./file-actions"
 import { FileCardProps } from "@/config/types/components.types"
@@ -14,6 +16,8 @@ import { typeIcons } from "@/config/const/components.const"
 import { links } from "@/config/routing/links.route"
 import { Id } from "../../../../convex/_generated/dataModel"
 import { useUser } from "@clerk/nextjs"
+import { addToFavorites, removeFromFavorites } from "@/app/api/files"
+import toast from "react-hot-toast"
 
 function formatExpiresIn(seconds: number | null): string {
     if (seconds === null) return "Истек";
@@ -67,54 +71,195 @@ export function FileCardSkeleton() {
     );
 }
 
-export function FileCard({ file, shrtl, notter }: FileCardProps){
+function FilePreview({
+    file,
+    fileLink,
+}: {
+    file: FileCardProps["file"];
+    fileLink: string;
+}) {
+    const [failed, setFailed] = useState(false);
+
+    if (file.isFolder || !fileLink || isFileExpired(file) || failed) {
+        return (
+            <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-500">
+                {typeIcons[file.type]}
+            </div>
+        );
+    }
+
+    if (file.type === "image" || file.type === "imageother") {
+        return (
+            <Image
+                alt={file.name}
+                width={200}
+                height={300}
+                className="max-w-[120px] max-h-[150px] rounded-sm object-contain"
+                src={fileLink}
+                unoptimized
+                onError={() => setFailed(true)}
+            />
+        );
+    }
+
+    if (file.type === "video") {
+        return (
+            <video
+                src={fileLink}
+                className="max-w-[180px] max-h-[150px] rounded-sm"
+                preload="metadata"
+                controls={false}
+                muted
+                onError={() => setFailed(true)}
+            />
+        );
+    }
+
+    if (file.type === "audio") {
+        return (
+            <div className="flex flex-col items-center gap-2">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-500">
+                    {typeIcons[file.type]}
+                </div>
+                <audio
+                    src={fileLink}
+                    className="h-8 w-32"
+                    preload="metadata"
+                    controls
+                    onError={() => setFailed(true)}
+                />
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-500">
+            {typeIcons[file.type]}
+        </div>
+    );
+}
+
+export function FileCard({
+    file,
+    shrtl,
+    notter,
+    useFilesApi,
+    deletedOnly,
+    onRefresh,
+    onOpenFolder,
+}: FileCardProps){
     const { user } = useUser()
     const isFromApi = "_isFromApi" in file && file._isFromApi;
+    const isFolder = file.isFolder;
     const userProfile = useQuery(api.users.getUserProfile, !isFromApi ? {
         userId: file.userId
     } : "skip")
 
-    const fileLink = shrtl 
+    const fileLink = isFolder
+        ? ""
+        : shrtl
         ? (file.fileUrl ?? links.SHRTL.GET_FILE(file.fileId as string))
-        : notter ? links.NOTTER.GET_FILE(file.fileId as string)
+        : notter
+        ? links.NOTTER.GET_FILE(file.fileId as string)
+        : useFilesApi
+        ? (file.fileUrl ?? links.KENYCLOUD.GET_FILE(file.fileId as Id<"_storage">))
         : links.KENYCLOUD.GET_FILE(file.fileId as Id<"_storage">);
 
-    const avatar = shrtl 
-        ? user?.imageUrl 
-        : notter ? file.avatar
+    const avatar = isFolder
+        ? user?.imageUrl
+        : shrtl
+        ? user?.imageUrl
+        : notter
+        ? file.avatar
+        : useFilesApi
+        ? user?.imageUrl
         : userProfile?.image
 
-    const username = shrtl 
-        ? user?.username 
-        : notter ? file.username
+    const username = isFolder
+        ? "Папка"
+        : shrtl
+        ? user?.username
+        : notter
+        ? file.username
+        : useFilesApi
+        ? (user?.username ?? user?.fullName ?? "Вы")
         : userProfile?.name
-        
+
+    const displayName = file.name?.trim() || "Без названия";
+    const canFavorite = useFilesApi && !isFolder && !deletedOnly && !isFileExpired(file);
+
+    const handleToggleFavorite = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        try {
+            if (file.isFavorited) {
+                await removeFromFavorites(file._id as string);
+                toast.success("Убрано из избранного");
+            } else {
+                await addToFavorites(file._id as string);
+                toast.success("Добавлено в избранное");
+            }
+            onRefresh?.();
+        } catch {
+            toast.error("Не удалось обновить избранное");
+        }
+    };
+
     return (
-        <div className="group surface-panel relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_24px_70px_rgba(0,0,0,0.35)]">
+        <div
+            className={`group surface-panel relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_24px_70px_rgba(0,0,0,0.35)] ${isFolder ? "cursor-pointer" : ""}`}
+            onClick={isFolder ? () => onOpenFolder?.(file.name) : undefined}
+            role={isFolder ? "button" : undefined}
+            tabIndex={isFolder ? 0 : undefined}
+            onKeyDown={
+                isFolder
+                    ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              onOpenFolder?.(file.name);
+                          }
+                      }
+                    : undefined
+            }
+        >
             <div className="relative flex items-start justify-between gap-2 px-5 pt-5 pb-3">
                 <div className="flex items-center gap-2 text-sm text-white/80 font-medium break-all min-w-0">
                     <span className="shrink-0 text-zinc-400">{typeIcons[file.type]}</span>
-                    <span className="truncate">{file.name}</span>
+                    <span className="truncate" title={displayName}>{displayName}</span>
                 </div>
-                <div className="shrink-0">
-                    <FileCardActions file={file} shrtl={shrtl} notter={notter}/>
+                <div className="flex shrink-0 items-center gap-1" onClick={isFolder ? (e) => e.stopPropagation() : undefined}>
+                    {canFavorite && (
+                        <button
+                            onClick={handleToggleFavorite}
+                            className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors hover:bg-white/10 ${
+                                file.isFavorited
+                                    ? "text-yellow-400"
+                                    : "text-white/40 hover:text-yellow-400"
+                            }`}
+                            title={file.isFavorited ? "Убрать из избранного" : "В избранное"}
+                            aria-label={file.isFavorited ? "Убрать из избранного" : "В избранное"}
+                        >
+                            <Star className={`h-4 w-4 ${file.isFavorited ? "fill-current" : ""}`} />
+                        </button>
+                    )}
+                    <FileCardActions
+                        file={file}
+                        shrtl={shrtl}
+                        notter={notter}
+                        useFilesApi={useFilesApi}
+                        deletedOnly={deletedOnly}
+                        onRefresh={onRefresh}
+                        onOpenFolder={onOpenFolder}
+                    />
                 </div>
             </div>
 
             <div className="flex h-[160px] items-center justify-center px-5 py-2">
-                {file.type === "image" && !isFileExpired(file) ? (
-                    <Image
-                        alt={file.name}
-                        width={200}
-                        height={300}
-                        className="max-w-[120px] max-h-[150px] rounded-sm object-contain"
-                        src={fileLink}
-                        unoptimized
-                    />
-                ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-500">
-                        {typeIcons[file.type]}
+                {isFolder ? (
+                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-yellow-400">
+                        {typeIcons.folder}
                     </div>
+                ) : (
+                    <FilePreview file={file} fileLink={fileLink} />
                 )}
             </div>
 
@@ -129,7 +274,7 @@ export function FileCard({ file, shrtl, notter }: FileCardProps){
                     <span>{username}</span>
                 </div>
                 <div className="text-xs text-white/30">
-                    {getFileTimeDisplay(file, shrtl)}
+                    {isFolder ? "" : getFileTimeDisplay(file, shrtl)}
                 </div>
             </div>
         </div>

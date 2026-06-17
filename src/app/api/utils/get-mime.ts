@@ -1,6 +1,8 @@
 import { FileType } from "@/config/types/components.types";
 
-export function getMimeType(mimeType: string): FileType {
+export function getMimeType(mimeType: string | undefined | null): FileType {
+  if (!mimeType) return "txt";
+
   const type = mimeType.toLowerCase();
   
   if (type.startsWith("image/")) {

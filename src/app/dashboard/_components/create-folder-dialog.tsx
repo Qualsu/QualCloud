@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FolderPlus } from "lucide-react";
+import { FolderPlus, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
@@ -16,18 +16,37 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createFolder } from "@/app/api/files";
 
-export function CreateFolderDialog() {
+interface CreateFolderDialogProps {
+  account_id?: string;
+  onCreated?: () => void;
+}
+
+export function CreateFolderDialog({
+  account_id,
+  onCreated,
+}: CreateFolderDialogProps) {
   const [open, setOpen] = useState(false);
   const [folderName, setFolderName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     const trimmed = folderName.trim();
-    if (!trimmed) return;
+    if (!trimmed || !account_id) return;
 
-    toast.success(`Папка «${trimmed}» создана`);
-    setFolderName("");
-    setOpen(false);
+    setIsLoading(true);
+    try {
+      await createFolder(account_id, trimmed);
+      toast.success(`Папка «${trimmed}» создана`);
+      setFolderName("");
+      setOpen(false);
+      onCreated?.();
+    } catch {
+      toast.error("Не удалось создать папку");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,15 +82,19 @@ export function CreateFolderDialog() {
           <Button
             variant="outline"
             onClick={() => setOpen(false)}
+            disabled={isLoading}
             className="border-white/10 bg-transparent text-white hover:bg-white/10 hover:text-white"
           >
             Отмена
           </Button>
           <Button
             onClick={handleCreate}
-            disabled={!folderName.trim()}
+            disabled={!folderName.trim() || !account_id || isLoading}
             className="bg-purple hover:bg-purple/90"
           >
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
             Создать
           </Button>
         </DialogFooter>

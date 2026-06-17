@@ -7,6 +7,7 @@ import { pages } from '@/config/routing/pages.route';
 import { Header } from '../_component/header';
 import { SideNav } from "./_components/side-nav"
 import { FilesViewProvider } from "./_components/files-view-context";
+import { FilesRefreshProvider } from "./_components/files-refresh-context";
 import { MobileNavProvider } from '@/components/mobile-nav-context';
 import { SearchSuggestionsProvider } from '@/components/search-suggestions-context';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,20 +32,22 @@ export default function DashboardLayout({
   return (
     <MobileNavProvider>
       <SearchSuggestionsProvider>
-        <div className="relative isolate min-h-screen text-white">
-          <Header showMobileMenuButton showSearch />
-          <div className="h-20 md:h-24" />
-          <main className="mx-4 sm:mx-6 md:mx-8 lg:mx-10 py-6">
-            <div className="flex w-full gap-6 md:gap-8">
-              <SideNav />
-              <div className="min-w-0 flex-1">
-                <FilesViewProvider>
-                  {children}
-                </FilesViewProvider>
+        <FilesRefreshProvider>
+          <div className="relative isolate min-h-screen text-white">
+            <Header showMobileMenuButton showSearch />
+            <div className="h-20 md:h-24" />
+            <main className="mx-4 sm:mx-6 md:mx-8 lg:mx-10 py-6">
+              <div className="flex w-full gap-6 md:gap-8">
+                <SideNav />
+                <div className="min-w-0 flex-1">
+                  <FilesViewProvider>
+                    {children}
+                  </FilesViewProvider>
+                </div>
               </div>
-            </div>
-          </main>
-        </div>
+            </main>
+          </div>
+        </FilesRefreshProvider>
       </SearchSuggestionsProvider>
     </MobileNavProvider>
   );

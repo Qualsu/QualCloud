@@ -1,5 +1,5 @@
 import { pages } from "../routing/pages.route";
-import { Cloud, Files, Heart, House, Lamp, Link2Icon, Trash2, Upload } from "lucide-react"
+import { Cloud, Files, Folder, Heart, House, Lamp, Link2Icon, Trash2, Upload } from "lucide-react"
 import { FileType } from "../types/components.types";
 import { ReactNode } from "react";
 import Image from "next/image";
@@ -20,6 +20,7 @@ import {
 import { images } from "../routing/image.route";
 
 export const fileTypeOrder = [
+  "folder",
   "image",
   "imageother",
   "table",
@@ -36,6 +37,7 @@ export const fileTypeOrder = [
 
 export const fileTypeOptions = [
   { value: "all", label: "Все" },
+  { value: "folder", label: "Папки" },
   { value: "image", label: "Изображения" },
   { value: "audio", label: "Аудио" },
   { value: "video", label: "Видео" },
@@ -95,6 +97,7 @@ export const landingFeatureCards = [
 ] as const;
 
 export const typeIcons: Record<FileType, ReactNode> = {
+    folder: <Folder className="text-yellow-400" />,
     image: <ImageIcon />,
     imageother: <ImageIcon />,
     presentation: <PresentationIcon />,

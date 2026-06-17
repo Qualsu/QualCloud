@@ -1,6 +1,8 @@
 "use client";
 
+import { useUser, useOrganization } from "@clerk/nextjs";
 import { ColumnDef } from "@tanstack/react-table";
+import { useEffect, useState } from "react";
 import {
   Avatar,
   AvatarFallback,
@@ -8,13 +10,14 @@ import {
 } from "@/components/ui/avatar";
 import { typeIcons } from "@/config/const/components.const";
 import { pages } from "@/config/routing/pages.route";
-import type { FileType } from "@/config/types/components.types";
+import type { FileDoc, FileType } from "@/config/types/components.types";
 import {
   Clock3,
   Files,
   HardDrive,
   Heart,
   LayoutGrid,
+  Loader2,
   Table as TableIcon,
   Trash2,
 } from "lucide-react";
@@ -23,139 +26,28 @@ import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFilesView } from "../_components/files-view-context";
 import { DataTable } from "../_components/file-table";
+import { getUserStats, getRecentFiles } from "@/app/api/files";
+import { FilesUserStatsResponse } from "@/config/types/api.types";
 
-const storageStats = [
-  {
-    label: "Занято",
-    value: "38.4 ГБ",
-    hint: "из 100 ГБ",
-    icon: HardDrive,
-    href: pages.DASHBOARD.CLOUD,
-  },
-  {
-    label: "Всего файлов",
-    value: "1 248",
-    hint: "во всех сервисах",
-    icon: Files,
-    href: pages.DASHBOARD.CLOUD,
-  },
-  {
-    label: "В избранном",
-    value: "96",
-    hint: "быстрый доступ",
-    icon: Heart,
-    href: pages.DASHBOARD.FAVORITES,
-  },
-  {
-    label: "Корзина будет очищена",
-    value: "через 12 дней",
-    hint: "8 файлов ждут удаления",
-    icon: Trash2,
-    href: pages.DASHBOARD.TRASH,
-  },
-] as const;
+function formatSize(bytes: number): string {
+  if (bytes === 0) return "0 Б";
+  const k = 1024;
+  const sizes = ["Б", "КБ", "МБ", "ГБ"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
 
-const recentFiles: {
-  id: string;
-  name: string;
-  type: FileType;
-  owner: string;
-  ownerInitial: string;
-  uploadedAt: string;
-}[] = [
-  {
-    id: "1",
-    name: "brand-guidelines-2026.pdf",
-    type: "txt",
-    owner: "Марина",
-    ownerInitial: "М",
-    uploadedAt: "12 минут назад",
-  },
-  {
-    id: "2",
-    name: "hero-banner-v4.png",
-    type: "image",
-    owner: "Артём",
-    ownerInitial: "А",
-    uploadedAt: "38 минут назад",
-  },
-  {
-    id: "3",
-    name: "sales-report-q2.xlsx",
-    type: "table",
-    owner: "Ольга",
-    ownerInitial: "О",
-    uploadedAt: "1 час назад",
-  },
-  {
-    id: "4",
-    name: "team-sync-recording.mp4",
-    type: "video",
-    owner: "Илья",
-    ownerInitial: "И",
-    uploadedAt: "2 часа назад",
-  },
-  {
-    id: "5",
-    name: "api-contract-v2.json",
-    type: "programming",
-    owner: "Никита",
-    ownerInitial: "Н",
-    uploadedAt: "сегодня",
-  },
-  {
-    id: "6",
-    name: "campaign-assets.zip",
-    type: "archive",
-    owner: "Саша",
-    ownerInitial: "С",
-    uploadedAt: "сегодня",
-  },
-];
-
-const recentColumns: ColumnDef<(typeof recentFiles)[number]>[] = [
-  {
-    accessorKey: "name",
-    header: "Название",
-    cell: ({ row }) => (
-      <div className="font-medium text-white/80">{row.original.name}</div>
-    ),
-  },
-  {
-    accessorKey: "type",
-    header: "Тип",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2 text-white/70">
-        <span className="shrink-0 text-zinc-400">
-          {typeIcons[row.original.type]}
-        </span>
-        <span className="capitalize">{row.original.type}</span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "owner",
-    header: "Владелец",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2 text-white/50">
-        <Avatar className="h-7 w-7">
-          <AvatarImage alt={row.original.owner} />
-          <AvatarFallback className="bg-white/10 text-xs text-white/60">
-            {row.original.ownerInitial}
-          </AvatarFallback>
-        </Avatar>
-        <span>{row.original.owner}</span>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "uploadedAt",
-    header: "Загружено",
-    cell: ({ row }) => (
-      <div className="text-white/50">{row.original.uploadedAt}</div>
-    ),
-  },
-];
+function formatTimeAgo(timestamp: number): string {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (seconds < 60) return "только что";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} мин. назад`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} ч. назад`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} д. назад`;
+  return "давно";
+}
 
 function StatCard({
   label,
@@ -163,7 +55,13 @@ function StatCard({
   hint,
   href,
   icon: Icon,
-}: (typeof storageStats)[number]) {
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  href: string;
+  icon: typeof HardDrive;
+}) {
   return (
     <Link
       href={href}
@@ -187,10 +85,12 @@ function StatCard({
 function RecentFileCard({
   name,
   type,
-  owner,
-  ownerInitial,
   uploadedAt,
-}: (typeof recentFiles)[number]) {
+}: {
+  name: string;
+  type: FileType;
+  uploadedAt: string;
+}) {
   return (
     <div className="group surface-panel relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_24px_70px_rgba(0,0,0,0.35)]">
       <div className={`pointer-events-none absolute inset-x-0 top-0 h-24`} />
@@ -212,12 +112,12 @@ function RecentFileCard({
       <div className="flex items-center justify-between border-t border-white/[0.08] px-5 py-3">
         <div className="flex items-center gap-2 text-xs text-white/50">
           <Avatar className="h-6 w-6">
-            <AvatarImage alt={owner} />
+            <AvatarImage alt="" />
             <AvatarFallback className="bg-white/10 text-xs text-white/60">
-              {ownerInitial}
+              ?
             </AvatarFallback>
           </Avatar>
-          <span>{owner}</span>
+          <span>Вы</span>
         </div>
         <div className="text-xs text-white/30">{uploadedAt}</div>
       </div>
@@ -225,8 +125,116 @@ function RecentFileCard({
   );
 }
 
+const recentColumns: ColumnDef<FileDoc>[] = [
+  {
+    accessorKey: "name",
+    header: "Название",
+    cell: ({ row }) => (
+      <div className="font-medium text-white/80">{row.original.name}</div>
+    ),
+  },
+  {
+    accessorKey: "type",
+    header: "Тип",
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2 text-white/70">
+        <span className="shrink-0 text-zinc-400">
+          {typeIcons[row.original.type]}
+        </span>
+        <span className="capitalize">{row.original.type}</span>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "_creationTime",
+    header: "Загружено",
+    cell: ({ row }) => (
+      <div className="text-white/50">
+        {formatTimeAgo(row.original._creationTime)}
+      </div>
+    ),
+  },
+];
+
 export default function Home() {
   const [view, setView] = useFilesView();
+  const { user, isLoaded: userLoaded } = useUser();
+  const { organization, isLoaded: orgLoaded } = useOrganization();
+  const [stats, setStats] = useState<FilesUserStatsResponse | null>(null);
+  const [recentFiles, setRecentFiles] = useState<FileDoc[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const orgId =
+    userLoaded && orgLoaded
+      ? (organization?.id ?? user?.id)
+      : undefined;
+
+  useEffect(() => {
+    if (!orgId) return;
+
+    let cancelled = false;
+    setLoading(true);
+
+    Promise.all([getUserStats(orgId), getRecentFiles(orgId)])
+      .then(([statsData, recentData]) => {
+        if (cancelled) return;
+        setStats(statsData);
+        setRecentFiles(recentData);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setStats(null);
+        setRecentFiles([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
+
+  const storageStats = [
+    {
+      label: "Занято",
+      value: stats ? formatSize(stats.total_size) : "—",
+      hint: stats?.storage_limit
+        ? `из ${formatSize(stats.storage_limit)}`
+        : "облачное хранилище",
+      icon: HardDrive,
+      href: pages.DASHBOARD.CLOUD,
+    },
+    {
+      label: "Всего файлов",
+      value: stats ? String(stats.total_files) : "—",
+      hint: "во всех папках",
+      icon: Files,
+      href: pages.DASHBOARD.CLOUD,
+    },
+    {
+      label: "В избранном",
+      value: "—",
+      hint: "быстрый доступ",
+      icon: Heart,
+      href: pages.DASHBOARD.FAVORITES,
+    },
+    {
+      label: "Корзина",
+      value: "—",
+      hint: "удаленные файлы",
+      icon: Trash2,
+      href: pages.DASHBOARD.TRASH,
+    },
+  ] as const;
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[320px] items-center justify-center">
+        <Loader2 className="h-16 w-16 animate-spin text-white/50" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10">
@@ -280,7 +288,12 @@ export default function Home() {
           <TabsContent value="grid" className="mt-5">
             <div className="mr-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {recentFiles.map((file) => (
-                <RecentFileCard key={file.id} {...file} />
+                <RecentFileCard
+                  key={file._id}
+                  name={file.name}
+                  type={file.type}
+                  uploadedAt={formatTimeAgo(file._creationTime)}
+                />
               ))}
             </div>
           </TabsContent>
