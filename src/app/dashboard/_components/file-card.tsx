@@ -6,7 +6,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatRelative } from 'date-fns'
 import { useQuery } from "convex/react"
-import Image from "next/image"
 import { Heart } from "lucide-react"
 import { useState } from "react"
 import { api } from "../../../../convex/_generated/api"
@@ -18,22 +17,9 @@ import { Id } from "../../../../convex/_generated/dataModel"
 import { useUser } from "@clerk/nextjs"
 import { addToFavorites, removeFromFavorites } from "@/app/api/files"
 import { toast } from "@/lib/toast"
-
-function formatExpiresIn(seconds: number | null): string {
-    if (seconds === null) return "Истек";
-    
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    
-    return `Осталось: ${days}д ${hours}ч ${minutes}м`;
-}
-
-export function isFileExpired(file: FileCardProps["file"]): boolean {
-    const expiresInSeconds = file._expiresInSeconds;
-    if (expiresInSeconds === undefined) return false;
-    return expiresInSeconds === null || expiresInSeconds <= 0;
-}
+import { FilePreview } from "./file-preview"
+import { FilePreviewModal } from "./file-preview-modal"
+import { formatExpiresIn, isFileExpired } from "./file-helpers"
 
 function getFileTimeDisplay(file: FileCardProps["file"], shrtl?: boolean): string {
     if (shrtl) {
@@ -65,74 +51,6 @@ export function FileCardSkeleton() {
                 </div>
                 <Skeleton className="h-3 w-24 rounded-md" />
             </div>
-        </div>
-    );
-}
-
-function FilePreview({
-    file,
-    fileLink,
-}: {
-    file: FileCardProps["file"];
-    fileLink: string;
-}) {
-    const [failed, setFailed] = useState(false);
-
-    if (file.isFolder || !fileLink || isFileExpired(file) || failed) {
-        return (
-            <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-500">
-                {typeIcons[file.type]}
-            </div>
-        );
-    }
-
-    if (file.type === "image" || file.type === "imageother") {
-        return (
-            <Image
-                alt={file.name}
-                width={200}
-                height={300}
-                className="max-w-[120px] max-h-[150px] rounded-sm object-contain"
-                src={fileLink}
-                unoptimized
-                onError={() => setFailed(true)}
-            />
-        );
-    }
-
-    if (file.type === "video") {
-        return (
-            <video
-                src={fileLink}
-                className="max-w-[180px] max-h-[150px] rounded-sm"
-                preload="metadata"
-                controls={false}
-                muted
-                onError={() => setFailed(true)}
-            />
-        );
-    }
-
-    if (file.type === "audio") {
-        return (
-            <div className="flex flex-col items-center gap-2">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-500">
-                    {typeIcons[file.type]}
-                </div>
-                <audio
-                    src={fileLink}
-                    className="h-8 w-32"
-                    preload="metadata"
-                    controls
-                    onError={() => setFailed(true)}
-                />
-            </div>
-        );
-    }
-
-    return (
-        <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-500">
-            {typeIcons[file.type]}
         </div>
     );
 }
@@ -186,6 +104,22 @@ export function FileCard({
 
     const displayName = file.displayName?.trim() || file.name?.trim() || "Без названия";
     const canFavorite = useFilesApi && !isFolder && !deletedOnly && !isFileExpired(file);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handleCardClick = () => {
+        if (isFolder) {
+            onOpenFolder?.(file.name);
+        } else {
+            setIsModalOpen(true);
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleCardClick();
+        }
+    };
 
     const handleToggleFavorite = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -203,28 +137,20 @@ export function FileCard({
     };
 
     return (
+        <>
         <div
-            className={`group surface-panel relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_24px_70px_rgba(0,0,0,0.35)] ${isFolder ? "cursor-pointer" : ""}`}
-            onClick={isFolder ? () => onOpenFolder?.(file.name) : undefined}
-            role={isFolder ? "button" : undefined}
-            tabIndex={isFolder ? 0 : undefined}
-            onKeyDown={
-                isFolder
-                    ? (e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              onOpenFolder?.(file.name);
-                          }
-                      }
-                    : undefined
-            }
+            className="group surface-panel relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_24px_70px_rgba(0,0,0,0.35)] cursor-pointer"
+            onClick={handleCardClick}
+            role="button"
+            tabIndex={0}
+            onKeyDown={handleKeyDown}
         >
             <div className="relative flex items-start justify-between gap-2 px-5 pt-5 pb-3">
                 <div className="flex items-center gap-2 text-sm text-white/80 font-medium break-all min-w-0">
                     <span className="shrink-0 text-zinc-400">{typeIcons[file.type]}</span>
                     <span className="truncate" title={displayName}>{displayName}</span>
                 </div>
-                <div className="flex shrink-0 items-center gap-1" onClick={isFolder ? (e) => e.stopPropagation() : undefined}>
+                <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     {canFavorite && (
                         <button
                             onClick={handleToggleFavorite}
@@ -280,6 +206,18 @@ export function FileCard({
                 </div>
             </div>
         </div>
+        <FilePreviewModal
+            file={file}
+            open={isModalOpen}
+            onOpenChange={setIsModalOpen}
+            shrtl={shrtl}
+            notter={notter}
+            useFilesApi={useFilesApi}
+            deletedOnly={deletedOnly}
+            onRefresh={onRefresh}
+            onOpenFolder={onOpenFolder}
+        />
+        </>
     )
 
 }

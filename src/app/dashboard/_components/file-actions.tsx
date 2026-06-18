@@ -25,9 +25,10 @@ import { toast } from "@/lib/toast"
 import { useState } from "react"
 import { links } from "@/config/routing/links.route"
 import { DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu"
-import { isFileExpired } from "./file-card"
+import { isFileExpired } from "./file-helpers"
 import { RenameDialog } from "./rename-dialog"
 import { MoveToFolderDialog } from "./move-to-folder-dialog"
+import { ConfirmDialog } from "./confirm-dialog"
 import {
     addToFavorites,
     removeFromFavorites,
@@ -54,6 +55,9 @@ export function FileCardActions({
     const origin = useOrigin()
     const [isRenameOpen, setIsRenameOpen] = useState(false);
     const [isMoveOpen, setIsMoveOpen] = useState(false);
+    const [isTrashConfirmOpen, setIsTrashConfirmOpen] = useState(false);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [isConfirmLoading, setIsConfirmLoading] = useState(false);
     const isFolder = file.isFolder;
 
     const openLink = shrtl
@@ -89,6 +93,7 @@ export function FileCardActions({
     };
 
     const handleMoveToTrash = async () => {
+        setIsConfirmLoading(true);
         try {
             await toast.promise(
                 moveToTrash(file._id as string),
@@ -98,8 +103,11 @@ export function FileCardActions({
                     error: "Не удалось переместить в корзину",
                 },
             );
+            setIsTrashConfirmOpen(false);
             onRefresh?.();
-        } catch {}
+        } catch {} finally {
+            setIsConfirmLoading(false);
+        }
     };
 
     const handleRestore = async () => {
@@ -117,6 +125,7 @@ export function FileCardActions({
     };
 
     const handleDeletePermanently = async () => {
+        setIsConfirmLoading(true);
         try {
             await toast.promise(
                 deleteFilePermanently(file._id as string),
@@ -126,8 +135,11 @@ export function FileCardActions({
                     error: "Не удалось удалить файл",
                 },
             );
+            setIsDeleteConfirmOpen(false);
             onRefresh?.();
-        } catch {}
+        } catch {} finally {
+            setIsConfirmLoading(false);
+        }
     };
 
     const handleDownload = () => {
@@ -281,7 +293,7 @@ export function FileCardActions({
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
-                                            onClick={handleDeletePermanently}
+                                            onClick={() => setIsDeleteConfirmOpen(true)}
                                         >
                                             <Trash className="w-4 h-4" /> Удалить навсегда
                                         </DropdownMenuItem>
@@ -291,7 +303,7 @@ export function FileCardActions({
                                         {!expired && openLink && <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />}
                                         <DropdownMenuItem
                                             className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
-                                            onClick={handleMoveToTrash}
+                                            onClick={() => setIsTrashConfirmOpen(true)}
                                         >
                                             <Trash2 className="w-4 h-4" /> В корзину
                                         </DropdownMenuItem>
@@ -326,6 +338,30 @@ export function FileCardActions({
             open={isMoveOpen}
             onOpenChange={setIsMoveOpen}
             onMoved={onRefresh}
+        />
+
+        <ConfirmDialog
+            open={isTrashConfirmOpen}
+            onOpenChange={setIsTrashConfirmOpen}
+            title="Переместить в корзину"
+            description={`Вы уверены, что хотите переместить «${file.name}» в корзину? Файл можно будет восстановить позже.`}
+            confirmLabel="В корзину"
+            cancelLabel="Отмена"
+            onConfirm={handleMoveToTrash}
+            isLoading={isConfirmLoading}
+            destructive={false}
+        />
+
+        <ConfirmDialog
+            open={isDeleteConfirmOpen}
+            onOpenChange={setIsDeleteConfirmOpen}
+            title="Удалить навсегда"
+            description={`Вы уверены, что хотите безвозвратно удалить «${file.name}»? Это действие нельзя отменить.`}
+            confirmLabel="Удалить"
+            cancelLabel="Отмена"
+            onConfirm={handleDeletePermanently}
+            isLoading={isConfirmLoading}
+            destructive={true}
         />
         </>
     )

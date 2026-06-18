@@ -12,6 +12,7 @@ export type FileDoc = Omit<Doc<"files">, "type"> & {
   username?: string;
   noteId?: string;
   fileUrl?: string;
+  fileSize?: number;
   folder?: string | null;
   isDeleted?: boolean;
   isFolder?: boolean;
@@ -58,6 +59,7 @@ export interface NavigationItem {
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  onRowClick?: (row: TData) => void;
 }
 
 export interface HeaderProps {

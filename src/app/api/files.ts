@@ -42,6 +42,7 @@ function mapFile(file: FilesFileResponse, fallbackAccountId?: string): FileDoc {
     _isFromApi: true,
     downloads: 0,
     fileUrl: file.file_url || undefined,
+    fileSize: file.file_size,
     folder: file.folder ?? null,
     updatedBy: file.updated_by,
     updatedAt: file.updated_at

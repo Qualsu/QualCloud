@@ -19,6 +19,7 @@ import type { DataTableProps } from "@/config/types/components.types"
 export function DataTable<TData, TValue>({
   columns,
   data,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
@@ -53,10 +54,18 @@ export function DataTable<TData, TValue>({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="border-white/10 text-white/70 hover:bg-white/[0.04]"
+                className="border-white/10 text-white/70 hover:bg-white/[0.04] cursor-pointer"
+                onClick={() => onRowClick?.(row.original)}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell
+                    key={cell.id}
+                    onClick={(e) => {
+                      if (cell.column.id === "actions") {
+                        e.stopPropagation();
+                      }
+                    }}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}

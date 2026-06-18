@@ -60,6 +60,7 @@ import { createColumns } from "./columns";
 import { CreateFolderDialog } from "./create-folder-dialog";
 import { FileCard } from "./file-card";
 import { DataTable } from "./file-table";
+import { FilePreviewModal } from "./file-preview-modal";
 
 export function Placeholder({ message }: { message?: string }) {
   return (
@@ -97,6 +98,7 @@ export function FilesBrowser({
   const [trashEmptyInSeconds, setTrashEmptyInSeconds] = useState<number | null>(null);
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [previewFile, setPreviewFile] = useState<FileDoc | null>(null);
   const query = searchParams.get("q")?.trim() ?? "";
 
   let orgId: string | undefined;
@@ -202,6 +204,14 @@ export function FilesBrowser({
   const currentFolderName = currentFolder
     ? currentFolder.split("/").pop()
     : null;
+
+  const handleRowClick = (file: FileDoc) => {
+    if (file.isFolder) {
+      setCurrentFolder(file.name);
+    } else {
+      setPreviewFile(file);
+    }
+  };
 
   const emptyMessage = (() => {
     if (deletedOnly) return "Корзина пуста";
@@ -578,7 +588,7 @@ export function FilesBrowser({
             </TabsContent>
 
             <TabsContent value="table">
-              <DataTable columns={fileColumns} data={sortedFiles} />
+              <DataTable columns={fileColumns} data={sortedFiles} onRowClick={handleRowClick} />
             </TabsContent>
           </>
         ) : null}
@@ -589,6 +599,22 @@ export function FilesBrowser({
         (shouldShowEmptyState || sortedFiles.length === 0) && (
           <Placeholder message={emptyMessage} />
         )}
+
+      {previewFile && (
+        <FilePreviewModal
+          file={previewFile}
+          open={!!previewFile}
+          onOpenChange={(open) => {
+            if (!open) setPreviewFile(null);
+          }}
+          shrtl={shrtl}
+          notter={notter}
+          useFilesApi={useFilesApi}
+          deletedOnly={deletedOnly}
+          onRefresh={refreshFiles}
+          onOpenFolder={setCurrentFolder}
+        />
+      )}
     </div>
   );
 }

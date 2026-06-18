@@ -10,16 +10,7 @@ import type { FileDoc } from "@/config/types/components.types"
 import { typeIcons } from "@/config/const/components.const"
 import { api } from "../../../../convex/_generated/api"
 import { FileCardActions } from "./file-actions"
-
-function formatExpiresIn(seconds: number | null): string {
-  if (seconds === null) return "Истек";
-
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-
-  return `Осталось: ${days}д ${hours}ч ${minutes}м`;
-}
+import { formatExpiresIn } from "./file-helpers"
 
 function UserCell({
   file,
@@ -81,7 +72,10 @@ function NameCell({
   if (file.isFolder) {
     return (
       <button
-        onClick={() => onOpenFolder?.(file.name)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenFolder?.(file.name);
+        }}
         className="flex items-center gap-2 font-medium text-white/80 transition-colors hover:text-white"
         title={displayName}
       >
