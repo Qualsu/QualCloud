@@ -21,7 +21,7 @@ import {
 import { pages } from "@/config/routing/pages.route"
 import type { FileCardProps } from "@/config/types/components.types"
 import { useOrigin } from "../../../components/hooks/use-origin"
-import toast from "react-hot-toast"
+import { toast } from "@/lib/toast"
 import { useState } from "react"
 import { links } from "@/config/routing/links.route"
 import { DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu"
@@ -76,47 +76,58 @@ export function FileCardActions({
 
     const handleToggleFavorite = async () => {
         try {
-            if (file.isFavorited) {
-                await removeFromFavorites(file._id as string);
-                toast.success("Убрано из избранного");
-            } else {
-                await addToFavorites(file._id as string);
-                toast.success("Добавлено в избранное");
-            }
+            const promise = file.isFavorited
+                ? removeFromFavorites(file._id as string)
+                : addToFavorites(file._id as string);
+            await toast.promise(promise, {
+                loading: file.isFavorited ? "Убираем из избранного…" : "Добавляем в избранное…",
+                success: file.isFavorited ? "Убрано из избранного" : "Добавлено в избранное",
+                error: "Не удалось обновить избранное",
+            });
             onRefresh?.();
-        } catch {
-            toast.error("Не удалось обновить избранное");
-        }
+        } catch {}
     };
 
     const handleMoveToTrash = async () => {
         try {
-            await moveToTrash(file._id as string);
-            toast.success("Перемещено в корзину");
+            await toast.promise(
+                moveToTrash(file._id as string),
+                {
+                    loading: "Перемещаем в корзину…",
+                    success: "Перемещено в корзину",
+                    error: "Не удалось переместить в корзину",
+                },
+            );
             onRefresh?.();
-        } catch {
-            toast.error("Не удалось переместить в корзину");
-        }
+        } catch {}
     };
 
     const handleRestore = async () => {
         try {
-            await restoreFromTrash(file._id as string);
-            toast.success("Файл восстановлен");
+            await toast.promise(
+                restoreFromTrash(file._id as string),
+                {
+                    loading: "Восстанавливаем…",
+                    success: "Файл восстановлен",
+                    error: "Не удалось восстановить файл",
+                },
+            );
             onRefresh?.();
-        } catch {
-            toast.error("Не удалось восстановить файл");
-        }
+        } catch {}
     };
 
     const handleDeletePermanently = async () => {
         try {
-            await deleteFilePermanently(file._id as string);
-            toast.success("Файл удален");
+            await toast.promise(
+                deleteFilePermanently(file._id as string),
+                {
+                    loading: "Удаляем…",
+                    success: "Файл удален",
+                    error: "Не удалось удалить файл",
+                },
+            );
             onRefresh?.();
-        } catch {
-            toast.error("Не удалось удалить файл");
-        }
+        } catch {}
     };
 
     const handleDownload = () => {
@@ -131,12 +142,16 @@ export function FileCardActions({
 
     const handleDeleteFolder = async () => {
         try {
-            await deleteFolder(file.orgId, file.name);
-            toast.success(`Папка «${folderDisplayName}» удалена`);
+            await toast.promise(
+                deleteFolder(file.orgId, file.name),
+                {
+                    loading: "Удаляем папку…",
+                    success: `Папка «${folderDisplayName}» удалена`,
+                    error: "Не удалось удалить папку",
+                },
+            );
             onRefresh?.();
-        } catch {
-            toast.error("Не удалось удалить папку");
-        }
+        } catch {}
     };
 
     const handleCopyFolderPath = async () => {

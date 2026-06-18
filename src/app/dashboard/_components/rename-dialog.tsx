@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Pencil } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -65,21 +65,20 @@ export function RenameDialog({
 
     setIsLoading(true);
     try {
-      if (isFolder) {
-        await renameFolder(file.orgId, file.name, targetName);
-        toast.success("Папка переименована");
-      } else {
-        await renameFile(file._id as string, trimmed);
-        toast.success("Файл переименован");
-      }
+      const promise = isFolder
+        ? renameFolder(file.orgId, file.name, targetName)
+        : renameFile(file._id as string, trimmed);
+
+      await toast.promise(promise, {
+        loading: isFolder ? "Переименовываем папку…" : "Переименовываем файл…",
+        success: isFolder ? "Папка переименована" : "Файл переименован",
+        error: isFolder
+          ? "Не удалось переименовать папку"
+          : "Не удалось переименовать файл",
+      });
+
       onOpenChange(false);
       onRenamed?.();
-    } catch {
-      toast.error(
-        isFolder
-          ? "Не удалось переименовать папку"
-          : "Не удалось переименовать файл"
-      );
     } finally {
       setIsLoading(false);
     }

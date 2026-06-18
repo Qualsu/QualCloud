@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FileIcon, Loader2, Upload, X } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "@/lib/toast";
 import Image from "next/image";
 
 import { uploadFile, uploadMultipleFiles } from "@/app/api/files";

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, FolderInput } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -56,23 +56,20 @@ export function MoveToFolderDialog({
 
     setIsLoading(true);
     try {
-      if (isFolder) {
-        await moveFolder(file.orgId, file.name, targetFolder);
-      } else {
-        await moveFile(file._id as string, targetFolder);
-      }
+      const promise = isFolder
+        ? moveFolder(file.orgId, file.name, targetFolder)
+        : moveFile(file._id as string, targetFolder);
 
-      toast.success(
-        isFolder ? "Папка перемещена" : "Файл перемещён в папку"
-      );
+      await toast.promise(promise, {
+        loading: isFolder ? "Перемещаем папку…" : "Перемещаем файл…",
+        success: isFolder ? "Папка перемещена" : "Файл перемещён в папку",
+        error: isFolder
+          ? "Не удалось переместить папку"
+          : "Не удалось переместить файл",
+      });
+
       onOpenChange(false);
       onMoved?.();
-    } catch {
-      toast.error(
-        isFolder
-          ? "Не удалось переместить папку"
-          : "Не удалось переместить файл"
-      );
     } finally {
       setIsLoading(false);
     }

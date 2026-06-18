@@ -31,7 +31,7 @@ import type {
 import { useSearchSuggestions } from "@/components/search-suggestions-context";
 import { useFilesView } from "./files-view-context";
 import { formatTimeRemaining } from "@/lib/utils";
-import { toast } from "react-hot-toast";
+import { toast } from "@/lib/toast";
 import { useFilesRefresh } from "./files-refresh-context";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -180,12 +180,16 @@ export function FilesBrowser({
 
     setIsClearing(true);
     try {
-      await emptyTrash(orgId);
-      toast.success("Корзина очищена");
+      await toast.promise(
+        emptyTrash(orgId),
+        {
+          loading: "Очищаем корзину…",
+          success: "Корзина очищена",
+          error: "Не удалось очистить корзину",
+        },
+      );
       setIsClearDialogOpen(false);
       refreshFiles();
-    } catch {
-      toast.error("Не удалось очистить корзину");
     } finally {
       setIsClearing(false);
     }

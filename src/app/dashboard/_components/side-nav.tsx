@@ -36,7 +36,7 @@ export function SideNav() {
             className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-200 ${
                 active
                 ? "nav-link-active text-white"
-                : "text-white/60 hover:bg-white/[0.06] hover:text-white"
+                : "opacity-60 hover:bg-white/[0.06] hover:opacity-100"
             }`}
           >
             <Image src={image} alt="nav icon" width={16} height={16} className="h-5 w-5" />

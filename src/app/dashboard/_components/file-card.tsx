@@ -17,7 +17,7 @@ import { links } from "@/config/routing/links.route"
 import { Id } from "../../../../convex/_generated/dataModel"
 import { useUser } from "@clerk/nextjs"
 import { addToFavorites, removeFromFavorites } from "@/app/api/files"
-import toast from "react-hot-toast"
+import { toast } from "@/lib/toast"
 
 function formatExpiresIn(seconds: number | null): string {
     if (seconds === null) return "Истек";
@@ -190,17 +190,16 @@ export function FileCard({
     const handleToggleFavorite = async (e: React.MouseEvent) => {
         e.stopPropagation();
         try {
-            if (file.isFavorited) {
-                await removeFromFavorites(file._id as string);
-                toast.success("Убрано из избранного");
-            } else {
-                await addToFavorites(file._id as string);
-                toast.success("Добавлено в избранное");
-            }
+            const promise = file.isFavorited
+                ? removeFromFavorites(file._id as string)
+                : addToFavorites(file._id as string);
+            await toast.promise(promise, {
+                loading: file.isFavorited ? "Убираем из избранного…" : "Добавляем в избранное…",
+                success: file.isFavorited ? "Убрано из избранного" : "Добавлено в избранное",
+                error: "Не удалось обновить избранное",
+            });
             onRefresh?.();
-        } catch {
-            toast.error("Не удалось обновить избранное");
-        }
+        } catch {}
     };
 
     return (

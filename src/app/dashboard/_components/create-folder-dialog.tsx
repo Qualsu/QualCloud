@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { FolderPlus, Loader2 } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -39,13 +39,17 @@ export function CreateFolderDialog({
 
     setIsLoading(true);
     try {
-      await createFolder(account_id, trimmed, parent ?? null);
-      toast.success(`Папка «${trimmed}» создана`);
+      await toast.promise(
+        createFolder(account_id, trimmed, parent ?? null),
+        {
+          loading: "Создание папки…",
+          success: `Папка «${trimmed}» создана`,
+          error: "Не удалось создать папку",
+        },
+      );
       setFolderName("");
       setOpen(false);
       onCreated?.();
-    } catch {
-      toast.error("Не удалось создать папку");
     } finally {
       setIsLoading(false);
     }
