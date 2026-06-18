@@ -2,8 +2,8 @@
 
 import { useMutation } from "convex/react"
 import { useEffect, useState } from 'react'
-import { useParams } from "next/navigation"
-import { Loader2, FileIcon, AudioLinesIcon } from "lucide-react"
+import { useParams, useSearchParams } from "next/navigation"
+import { Loader2, FileIcon, AudioLinesIcon, Globe, Lock } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import NotFound from "@/app/not-found"
@@ -27,6 +27,7 @@ type FileView = {
   url: string;
   size?: number;
   isConvex: boolean;
+  isPublic?: boolean;
 };
 
 function formatSize(bytes: number): string {
@@ -42,7 +43,9 @@ export default function File() {
     const [found, setFound] = useState(true)
     const fileLink = useMutation(api.files.getFile)
     const params = useParams()
+    const searchParams = useSearchParams()
     const id = Array.isArray(params?.id) ? params.id[0] : (params?.id ?? "")
+    const accountId = searchParams.get("account_id") || undefined
 
     useEffect(() => {
         const fetchLink = async () => {
@@ -72,15 +75,21 @@ export default function File() {
             }
 
             try {
-                const apiFile: ApiFile = await getFileInfo(id)
+                const apiFile: ApiFile = await getFileInfo(id, accountId)
 
                 if (apiFile && apiFile.file_id) {
+                    const downloadUrl =
+                        apiFile.file_url ||
+                        `${links.FILES.GET_FILE(apiFile.file_id)}${
+                            accountId ? `?account_id=${encodeURIComponent(accountId)}` : ""
+                        }`
                     setFile({
                         name: apiFile.file_name,
                         type: getMimeType(apiFile.file_type),
-                        url: apiFile.file_url || links.FILES.GET_FILE(apiFile.file_id),
+                        url: downloadUrl,
                         size: apiFile.file_size,
                         isConvex: false,
+                        isPublic: apiFile.is_public,
                     })
                     setFound(true)
                     setLoading(false)
@@ -94,7 +103,7 @@ export default function File() {
         }
 
         fetchLink()
-    }, [fileLink, id])
+    }, [fileLink, id, accountId])
 
     if (!found) {
         return <NotFound />
@@ -163,7 +172,9 @@ export default function File() {
                         ) : (
                             <>
                                 <div className="w-full">
-                                    <h1 className="text-2xl font-semibold break-all">{file.name}</h1>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <h1 className="text-2xl font-semibold break-all">{file.name}</h1>
+                                    </div>
                                     {typeof file.size === "number" && (
                                         <p className="mt-1 text-sm text-white/50">{formatSize(file.size)}</p>
                                     )}

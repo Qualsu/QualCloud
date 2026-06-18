@@ -50,6 +50,7 @@ export interface FilesFileResponse {
   updated_by?: string | null;
   last_editor?: FilesLastEditor | null;
   file_url?: string;
+  is_public?: boolean;
 }
 
 export type FilesListItem = FilesFileResponse | FilesFolderItem;
@@ -123,6 +124,11 @@ export interface FilesFolderDeleteBody extends FilesEditorBody {
 export interface FilesRenameBody extends FilesEditorBody {
   file_id: string;
   file_name: string;
+}
+
+export interface FilesPublicBody extends FilesEditorBody {
+  file_id: string;
+  is_public: boolean;
 }
 
 export interface FilesUserStatsResponse {

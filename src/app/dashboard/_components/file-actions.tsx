@@ -4,7 +4,9 @@ import {
     FileIcon,
     FolderInput,
     FolderOpen,
+    Globe,
     Heart,
+    Lock,
     MoreVertical,
     Pencil,
     RotateCcw,
@@ -39,6 +41,7 @@ import {
     restoreFromTrash,
     deleteFilePermanently,
     deleteFolder,
+    updateFilePublic,
 } from "@/app/api/files"
 
 const copyTextToClipboard = async (text: string) => {
@@ -63,6 +66,7 @@ export function FileCardActions({
     const [isTrashConfirmOpen, setIsTrashConfirmOpen] = useState(false);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [isConfirmLoading, setIsConfirmLoading] = useState(false);
+    const [isPublicLoading, setIsPublicLoading] = useState(false);
     const isFolder = file.isFolder;
     const editor = getFilesEditor(user);
     const canPermanentlyDelete = isOrgAdmin;
@@ -162,6 +166,25 @@ export function FileCardActions({
         window.open(downloadLink, "_blank");
     };
 
+    const handleTogglePublic = async () => {
+        if (isPublicLoading || isFolder) return;
+        setIsPublicLoading(true);
+        try {
+            const next = !file.isPublic;
+            await toast.promise(
+                updateFilePublic(file.fileId as string, next, editor),
+                {
+                    loading: next ? "Открываем публичный доступ…" : "Закрываем публичный доступ…",
+                    success: next ? "Публичный доступ открыт" : "Публичный доступ закрыт",
+                    error: "Не удалось изменить публичный доступ",
+                },
+            );
+            onRefresh?.();
+        } catch {} finally {
+            setIsPublicLoading(false);
+        }
+    };
+
     const folderDisplayName = file.displayName ?? file.name;
 
     const handleDeleteFolder = async () => {
@@ -249,7 +272,7 @@ export function FileCardActions({
                                     <FileIcon className="w-4 h-4" /> Открыть {notter && 'заметку'}
                                 </DropdownMenuItem>
 
-                                {!notter && (
+                                {(!useFilesApi || file.isPublic) && !notter && (
                                     <DropdownMenuItem className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white" onClick={() => {
                                         copyTextToClipboard(shareLink)
                                     }}>
@@ -293,6 +316,24 @@ export function FileCardActions({
                                         onClick={() => setIsMoveOpen(true)}
                                     >
                                         <FolderInput className="w-4 h-4" /> Переместить в папку
+                                    </DropdownMenuItem>
+                                )}
+
+                                {!expired && !deletedOnly && (
+                                    <DropdownMenuItem
+                                        className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                        onClick={handleTogglePublic}
+                                        disabled={isPublicLoading}
+                                    >
+                                        {file.isPublic ? (
+                                            <>
+                                                <Lock className="w-4 h-4" /> Сделать приватным
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Globe className="w-4 h-4" /> Сделать публичным
+                                            </>
+                                        )}
                                     </DropdownMenuItem>
                                 )}
 

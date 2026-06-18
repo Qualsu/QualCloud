@@ -12,6 +12,7 @@ import {
   FilesListItem,
   FilesListResponse,
   FilesMoveBody,
+  FilesPublicBody,
   FilesRenameBody,
   FilesRestoreBody,
   FilesTrashBody,
@@ -64,6 +65,7 @@ function mapFile(file: FilesFileResponse, fallbackAccountId?: string): FileDoc {
       : file.uploaded_at
       ? new Date(file.uploaded_at).getTime()
       : undefined,
+    isPublic: file.is_public ?? false,
   };
 }
 
@@ -202,13 +204,22 @@ export async function getRecentFiles(account_id: string): Promise<FileDoc[]> {
   return filesResponse.map((file) => mapFile(file, account_id));
 }
 
-export async function getFileInfo(file_id: string): Promise<FilesFileResponse> {
-  const res = await files.get(api.FILES.INFO(file_id));
+export async function getFileInfo(
+  file_id: string,
+  account_id?: string
+): Promise<FilesFileResponse> {
+  const res = await files.get(api.FILES.INFO(file_id), {
+    params: account_id ? { account_id } : undefined,
+  });
   return res.data;
 }
 
-export async function downloadFile(file_id: string): Promise<Blob> {
+export async function downloadFile(
+  file_id: string,
+  account_id?: string
+): Promise<Blob> {
   const res = await files.get(api.FILES.DOWNLOAD(file_id), {
+    params: account_id ? { account_id } : undefined,
     responseType: "blob",
   });
   return res.data;
@@ -231,6 +242,16 @@ export async function renameFile(
 ): Promise<FilesFileResponse> {
   const body: FilesRenameBody = { file_id, file_name, ...editorBody(editor) };
   const res = await files.post(api.FILES.RENAME, body);
+  return res.data;
+}
+
+export async function updateFilePublic(
+  file_id: string,
+  is_public: boolean,
+  editor?: FilesApiEditor
+): Promise<FilesFileResponse> {
+  const body: FilesPublicBody = { file_id, is_public, ...editorBody(editor) };
+  const res = await files.post(api.FILES.PUBLIC, body);
   return res.data;
 }
 

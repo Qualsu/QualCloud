@@ -18,6 +18,7 @@ export type FileDoc = Omit<Doc<"files">, "type"> & {
   folder?: string | null;
   isDeleted?: boolean;
   isFolder?: boolean;
+  isPublic?: boolean;
   updatedBy?: string | null;
   updatedAt?: number | null;
   displayName?: string;

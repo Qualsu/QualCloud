@@ -7,14 +7,16 @@ import {
     Download,
     ExternalLink,
     FolderInput,
+    Globe,
     Heart,
+    Lock,
     Pencil,
     RotateCcw,
     Share2Icon,
     Trash,
     Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -43,6 +45,7 @@ import {
     moveToTrash,
     removeFromFavorites,
     restoreFromTrash,
+    updateFilePublic,
 } from "@/app/api/files";
 import { toast } from "@/lib/toast";
 
@@ -100,6 +103,12 @@ export function FilePreviewModal({
     const [isTrashConfirmOpen, setIsTrashConfirmOpen] = useState(false);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [isConfirmLoading, setIsConfirmLoading] = useState(false);
+    const [isPublic, setIsPublic] = useState(file.isPublic ?? false);
+    const [isPublicLoading, setIsPublicLoading] = useState(false);
+
+    useEffect(() => {
+        setIsPublic(file.isPublic ?? false);
+    }, [file.isPublic]);
 
     const fileLink = isFolder
         ? ""
@@ -178,10 +187,11 @@ export function FilePreviewModal({
         (useFilesApi || isFolder) && !deletedOnly && (!isFolder ? !expired : true);
     const canMove =
         (useFilesApi || isFolder) && !deletedOnly && (!isFolder ? !expired : true);
-    const canShare = !isFolder && !expired && Boolean(shareLink) && !notter && !deletedOnly;
+    const canShare = !isFolder && !expired && Boolean(shareLink) && !notter && !deletedOnly && (!useFilesApi || isPublic);
     const canTrash = useFilesApi && !isFolder;
     const canDownload = !isFolder && Boolean(downloadLink);
     const canOpen = !isFolder && !expired && Boolean(openLink);
+    const canTogglePublic = useFilesApi && !isFolder && !deletedOnly && !expired;
 
     const handleOpen = () => {
         if (openLink) window.open(openLink, "_blank");
@@ -193,6 +203,23 @@ export function FilePreviewModal({
 
     const handleShare = () => {
         if (shareLink) copyTextToClipboard(shareLink);
+    };
+
+    const handleTogglePublic = async () => {
+        if (!canTogglePublic || isPublicLoading) return;
+        setIsPublicLoading(true);
+        try {
+            const next = !isPublic;
+            await toast.promise(updateFilePublic(file.fileId as string, next, editor), {
+                loading: next ? "Открываем публичный доступ…" : "Закрываем публичный доступ…",
+                success: next ? "Публичный доступ открыт" : "Публичный доступ закрыт",
+                error: "Не удалось изменить публичный доступ",
+            });
+            setIsPublic(next);
+            onRefresh?.();
+        } catch {} finally {
+            setIsPublicLoading(false);
+        }
     };
 
     const handleToggleFavorite = async () => {
@@ -362,6 +389,25 @@ export function FilePreviewModal({
                                 </span>
                             </div>
 
+                            {useFilesApi && !isFolder && (
+                                <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+                                    <span className="text-white/40">Доступ:</span>
+                                    <span className="flex items-center gap-1.5 text-white/80">
+                                        {isPublic ? (
+                                            <>
+                                                <Globe className="h-3.5 w-3.5" />
+                                                Публичный
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Lock className="h-3.5 w-3.5" />
+                                                Приватный
+                                            </>
+                                        )}
+                                    </span>
+                                </div>
+                            )}
+
                             {(file.folder !== undefined || canMove) && (
                                 <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
                                     <span className="shrink-0 text-white/40">Расположение:</span>
@@ -437,6 +483,26 @@ export function FilePreviewModal({
                                 >
                                     <Trash2 className="h-4 w-4" />
                                     Удалить
+                                </button>
+                            )}
+
+                            {canTogglePublic && (
+                                <button
+                                    onClick={handleTogglePublic}
+                                    disabled={isPublicLoading}
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium md:py-2.5 text-white transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isPublic ? (
+                                        <>
+                                            <Lock className="h-4 w-4" />
+                                            Сделать приватным
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Globe className="h-4 w-4" />
+                                            Сделать публичным
+                                        </>
+                                    )}
                                 </button>
                             )}
 

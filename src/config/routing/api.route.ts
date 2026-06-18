@@ -18,6 +18,7 @@ export const api = {
         DOWNLOAD: (file_id: string) => `/files/download/${file_id}`,
         MOVE: "/files/move",
         RENAME: "/files/rename",
+        PUBLIC: "/files/public",
         FAVORITE: "/files/favorite",
         TRASH: "/files/trash",
         RESTORE: "/files/restore",
