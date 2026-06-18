@@ -17,7 +17,7 @@ import {
 import Link from "next/link";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useFilesView } from "../_components/files-view-context";
+import { useFilesView } from "@/components/context/files-view-context";
 import { DataTable } from "../_components/file-table";
 import { FileCard } from "../_components/file-card";
 import { Placeholder } from "../_components/file-browser";

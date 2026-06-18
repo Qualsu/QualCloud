@@ -28,8 +28,8 @@ import type { FileDoc } from "@/config/types/components.types";
 import { useOrigin } from "@/components/hooks/use-origin";
 import { links } from "@/config/routing/links.route";
 import { pages } from "@/config/routing/pages.route";
-import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 import {
     addToFavorites,
     deleteFilePermanently,
@@ -40,11 +40,11 @@ import {
 } from "@/app/api/files";
 import { toast } from "@/lib/toast";
 
-import { FilePreview } from "./file-preview";
-import { RenameDialog } from "./rename-dialog";
-import { MoveToFolderDialog } from "./move-to-folder-dialog";
-import { ConfirmDialog } from "./confirm-dialog";
-import { formatExpiresIn, formatSize, isFileExpired } from "./file-helpers";
+import { FilePreview } from "@/app/dashboard/_components/file-preview";
+import { RenameDialog } from "@/components/dialog/rename-dialog";
+import { MoveToFolderDialog } from "@/components/dialog/move-to-folder-dialog";
+import { ConfirmDialog } from "@/components/dialog/confirm-dialog";
+import { formatExpiresIn, formatSize, isFileExpired } from "@/app/dashboard/_components/file-helpers";
 
 const copyTextToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text);

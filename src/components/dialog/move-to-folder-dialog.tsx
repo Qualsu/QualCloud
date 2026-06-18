@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { moveFile, moveFolder } from "@/app/api/files";
-import { FolderTree } from "./folder-tree";
+import { FolderTree } from "@/app/dashboard/_components/folder-tree";
 import type { FileDoc } from "@/config/types/components.types";
 
 interface MoveToFolderDialogProps {

@@ -28,11 +28,11 @@ import type {
   FileSortDirection,
   FileSortKey,
 } from "@/config/types/components.types";
-import { useSearchSuggestions } from "@/components/search-suggestions-context";
-import { useFilesView } from "./files-view-context";
+import { useSearchSuggestions } from "@/components/context/search-suggestions-context";
+import { useFilesView } from "@/components/context/files-view-context";
 import { formatTimeRemaining } from "@/lib/utils";
 import { toast } from "@/lib/toast";
-import { useFilesRefresh } from "./files-refresh-context";
+import { useFilesRefresh } from "@/components/context/files-refresh-context";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
@@ -57,10 +57,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { api } from "../../../../convex/_generated/api";
 import { createColumns } from "./columns";
-import { CreateFolderDialog } from "./create-folder-dialog";
+import { CreateFolderDialog } from "@/components/dialog/create-folder-dialog";
 import { FileCard } from "./file-card";
 import { DataTable } from "./file-table";
-import { FilePreviewModal } from "./file-preview-modal";
+import { FilePreviewModal } from "@/components/modal/file-preview-modal";
 
 export function Placeholder({ message }: { message?: string }) {
   return (

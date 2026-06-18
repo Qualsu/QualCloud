@@ -8,7 +8,7 @@ import Image from "next/image";
 
 import { pages } from "@/config/routing/pages.route";
 import { images } from "@/config/routing/image.route";
-import { useMobileNav } from "@/components/mobile-nav-context";
+import { useMobileNav } from "@/components/context/mobile-nav-context";
 import { HeaderProps } from "@/config/types/components.types";
 import { usePathname } from "next/navigation";
 import { SearchBar } from "../dashboard/_components/search-bar";

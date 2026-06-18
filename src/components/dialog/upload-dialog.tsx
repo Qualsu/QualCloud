@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { useFilesRefresh } from "./files-refresh-context";
-import { FolderTree } from "./folder-tree";
+import { useFilesRefresh } from "@/components/context/files-refresh-context";
+import { FolderTree } from "@/app/dashboard/_components/folder-tree";
 
 interface UploadFile {
   id: string;

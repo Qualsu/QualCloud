@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { useSearchSuggestions } from "@/components/search-suggestions-context";
+import { useSearchSuggestions } from "@/components/context/search-suggestions-context";
 import { Button } from "@/components/ui/button";
 import {
     Form,

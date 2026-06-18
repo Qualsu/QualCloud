@@ -18,7 +18,7 @@ import { useUser } from "@clerk/nextjs"
 import { addToFavorites, removeFromFavorites } from "@/app/api/files"
 import { toast } from "@/lib/toast"
 import { FilePreview } from "./file-preview"
-import { FilePreviewModal } from "./file-preview-modal"
+import { FilePreviewModal } from "@/components/modal/file-preview-modal"
 import { formatExpiresIn, isFileExpired } from "./file-helpers"
 
 function getFileTimeDisplay(file: FileCardProps["file"], shrtl?: boolean): string {

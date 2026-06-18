@@ -26,9 +26,9 @@ import { useState } from "react"
 import { links } from "@/config/routing/links.route"
 import { DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu"
 import { isFileExpired } from "./file-helpers"
-import { RenameDialog } from "./rename-dialog"
-import { MoveToFolderDialog } from "./move-to-folder-dialog"
-import { ConfirmDialog } from "./confirm-dialog"
+import { RenameDialog } from "@/components/dialog/rename-dialog"
+import { MoveToFolderDialog } from "@/components/dialog/move-to-folder-dialog"
+import { ConfirmDialog } from "@/components/dialog/confirm-dialog"
 import {
     addToFavorites,
     removeFromFavorites,

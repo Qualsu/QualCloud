@@ -6,10 +6,10 @@ import { redirect } from 'next/navigation';
 import { pages } from '@/config/routing/pages.route';
 import { Header } from '../_component/header';
 import { SideNav } from "./_components/side-nav"
-import { FilesViewProvider } from "./_components/files-view-context";
-import { FilesRefreshProvider } from "./_components/files-refresh-context";
-import { MobileNavProvider } from '@/components/mobile-nav-context';
-import { SearchSuggestionsProvider } from '@/components/search-suggestions-context';
+import { FilesViewProvider } from "@/components/context/files-view-context";
+import { FilesRefreshProvider } from "@/components/context/files-refresh-context";
+import { MobileNavProvider } from '@/components/context/mobile-nav-context';
+import { SearchSuggestionsProvider } from '@/components/context/search-suggestions-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
 

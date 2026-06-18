@@ -1,11 +1,11 @@
 'use client'
 
 import { OrganizationSwitcher } from "@clerk/nextjs"
-import { useMobileNav } from "@/components/mobile-nav-context"
+import { useMobileNav } from "@/components/context/mobile-nav-context"
 import { navItems, utilityNavItems } from "@/config/const/components.const"
 import { images } from "@/config/routing/image.route"
 import { Upload, X } from "lucide-react"
-import { UploadDialog } from "./upload-dialog"
+import { UploadDialog } from "@/components/dialog/upload-dialog"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
