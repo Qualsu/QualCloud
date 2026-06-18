@@ -10,6 +10,7 @@ import { FilesViewProvider } from "@/components/context/files-view-context";
 import { FilesRefreshProvider } from "@/components/context/files-refresh-context";
 import { MobileNavProvider } from '@/components/context/mobile-nav-context';
 import { SearchSuggestionsProvider } from '@/components/context/search-suggestions-context';
+import { PageDropZone } from '@/components/drop-zone/page-drop-zone';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
 
@@ -33,20 +34,22 @@ export default function DashboardLayout({
     <MobileNavProvider>
       <SearchSuggestionsProvider>
         <FilesRefreshProvider>
-          <div className="relative isolate min-h-screen text-white">
-            <Header showMobileMenuButton showSearch />
-            <div className="h-20 md:h-24" />
-            <main className="mx-4 sm:mx-6 md:mx-8 lg:mx-10 py-6">
-              <div className="flex w-full items-start">
-                <SideNav />
-                <div className="min-w-0 flex-1 md:pl-[17rem]">
-                  <FilesViewProvider>
-                    {children}
-                  </FilesViewProvider>
+          <PageDropZone>
+            <div className="relative isolate min-h-screen text-white">
+              <Header showMobileMenuButton showSearch />
+              <div className="h-20 md:h-24" />
+              <main className="mx-4 sm:mx-6 md:mx-8 lg:mx-10 py-6">
+                <div className="flex w-full items-start">
+                  <SideNav />
+                  <div className="min-w-0 flex-1 md:pl-[17rem]">
+                    <FilesViewProvider>
+                      {children}
+                    </FilesViewProvider>
+                  </div>
                 </div>
-              </div>
-            </main>
-          </div>
+              </main>
+            </div>
+          </PageDropZone>
         </FilesRefreshProvider>
       </SearchSuggestionsProvider>
     </MobileNavProvider>

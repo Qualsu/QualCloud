@@ -29,10 +29,14 @@ interface UploadFile {
 }
 
 interface UploadDialogProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   account_id?: string;
   folder?: string | null;
   onUploadComplete?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  initialFiles?: File[];
+  autoStart?: boolean;
 }
 
 export function UploadDialog({
@@ -40,10 +44,15 @@ export function UploadDialog({
   account_id: accountIdProp,
   folder: folderProp,
   onUploadComplete,
+  open,
+  onOpenChange,
+  initialFiles,
+  autoStart = false,
 }: UploadDialogProps) {
   const { user } = useUser();
   const { refreshFiles } = useFilesRefresh();
-  const [open, setOpen] = useState(false);
+  const isOpenControlled = open !== undefined;
+  const [internalOpen, setInternalOpen] = useState(open ?? false);
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [folder, setFolder] = useState<string>(folderProp ?? "/");
   const [isDragging, setIsDragging] = useState(false);
@@ -51,6 +60,18 @@ export function UploadDialog({
   const [progress, setProgress] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const previewUrlsRef = useRef<Record<string, string>>({});
+
+  const isOpen = isOpenControlled ? open : internalOpen;
+
+  const setIsOpen = useCallback(
+    (nextOpen: boolean) => {
+      if (!isOpenControlled) {
+        setInternalOpen(nextOpen);
+      }
+      onOpenChange?.(nextOpen);
+    },
+    [isOpenControlled, onOpenChange]
+  );
 
   const account_id = accountIdProp ?? user?.id;
   const editor = getFilesEditor(user);
@@ -62,10 +83,13 @@ export function UploadDialog({
     };
   }, []);
 
-  const addFiles = useCallback((incoming: FileList | null) => {
+  const addFiles = useCallback((incoming: File[] | FileList | null) => {
     if (!incoming) return;
 
-    const newFiles: UploadFile[] = Array.from(incoming).map((file) => ({
+    const array = Array.isArray(incoming) ? incoming : Array.from(incoming);
+    if (array.length === 0) return;
+
+    const newFiles: UploadFile[] = array.map((file) => ({
       id: `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       file,
     }));
@@ -78,6 +102,13 @@ export function UploadDialog({
 
     setFiles((current) => [...current, ...newFiles]);
   }, []);
+
+  useEffect(() => {
+    if (initialFiles && initialFiles.length > 0) {
+      addFiles(initialFiles);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFiles]);
 
   const removeFile = useCallback((id: string) => {
     setFiles((current) => current.filter((item) => item.id !== id));
@@ -123,6 +154,16 @@ export function UploadDialog({
     setFolder(folderProp ?? "/");
   }, [folderProp]);
 
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      setIsOpen(nextOpen);
+      if (!nextOpen && isOpenControlled) {
+        resetUpload();
+      }
+    },
+    [setIsOpen, resetUpload, isOpenControlled]
+  );
+
   const handleUpload = useCallback(async () => {
     if (files.length === 0) {
       toast.error("Выберите файлы для загрузки");
@@ -166,8 +207,7 @@ export function UploadDialog({
           ? `Файл «${files[0].file.name}» успешно загружен`
           : `Успешно загружено ${files.length} файлов`
       );
-      setOpen(false);
-      resetUpload();
+      handleOpenChange(false);
       refreshFiles();
       onUploadComplete?.();
     } catch {
@@ -176,7 +216,19 @@ export function UploadDialog({
       clearInterval(progressInterval);
       setIsUploading(false);
     }
-  }, [files, account_id, folder, resetUpload, refreshFiles, onUploadComplete, editor]);
+  }, [files, account_id, folder, handleOpenChange, refreshFiles, onUploadComplete, editor]);
+
+  const handleUploadRef = useRef(handleUpload);
+  useEffect(() => {
+    handleUploadRef.current = handleUpload;
+  }, [handleUpload]);
+
+  useEffect(() => {
+    if (autoStart && isOpen && files.length > 0 && !isUploading && account_id) {
+      handleUploadRef.current();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart, isOpen, files.length, isUploading, account_id]);
 
   const formatSize = (bytes: number) => {
     if (bytes === 0) return "0 Б";
@@ -188,8 +240,8 @@ export function UploadDialog({
   const getFilePreviewUrl = (id: string) => previewUrlsRef.current[id] || null;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="max-w-md border-white/10 bg-[#1e1126] text-white sm:rounded-xl">
         <DialogHeader>
           <DialogTitle>Загрузить файлы</DialogTitle>
@@ -303,7 +355,7 @@ export function UploadDialog({
             variant="outline"
             onClick={() => {
               if (isUploading) return;
-              setOpen(false);
+              handleOpenChange(false);
               setFiles([]);
               setProgress(0);
             }}

@@ -246,7 +246,7 @@ export function FilesBrowser({
       );
     }
 
-    if (useFilesApi) {
+    if (useFilesApi && !favorites) {
       if (currentFolder === null) {
         result = result.filter((file) => !file.folder || file.isFolder);
       } else {
