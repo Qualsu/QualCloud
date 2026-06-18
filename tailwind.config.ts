@@ -31,8 +31,8 @@ const config: Config = {
 				black: "171418"
 			},
 			purple: {
-				DEFAULT: "#A431FF",
-				light: "#D7A4FF",
+				DEFAULT: "#8B5CF6",
+				light: "#C4A5E8",
 				lightest: "#C5B5D1",
 				darklight: "#9F90AB",
 				dark: "#655D6B",

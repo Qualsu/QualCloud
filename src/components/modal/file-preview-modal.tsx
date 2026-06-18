@@ -44,7 +44,7 @@ import { FilePreview } from "@/app/dashboard/_components/file-preview";
 import { RenameDialog } from "@/components/dialog/rename-dialog";
 import { MoveToFolderDialog } from "@/components/dialog/move-to-folder-dialog";
 import { ConfirmDialog } from "@/components/dialog/confirm-dialog";
-import { formatExpiresIn, formatSize, isFileExpired } from "@/app/dashboard/_components/file-helpers";
+import { formatExpiresIn, formatSize, getFileFormatDisplay, isFileExpired } from "@/app/dashboard/_components/file-helpers";
 
 const copyTextToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text);
@@ -336,8 +336,8 @@ export function FilePreviewModal({
                         <div className="space-y-3 text-sm text-white/60">
                             <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
                                 <span className="text-white/40">Тип:</span>
-                                <span className="capitalize text-white/80">
-                                    {file.isFolder ? "Папка" : file.type}
+                                <span className="text-white/80">
+                                    {getFileFormatDisplay(file.name, file.type, file.isFolder)}
                                 </span>
                             </div>
 

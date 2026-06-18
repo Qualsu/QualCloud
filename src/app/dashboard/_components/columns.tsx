@@ -10,7 +10,7 @@ import type { FileDoc } from "@/config/types/components.types"
 import { typeIcons } from "@/config/const/components.const"
 import { api } from "../../../../convex/_generated/api"
 import { FileCardActions } from "./file-actions"
-import { formatExpiresIn } from "./file-helpers"
+import { formatExpiresIn, getFileFormatDisplay } from "./file-helpers"
 
 function UserCell({
   file,
@@ -94,10 +94,11 @@ function NameCell({
 }
 
 function TypeCell({ file }: { file: FileDoc }) {
+  const displayFormat = getFileFormatDisplay(file.name, file.type, file.isFolder);
   return (
     <div className="flex items-center gap-2 text-white/70">
       <span className="shrink-0 text-zinc-400">{typeIcons[file.type]}</span>
-      <span className="capitalize">{file.isFolder ? "Папка" : file.type}</span>
+      <span>{displayFormat}</span>
     </div>
   );
 }
