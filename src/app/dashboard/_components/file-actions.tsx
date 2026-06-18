@@ -31,6 +31,7 @@ import { useUser } from "@clerk/nextjs"
 import { RenameDialog } from "@/components/dialog/rename-dialog"
 import { MoveToFolderDialog } from "@/components/dialog/move-to-folder-dialog"
 import { ConfirmDialog } from "@/components/dialog/confirm-dialog"
+import { useCurrentOrg } from "@/components/hooks/use-current-org"
 import {
     addToFavorites,
     removeFromFavorites,
@@ -55,6 +56,7 @@ export function FileCardActions({
     onOpenFolder,
 }: FileCardProps) {
     const { user } = useUser();
+    const { isOrgAdmin } = useCurrentOrg();
     const origin = useOrigin()
     const [isRenameOpen, setIsRenameOpen] = useState(false);
     const [isMoveOpen, setIsMoveOpen] = useState(false);
@@ -63,6 +65,7 @@ export function FileCardActions({
     const [isConfirmLoading, setIsConfirmLoading] = useState(false);
     const isFolder = file.isFolder;
     const editor = getFilesEditor(user);
+    const canPermanentlyDelete = isOrgAdmin;
 
     const openLink = shrtl
         ? links.SHRTL.GET_LINK(file.fileId as string)
@@ -129,6 +132,11 @@ export function FileCardActions({
     };
 
     const handleDeletePermanently = async () => {
+        if (!canPermanentlyDelete) {
+            toast.error("Безвозвратное удаление может выполнить только администратор организации");
+            return;
+        }
+
         setIsConfirmLoading(true);
         try {
             await toast.promise(
@@ -157,6 +165,11 @@ export function FileCardActions({
     const folderDisplayName = file.displayName ?? file.name;
 
     const handleDeleteFolder = async () => {
+        if (!canPermanentlyDelete) {
+            toast.error("Удаление папки может выполнить только администратор организации");
+            return;
+        }
+
         try {
             await toast.promise(
                 deleteFolder(file.orgId, file.name, editor),
@@ -214,13 +227,17 @@ export function FileCardActions({
                         >
                             <Copy className="w-4 h-4" /> Копировать путь
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />
-                        <DropdownMenuItem
-                            className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
-                            onClick={handleDeleteFolder}
-                        >
-                            <Trash2 className="w-4 h-4" /> Удалить папку
-                        </DropdownMenuItem>
+                        {canPermanentlyDelete && (
+                            <>
+                                <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />
+                                <DropdownMenuItem
+                                    className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
+                                    onClick={handleDeleteFolder}
+                                >
+                                    <Trash2 className="w-4 h-4" /> Удалить папку
+                                </DropdownMenuItem>
+                            </>
+                        )}
                     </>
                 ) : (
                     <>
@@ -295,12 +312,14 @@ export function FileCardActions({
                                         >
                                             <RotateCcw className="w-4 h-4" /> Восстановить
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
-                                            onClick={() => setIsDeleteConfirmOpen(true)}
-                                        >
-                                            <Trash className="w-4 h-4" /> Удалить навсегда
-                                        </DropdownMenuItem>
+                                        {canPermanentlyDelete && (
+                                            <DropdownMenuItem
+                                                className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
+                                                onClick={() => setIsDeleteConfirmOpen(true)}
+                                            >
+                                                <Trash className="w-4 h-4" /> Удалить навсегда
+                                            </DropdownMenuItem>
+                                        )}
                                     </>
                                 ) : (
                                     <>

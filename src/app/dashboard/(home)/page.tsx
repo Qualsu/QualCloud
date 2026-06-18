@@ -1,6 +1,5 @@
 "use client";
 
-import { useUser, useOrganization } from "@clerk/nextjs";
 import { useEffect, useState, useCallback } from "react";
 import { pages } from "@/config/routing/pages.route";
 import type { FileDoc } from "@/config/types/components.types";
@@ -15,6 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
+import { useCurrentOrg } from "@/components/hooks/use-current-org";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFilesView } from "@/components/context/files-view-context";
@@ -73,16 +73,10 @@ function StatCard({
 
 export default function Home() {
   const [view, setView] = useFilesView();
-  const { user, isLoaded: userLoaded } = useUser();
-  const { organization, isLoaded: orgLoaded } = useOrganization();
+  const { orgId } = useCurrentOrg();
   const [stats, setStats] = useState<FilesUserStatsResponse | null>(null);
   const [recentFiles, setRecentFiles] = useState<FileDoc[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const orgId =
-    userLoaded && orgLoaded
-      ? (organization?.id ?? user?.id)
-      : undefined;
 
   useEffect(() => {
     if (!orgId) return;

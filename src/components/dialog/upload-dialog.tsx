@@ -8,6 +8,7 @@ import Image from "next/image";
 
 import { uploadFile, uploadMultipleFiles } from "@/app/api/files";
 import { getFilesEditor } from "@/lib/files-editor";
+import { useCurrentOrg } from "@/components/hooks/use-current-org";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -50,6 +51,7 @@ export function UploadDialog({
   autoStart = false,
 }: UploadDialogProps) {
   const { user } = useUser();
+  const currentOrg = useCurrentOrg();
   const { refreshFiles } = useFilesRefresh();
   const isOpenControlled = open !== undefined;
   const [internalOpen, setInternalOpen] = useState(open ?? false);
@@ -73,7 +75,7 @@ export function UploadDialog({
     [isOpenControlled, onOpenChange]
   );
 
-  const account_id = accountIdProp ?? user?.id;
+  const account_id = accountIdProp ?? currentOrg.orgId;
   const editor = getFilesEditor(user);
 
   useEffect(() => {

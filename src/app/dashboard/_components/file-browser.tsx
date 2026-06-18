@@ -1,6 +1,6 @@
 "use client";
 
-import { useOrganization, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { useQuery } from "convex/react";
@@ -14,6 +14,7 @@ import {
   emptyTrash,
   getUserStats,
 } from "@/app/api/files";
+import { useCurrentOrg } from "@/components/hooks/use-current-org";
 import {
   fileSortDirectionOptions,
   fileSortOptions,
@@ -85,7 +86,7 @@ export function FilesBrowser({
 }: FilesBrowserProps) {
   const searchParams = useSearchParams();
   const { setSuggestions } = useSearchSuggestions();
-  const organization = useOrganization();
+  const { orgId, isOrgAdmin } = useCurrentOrg();
   const user = useUser();
   const [type, setType] = useState<FileFilterType>("all");
   const [sort, setSort] = useState<FileSortKey>("date");
@@ -101,11 +102,6 @@ export function FilesBrowser({
   const [isClearing, setIsClearing] = useState(false);
   const [previewFile, setPreviewFile] = useState<FileDoc | null>(null);
   const query = searchParams.get("q")?.trim() ?? "";
-
-  let orgId: string | undefined;
-  if (organization.isLoaded && user.isLoaded) {
-    orgId = organization.organization?.id ?? user.user?.id;
-  }
 
   useSyncBackendUser(user.user?.id);
 
@@ -182,6 +178,11 @@ export function FilesBrowser({
 
   const handleEmptyTrash = async () => {
     if (!orgId) return;
+
+    if (!isOrgAdmin) {
+      toast.error("Очистку корзины может выполнить только администратор организации");
+      return;
+    }
 
     setIsClearing(true);
     try {
@@ -455,7 +456,7 @@ export function FilesBrowser({
           </div>
 
           <div className="flex flex-wrap items-end justify-end gap-3">
-            {deletedOnly && orgId && modifiedFiles.length > 0 && (
+            {deletedOnly && orgId && isOrgAdmin && modifiedFiles.length > 0 && (
               <AlertDialog open={isClearDialogOpen} onOpenChange={setIsClearDialogOpen}>
                 <AlertDialogTrigger asChild>
                   <button className="inline-flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/20 hover:text-red-300">

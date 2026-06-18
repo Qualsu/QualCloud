@@ -31,6 +31,7 @@ import {
     getLastEditorDisplayName,
     isClerkUserId,
 } from "@/lib/files-editor";
+import { useCurrentOrg } from "@/components/hooks/use-current-org";
 import { links } from "@/config/routing/links.route";
 import { pages } from "@/config/routing/pages.route";
 import { api } from "../../../convex/_generated/api";
@@ -80,12 +81,14 @@ export function FilePreviewModal({
     onOpenFolder,
 }: FilePreviewModalProps) {
     const { user } = useUser();
+    const { isOrgAdmin } = useCurrentOrg();
     const editor = getFilesEditor(user);
     const origin = useOrigin();
     const isFromApi = "_isFromApi" in file && file._isFromApi;
     const isApiSource = shrtl || notter || useFilesApi || isFromApi;
     const isFolder = file.isFolder;
     const expired = isFileExpired(file);
+    const canPermanentlyDelete = isOrgAdmin;
 
     const userProfile = useQuery(
         api.users.getUserProfile,
@@ -236,6 +239,11 @@ export function FilePreviewModal({
     };
 
     const handleDeletePermanently = async () => {
+        if (!canPermanentlyDelete) {
+            toast.error("Безвозвратное удаление может выполнить только администратор организации");
+            return;
+        }
+
         setIsConfirmLoading(true);
         try {
             await toast.promise(deleteFilePermanently(file._id as string), {
@@ -254,6 +262,11 @@ export function FilePreviewModal({
     const folderDisplayName = file.displayName ?? file.name;
 
     const handleDeleteFolder = async () => {
+        if (!canPermanentlyDelete) {
+            toast.error("Удаление папки может выполнить только администратор организации");
+            return;
+        }
+
         try {
             await toast.promise(deleteFolder(file.orgId, file.name, editor), {
                 loading: "Удаляем папку…",
@@ -430,13 +443,15 @@ export function FilePreviewModal({
                             {(isFolder || deletedOnly) && (
                                 <div className="flex flex-col gap-3 border-t border-white/10 pt-3">
                                     {isFolder ? (
-                                        <button
-                                            onClick={handleDeleteFolder}
-                                            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium md:py-2.5 text-red-400 transition-colors hover:bg-red-500/20"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                            Удалить папку
-                                        </button>
+                                        canPermanentlyDelete && (
+                                            <button
+                                                onClick={handleDeleteFolder}
+                                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium md:py-2.5 text-red-400 transition-colors hover:bg-red-500/20"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                                Удалить папку
+                                            </button>
+                                        )
                                     ) : (
                                         <>
                                             <button
@@ -446,13 +461,15 @@ export function FilePreviewModal({
                                                 <RotateCcw className="h-4 w-4" />
                                                 Восстановить
                                             </button>
-                                            <button
-                                                onClick={() => setIsDeleteConfirmOpen(true)}
-                                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium md:py-2.5 text-red-400 transition-colors hover:bg-red-500/20"
-                                            >
-                                                <Trash className="h-4 w-4" />
-                                                Удалить навсегда
-                                            </button>
+                                            {canPermanentlyDelete && (
+                                                <button
+                                                    onClick={() => setIsDeleteConfirmOpen(true)}
+                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium md:py-2.5 text-red-400 transition-colors hover:bg-red-500/20"
+                                                >
+                                                    <Trash className="h-4 w-4" />
+                                                    Удалить навсегда
+                                                </button>
+                                            )}
                                         </>
                                     )}
                                 </div>

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { FolderPlus, Loader2 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getFilesEditor } from "@/lib/files-editor";
+import { useCurrentOrg } from "@/components/hooks/use-current-org";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,12 +28,14 @@ interface CreateFolderDialogProps {
 }
 
 export function CreateFolderDialog({
-    account_id,
+    account_id: accountIdProp,
     parent,
     onCreated,
 }: CreateFolderDialogProps) {
     const { user } = useUser();
+    const currentOrg = useCurrentOrg();
     const editor = getFilesEditor(user);
+    const account_id = accountIdProp ?? currentOrg.orgId;
     const [open, setOpen] = useState(false);
   const [folderName, setFolderName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
