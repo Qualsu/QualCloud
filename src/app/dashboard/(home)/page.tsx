@@ -25,13 +25,13 @@ import { createColumns } from "../_components/columns";
 import { getUserStats, getRecentFiles } from "@/app/api/files";
 import { FilesUserStatsResponse } from "@/config/types/api.types";
 import { formatTimeRemaining } from "@/lib/utils";
+import { FILE_SIZE_LABELS } from "@/config/const/files.const";
 
 function formatSize(bytes: number): string {
   if (bytes === 0) return "0 Б";
   const k = 1024;
-  const sizes = ["Б", "КБ", "МБ", "ГБ"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${FILE_SIZE_LABELS[i]}`;
 }
 
 function formatDays(days: number): string {

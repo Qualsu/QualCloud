@@ -26,6 +26,11 @@ import {
 import { typeIcons } from "@/config/const/components.const";
 import type { FileDoc } from "@/config/types/components.types";
 import { useOrigin } from "@/components/hooks/use-origin";
+import {
+    getFilesEditor,
+    getLastEditorDisplayName,
+    isClerkUserId,
+} from "@/lib/files-editor";
 import { links } from "@/config/routing/links.route";
 import { pages } from "@/config/routing/pages.route";
 import { api } from "../../../convex/_generated/api";
@@ -75,6 +80,7 @@ export function FilePreviewModal({
     onOpenFolder,
 }: FilePreviewModalProps) {
     const { user } = useUser();
+    const editor = getFilesEditor(user);
     const origin = useOrigin();
     const isFromApi = "_isFromApi" in file && file._isFromApi;
     const isApiSource = shrtl || notter || useFilesApi || isFromApi;
@@ -128,25 +134,27 @@ export function FilePreviewModal({
         ? pages.FILE.COPY(origin, file.linkId || (file._id as string))
         : openLink;
 
-    const avatar = isFolder
-        ? user?.imageUrl
-        : shrtl
-        ? user?.imageUrl
-        : notter
-        ? file.avatar
-        : useFilesApi
-        ? user?.imageUrl
-        : userProfile?.image;
+    let avatar: string | undefined;
+    let username: string | undefined;
 
-    const username = isFolder
-        ? (file.updatedBy ?? "Папка")
-        : shrtl
-        ? user?.username
-        : notter
-        ? file.username
-        : useFilesApi
-        ? (user?.username ?? user?.fullName ?? "Вы")
-        : userProfile?.name;
+    if (shrtl) {
+        avatar = user?.imageUrl ?? undefined;
+        username = user?.username ?? undefined;
+    } else if (notter) {
+        avatar = file.avatar;
+        username = file.username;
+    } else if (useFilesApi || isFolder) {
+        const lastEditorIsRawId = isClerkUserId(file.lastEditorUsername);
+        avatar =
+            file.lastEditorAvatar ??
+            (lastEditorIsRawId ? user?.imageUrl : undefined) ??
+            user?.imageUrl ??
+            undefined;
+        username = getLastEditorDisplayName(file.lastEditorUsername, user);
+    } else {
+        avatar = userProfile?.image;
+        username = userProfile?.name;
+    }
 
     const displayName = file.displayName?.trim() || file.name?.trim() || "Без названия";
 
@@ -188,8 +196,8 @@ export function FilePreviewModal({
         if (!canFavorite) return;
         try {
             const promise = file.isFavorited
-                ? removeFromFavorites(file._id as string)
-                : addToFavorites(file._id as string);
+                ? removeFromFavorites(file._id as string, editor)
+                : addToFavorites(file._id as string, editor);
             await toast.promise(promise, {
                 loading: file.isFavorited ? "Убираем из избранного…" : "Добавляем в избранное…",
                 success: file.isFavorited ? "Убрано из избранного" : "Добавлено в избранное",
@@ -202,7 +210,7 @@ export function FilePreviewModal({
     const handleMoveToTrash = async () => {
         setIsConfirmLoading(true);
         try {
-            await toast.promise(moveToTrash(file._id as string), {
+            await toast.promise(moveToTrash(file._id as string, editor), {
                 loading: "Перемещаем в корзину…",
                 success: "Перемещено в корзину",
                 error: "Не удалось переместить в корзину",
@@ -217,7 +225,7 @@ export function FilePreviewModal({
 
     const handleRestore = async () => {
         try {
-            await toast.promise(restoreFromTrash(file._id as string), {
+            await toast.promise(restoreFromTrash(file._id as string, editor), {
                 loading: "Восстанавливаем…",
                 success: "Файл восстановлен",
                 error: "Не удалось восстановить файл",
@@ -247,7 +255,7 @@ export function FilePreviewModal({
 
     const handleDeleteFolder = async () => {
         try {
-            await toast.promise(deleteFolder(file.orgId, file.name), {
+            await toast.promise(deleteFolder(file.orgId, file.name, editor), {
                 loading: "Удаляем папку…",
                 success: `Папка «${folderDisplayName}» удалена`,
                 error: "Не удалось удалить папку",

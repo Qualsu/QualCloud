@@ -16,6 +16,7 @@ import Link from "next/link"
 import { links } from "@/config/routing/links.route"
 import { FileType } from "@/config/types/components.types"
 import { FilesFileResponse } from "@/config/types/api.types"
+import { FILE_SIZE_LABELS } from "@/config/const/files.const"
 
 type ConvexFile = Doc<"files">;
 type ApiFile = FilesFileResponse;
@@ -31,9 +32,8 @@ type FileView = {
 function formatSize(bytes: number): string {
   if (bytes === 0) return "0 Б";
   const k = 1024;
-  const sizes = ["Б", "КБ", "МБ", "ГБ"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${FILE_SIZE_LABELS[i]}`;
 }
 
 export default function File() {

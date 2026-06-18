@@ -10,6 +10,8 @@ export type FileDoc = Omit<Doc<"files">, "type"> & {
   isFavorited?: boolean;
   avatar?: string;
   username?: string;
+  lastEditorUsername?: string | null;
+  lastEditorAvatar?: string | null;
   noteId?: string;
   fileUrl?: string;
   fileSize?: number;

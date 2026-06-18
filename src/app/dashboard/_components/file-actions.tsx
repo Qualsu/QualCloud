@@ -21,11 +21,13 @@ import {
 import { pages } from "@/config/routing/pages.route"
 import type { FileCardProps } from "@/config/types/components.types"
 import { useOrigin } from "../../../components/hooks/use-origin"
+import { getFilesEditor } from "@/lib/files-editor"
 import { toast } from "@/lib/toast"
 import { useState } from "react"
 import { links } from "@/config/routing/links.route"
 import { DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu"
 import { isFileExpired } from "./file-helpers"
+import { useUser } from "@clerk/nextjs"
 import { RenameDialog } from "@/components/dialog/rename-dialog"
 import { MoveToFolderDialog } from "@/components/dialog/move-to-folder-dialog"
 import { ConfirmDialog } from "@/components/dialog/confirm-dialog"
@@ -52,6 +54,7 @@ export function FileCardActions({
     onRefresh,
     onOpenFolder,
 }: FileCardProps) {
+    const { user } = useUser();
     const origin = useOrigin()
     const [isRenameOpen, setIsRenameOpen] = useState(false);
     const [isMoveOpen, setIsMoveOpen] = useState(false);
@@ -59,6 +62,7 @@ export function FileCardActions({
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [isConfirmLoading, setIsConfirmLoading] = useState(false);
     const isFolder = file.isFolder;
+    const editor = getFilesEditor(user);
 
     const openLink = shrtl
         ? links.SHRTL.GET_LINK(file.fileId as string)
@@ -81,8 +85,8 @@ export function FileCardActions({
     const handleToggleFavorite = async () => {
         try {
             const promise = file.isFavorited
-                ? removeFromFavorites(file._id as string)
-                : addToFavorites(file._id as string);
+                ? removeFromFavorites(file._id as string, editor)
+                : addToFavorites(file._id as string, editor);
             await toast.promise(promise, {
                 loading: file.isFavorited ? "Убираем из избранного…" : "Добавляем в избранное…",
                 success: file.isFavorited ? "Убрано из избранного" : "Добавлено в избранное",
@@ -96,7 +100,7 @@ export function FileCardActions({
         setIsConfirmLoading(true);
         try {
             await toast.promise(
-                moveToTrash(file._id as string),
+                moveToTrash(file._id as string, editor),
                 {
                     loading: "Перемещаем в корзину…",
                     success: "Перемещено в корзину",
@@ -113,7 +117,7 @@ export function FileCardActions({
     const handleRestore = async () => {
         try {
             await toast.promise(
-                restoreFromTrash(file._id as string),
+                restoreFromTrash(file._id as string, editor),
                 {
                     loading: "Восстанавливаем…",
                     success: "Файл восстановлен",
@@ -155,7 +159,7 @@ export function FileCardActions({
     const handleDeleteFolder = async () => {
         try {
             await toast.promise(
-                deleteFolder(file.orgId, file.name),
+                deleteFolder(file.orgId, file.name, editor),
                 {
                     loading: "Удаляем папку…",
                     success: `Папка «${folderDisplayName}» удалена`,

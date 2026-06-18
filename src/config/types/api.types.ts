@@ -20,12 +20,18 @@ export interface NotterFileResponse {
   created: string;
 }
 
+export interface FilesLastEditor {
+  username?: string | null;
+  avatar_url?: string | null;
+}
+
 export interface FilesFolderItem {
   type: "folder";
   name: string;
   created_at: string;
   updated_at?: string | null;
   updated_by?: string | null;
+  last_editor?: FilesLastEditor | null;
 }
 
 export interface FilesFileResponse {
@@ -42,6 +48,7 @@ export interface FilesFileResponse {
   uploaded_at?: string;
   updated_at?: string | null;
   updated_by?: string | null;
+  last_editor?: FilesLastEditor | null;
   file_url?: string;
 }
 
@@ -68,47 +75,52 @@ export interface FilesUploadResponse {
   url?: string;
 }
 
-export interface FilesMoveBody {
+export interface FilesEditorBody {
+  updated_by?: string | null;
+  updated_by_avatar?: string | null;
+}
+
+export interface FilesMoveBody extends FilesEditorBody {
   file_id: string;
   folder?: string | null;
 }
 
-export interface FilesFavoriteBody {
+export interface FilesFavoriteBody extends FilesEditorBody {
   file_id: string;
 }
 
-export interface FilesTrashBody {
+export interface FilesTrashBody extends FilesEditorBody {
   file_id: string;
 }
 
-export interface FilesRestoreBody {
+export interface FilesRestoreBody extends FilesEditorBody {
   file_id: string;
 }
 
-export interface FilesFolderCreateBody {
+export interface FilesFolderCreateBody extends FilesEditorBody {
   account_id: string;
   name: string;
   parent?: string | null;
 }
 
-export interface FilesFolderRenameBody {
+export interface FilesFolderRenameBody extends FilesEditorBody {
   account_id: string;
   old_name: string;
   new_name: string;
 }
 
-export interface FilesFolderMoveBody {
+export interface FilesFolderMoveBody extends FilesEditorBody {
   account_id: string;
   name: string;
   parent?: string | null;
 }
 
-export interface FilesFolderDeleteBody {
+export interface FilesFolderDeleteBody extends FilesEditorBody {
   account_id: string;
   name: string;
 }
 
-export interface FilesRenameBody {
+export interface FilesRenameBody extends FilesEditorBody {
   file_id: string;
   file_name: string;
 }

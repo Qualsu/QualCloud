@@ -26,6 +26,8 @@ export const api = {
         FOLDER_RENAME: "/files/folder/rename",
         FOLDER_MOVE: "/files/folder/move",
         EMPTY_TRASH: (account_id: string) => `/files/empty-trash/${account_id}`,
-        USER_STATS: (account_id: string) => `/users/stats/${account_id}`
+        USER_STATS: (account_id: string) => `/users/stats/${account_id}`,
+        USER_SET_USERNAME: (account_id: string) => `/users/${account_id}/username`,
+        USER_SET_AVATAR: (account_id: string) => `/users/${account_id}/avatar`,
     }
 }

@@ -33,6 +33,7 @@ import { useFilesView } from "@/components/context/files-view-context";
 import { formatTimeRemaining } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import { useFilesRefresh } from "@/components/context/files-refresh-context";
+import { useSyncBackendUser } from "@/components/hooks/use-sync-backend-user";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
@@ -105,6 +106,8 @@ export function FilesBrowser({
   if (organization.isLoaded && user.isLoaded) {
     orgId = organization.organization?.id ?? user.user?.id;
   }
+
+  useSyncBackendUser(user.user?.id);
 
   const useFilesApi = !shrtl && !notter && !kenycloud;
 

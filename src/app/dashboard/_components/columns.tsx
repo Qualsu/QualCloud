@@ -10,7 +10,14 @@ import type { FileDoc } from "@/config/types/components.types"
 import { typeIcons } from "@/config/const/components.const"
 import { api } from "../../../../convex/_generated/api"
 import { FileCardActions } from "./file-actions"
-import { formatExpiresIn, getFileFormatDisplay } from "./file-helpers"
+import {
+  formatExpiresIn,
+  getFileFormatDisplay,
+} from "./file-helpers"
+import {
+  getLastEditorDisplayName,
+  isClerkUserId,
+} from "@/lib/files-editor"
 
 function UserCell({
   file,
@@ -31,21 +38,27 @@ function UserCell({
     !isApiSource ? { userId: file.userId } : "skip"
   );
 
-  if (file.isFolder) {
-    return <div className="text-white/50">{file.updatedBy ?? "—"}</div>;
+  let avatar: string | undefined;
+  let username: string | undefined;
+
+  if (shrtl) {
+    avatar = user?.imageUrl ?? undefined;
+    username = user?.username ?? undefined;
+  } else if (notter) {
+    avatar = file.avatar;
+    username = file.username;
+  } else if (useFilesApi || file.isFolder) {
+    const lastEditorIsRawId = isClerkUserId(file.lastEditorUsername);
+    avatar =
+      file.lastEditorAvatar ??
+      (lastEditorIsRawId ? user?.imageUrl : undefined) ??
+      user?.imageUrl ??
+      undefined;
+    username = getLastEditorDisplayName(file.lastEditorUsername, user);
+  } else {
+    avatar = userProfile?.image;
+    username = userProfile?.name;
   }
-
-  const avatar = shrtl || useFilesApi
-    ? user?.imageUrl
-    : notter
-    ? file.avatar
-    : userProfile?.image;
-
-  const username = shrtl || useFilesApi
-    ? (user?.username ?? user?.fullName ?? "Вы")
-    : notter
-    ? file.username
-    : userProfile?.name;
 
   return (
     <div className="flex items-center gap-2 text-white/50">

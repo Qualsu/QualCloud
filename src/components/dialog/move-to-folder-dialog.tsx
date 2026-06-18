@@ -1,8 +1,10 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { Loader2, FolderInput } from "lucide-react";
 import { toast } from "@/lib/toast";
+import { getFilesEditor } from "@/lib/files-editor";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,15 +29,17 @@ interface MoveToFolderDialogProps {
 }
 
 export function MoveToFolderDialog({
-  file,
-  currentFolder,
-  open,
-  onOpenChange,
-  onMoved,
+    file,
+    currentFolder,
+    open,
+    onOpenChange,
+    onMoved,
 }: MoveToFolderDialogProps) {
-  const [selectedPath, setSelectedPath] = useState<string>(
-    currentFolder ?? "/"
-  );
+    const { user } = useUser();
+    const editor = getFilesEditor(user);
+    const [selectedPath, setSelectedPath] = useState<string>(
+        currentFolder ?? "/"
+    );
   const [isLoading, setIsLoading] = useState(false);
   const isFolder = file.isFolder;
 
@@ -57,8 +61,8 @@ export function MoveToFolderDialog({
     setIsLoading(true);
     try {
       const promise = isFolder
-        ? moveFolder(file.orgId, file.name, targetFolder)
-        : moveFile(file._id as string, targetFolder);
+        ? moveFolder(file.orgId, file.name, targetFolder, editor)
+        : moveFile(file._id as string, targetFolder, editor);
 
       await toast.promise(promise, {
         loading: isFolder ? "Перемещаем папку…" : "Перемещаем файл…",

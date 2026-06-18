@@ -22,6 +22,18 @@ import { FileDoc } from "@/config/types/components.types";
 import { Id } from "../../../convex/_generated/dataModel";
 import { getMimeType } from "./utils/get-mime";
 
+export interface FilesApiEditor {
+  username?: string;
+  avatar_url?: string;
+}
+
+function editorBody(editor?: FilesApiEditor) {
+  return {
+    updated_by: editor?.username,
+    updated_by_avatar: editor?.avatar_url,
+  };
+}
+
 function mapFile(file: FilesFileResponse, fallbackAccountId?: string): FileDoc {
   const accountId = file.account_id ?? fallbackAccountId ?? "";
   const deterministicId = `files_${accountId}` as unknown as Id<"users">;
@@ -45,6 +57,8 @@ function mapFile(file: FilesFileResponse, fallbackAccountId?: string): FileDoc {
     fileSize: file.file_size,
     folder: file.folder ?? null,
     updatedBy: file.updated_by,
+    lastEditorUsername: file.last_editor?.username,
+    lastEditorAvatar: file.last_editor?.avatar_url,
     updatedAt: file.updated_at
       ? new Date(file.updated_at).getTime()
       : file.uploaded_at
@@ -82,6 +96,8 @@ function mapFolder(
     isFolder: true,
     folder: currentFolder ?? null,
     updatedBy: folder.updated_by,
+    lastEditorUsername: folder.last_editor?.username,
+    lastEditorAvatar: folder.last_editor?.avatar_url,
     updatedAt: folder.updated_at
       ? new Date(folder.updated_at).getTime()
       : folder.created_at
@@ -126,13 +142,20 @@ export async function getAllFiles(
 export async function uploadFile(
   account_id: string,
   file: File,
-  folder?: string | null
+  folder?: string | null,
+  editor?: FilesApiEditor
 ): Promise<FilesUploadResponse> {
   const formData = new FormData();
   formData.append("account_id", account_id);
   formData.append("file", file);
   if (folder !== undefined && folder !== null) {
     formData.append("folder", folder);
+  }
+  if (editor?.username !== undefined) {
+    formData.append("updated_by", editor.username);
+  }
+  if (editor?.avatar_url !== undefined) {
+    formData.append("updated_by_avatar", editor.avatar_url);
   }
 
   const res = await files.post(api.FILES.UPLOAD, formData, {
@@ -147,13 +170,20 @@ export async function uploadFile(
 export async function uploadMultipleFiles(
   account_id: string,
   filesList: File[],
-  folder?: string | null
+  folder?: string | null,
+  editor?: FilesApiEditor
 ): Promise<FilesUploadResponse[]> {
   const formData = new FormData();
   formData.append("account_id", account_id);
   filesList.forEach((file) => formData.append("files", file));
   if (folder !== undefined && folder !== null) {
     formData.append("folder", folder);
+  }
+  if (editor?.username !== undefined) {
+    formData.append("updated_by", editor.username);
+  }
+  if (editor?.avatar_url !== undefined) {
+    formData.append("updated_by_avatar", editor.avatar_url);
   }
 
   const res = await files.post(api.FILES.UPLOAD_MULTIPLE, formData, {
@@ -186,42 +216,56 @@ export async function downloadFile(file_id: string): Promise<Blob> {
 
 export async function moveFile(
   file_id: string,
-  folder?: string | null
+  folder?: string | null,
+  editor?: FilesApiEditor
 ): Promise<unknown> {
-  const body: FilesMoveBody = { file_id, folder };
+  const body: FilesMoveBody = { file_id, folder, ...editorBody(editor) };
   const res = await files.post(api.FILES.MOVE, body);
   return res.data;
 }
 
 export async function renameFile(
   file_id: string,
-  file_name: string
+  file_name: string,
+  editor?: FilesApiEditor
 ): Promise<FilesFileResponse> {
-  const body: FilesRenameBody = { file_id, file_name };
+  const body: FilesRenameBody = { file_id, file_name, ...editorBody(editor) };
   const res = await files.post(api.FILES.RENAME, body);
   return res.data;
 }
 
-export async function addToFavorites(file_id: string): Promise<unknown> {
-  const body: FilesFavoriteBody = { file_id };
+export async function addToFavorites(
+  file_id: string,
+  editor?: FilesApiEditor
+): Promise<unknown> {
+  const body: FilesFavoriteBody = { file_id, ...editorBody(editor) };
   const res = await files.post(api.FILES.FAVORITE, body);
   return res.data;
 }
 
-export async function removeFromFavorites(file_id: string): Promise<unknown> {
-  const body: FilesFavoriteBody = { file_id };
+export async function removeFromFavorites(
+  file_id: string,
+  editor?: FilesApiEditor
+): Promise<unknown> {
+  const body: FilesFavoriteBody = { file_id, ...editorBody(editor) };
   const res = await files.delete(api.FILES.FAVORITE, { data: body });
   return res.data;
 }
 
-export async function moveToTrash(file_id: string): Promise<unknown> {
-  const body: FilesTrashBody = { file_id };
+export async function moveToTrash(
+  file_id: string,
+  editor?: FilesApiEditor
+): Promise<unknown> {
+  const body: FilesTrashBody = { file_id, ...editorBody(editor) };
   const res = await files.post(api.FILES.TRASH, body);
   return res.data;
 }
 
-export async function restoreFromTrash(file_id: string): Promise<unknown> {
-  const body: FilesRestoreBody = { file_id };
+export async function restoreFromTrash(
+  file_id: string,
+  editor?: FilesApiEditor
+): Promise<unknown> {
+  const body: FilesRestoreBody = { file_id, ...editorBody(editor) };
   const res = await files.post(api.FILES.RESTORE, body);
   return res.data;
 }
@@ -234,9 +278,15 @@ export async function deleteFilePermanently(file_id: string): Promise<unknown> {
 export async function createFolder(
   account_id: string,
   name: string,
-  parent?: string | null
+  parent?: string | null,
+  editor?: FilesApiEditor
 ): Promise<unknown> {
-  const body: FilesFolderCreateBody = { account_id, name, parent };
+  const body: FilesFolderCreateBody = {
+    account_id,
+    name,
+    parent,
+    ...editorBody(editor),
+  };
   const res = await files.post(api.FILES.FOLDER, body);
   return res.data;
 }
@@ -244,9 +294,15 @@ export async function createFolder(
 export async function renameFolder(
   account_id: string,
   old_name: string,
-  new_name: string
+  new_name: string,
+  editor?: FilesApiEditor
 ): Promise<unknown> {
-  const body: FilesFolderRenameBody = { account_id, old_name, new_name };
+  const body: FilesFolderRenameBody = {
+    account_id,
+    old_name,
+    new_name,
+    ...editorBody(editor),
+  };
   const res = await files.post(api.FILES.FOLDER_RENAME, body);
   return res.data;
 }
@@ -254,18 +310,29 @@ export async function renameFolder(
 export async function moveFolder(
   account_id: string,
   name: string,
-  parent?: string | null
+  parent?: string | null,
+  editor?: FilesApiEditor
 ): Promise<unknown> {
-  const body: FilesFolderMoveBody = { account_id, name, parent };
+  const body: FilesFolderMoveBody = {
+    account_id,
+    name,
+    parent,
+    ...editorBody(editor),
+  };
   const res = await files.post(api.FILES.FOLDER_MOVE, body);
   return res.data;
 }
 
 export async function deleteFolder(
   account_id: string,
-  name: string
+  name: string,
+  editor?: FilesApiEditor
 ): Promise<unknown> {
-  const body: FilesFolderDeleteBody = { account_id, name };
+  const body: FilesFolderDeleteBody = {
+    account_id,
+    name,
+    ...editorBody(editor),
+  };
   const res = await files.delete(api.FILES.FOLDER, { data: body });
   return res.data;
 }

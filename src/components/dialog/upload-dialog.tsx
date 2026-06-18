@@ -7,6 +7,7 @@ import { toast } from "@/lib/toast";
 import Image from "next/image";
 
 import { uploadFile, uploadMultipleFiles } from "@/app/api/files";
+import { getFilesEditor } from "@/lib/files-editor";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useFilesRefresh } from "@/components/context/files-refresh-context";
 import { FolderTree } from "@/app/dashboard/_components/folder-tree";
+import { FILE_SIZE_LABELS } from "@/config/const/files.const";
 
 interface UploadFile {
   id: string;
@@ -51,6 +53,7 @@ export function UploadDialog({
   const previewUrlsRef = useRef<Record<string, string>>({});
 
   const account_id = accountIdProp ?? user?.id;
+  const editor = getFilesEditor(user);
 
   useEffect(() => {
     return () => {
@@ -147,12 +150,13 @@ export function UploadDialog({
 
     try {
       if (files.length === 1) {
-        await uploadFile(account_id, files[0].file, targetFolder);
+        await uploadFile(account_id, files[0].file, targetFolder, editor);
       } else {
         await uploadMultipleFiles(
           account_id,
           files.map((item) => item.file),
-          targetFolder
+          targetFolder,
+          editor
         );
       }
 
@@ -172,14 +176,13 @@ export function UploadDialog({
       clearInterval(progressInterval);
       setIsUploading(false);
     }
-  }, [files, account_id, folder, resetUpload, refreshFiles, onUploadComplete]);
+  }, [files, account_id, folder, resetUpload, refreshFiles, onUploadComplete, editor]);
 
   const formatSize = (bytes: number) => {
     if (bytes === 0) return "0 Б";
     const k = 1024;
-    const sizes = ["Б", "КБ", "МБ", "ГБ"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${FILE_SIZE_LABELS[i]}`;
   };
 
   const getFilePreviewUrl = (id: string) => previewUrlsRef.current[id] || null;

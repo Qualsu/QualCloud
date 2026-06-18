@@ -1,8 +1,10 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { Loader2, Pencil } from "lucide-react";
 import { toast } from "@/lib/toast";
+import { getFilesEditor } from "@/lib/files-editor";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,12 +28,14 @@ interface RenameDialogProps {
 }
 
 export function RenameDialog({
-  file,
-  open,
-  onOpenChange,
-  onRenamed,
+    file,
+    open,
+    onOpenChange,
+    onRenamed,
 }: RenameDialogProps) {
-  const isFolder = file.isFolder;
+    const { user } = useUser();
+    const editor = getFilesEditor(user);
+    const isFolder = file.isFolder;
   const originalName = isFolder
     ? file.displayName ?? file.name ?? ""
     : file.name ?? "";
@@ -65,9 +69,9 @@ export function RenameDialog({
 
     setIsLoading(true);
     try {
-      const promise = isFolder
-        ? renameFolder(file.orgId, file.name, targetName)
-        : renameFile(file._id as string, trimmed);
+        const promise = isFolder
+            ? renameFolder(file.orgId, file.name, targetName, editor)
+            : renameFile(file._id as string, trimmed, editor);
 
       await toast.promise(promise, {
         loading: isFolder ? "Переименовываем папку…" : "Переименовываем файл…",

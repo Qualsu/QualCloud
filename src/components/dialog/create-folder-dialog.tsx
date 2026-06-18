@@ -1,8 +1,10 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { FolderPlus, Loader2 } from "lucide-react";
 import { toast } from "@/lib/toast";
+import { getFilesEditor } from "@/lib/files-editor";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,11 +27,13 @@ interface CreateFolderDialogProps {
 }
 
 export function CreateFolderDialog({
-  account_id,
-  parent,
-  onCreated,
+    account_id,
+    parent,
+    onCreated,
 }: CreateFolderDialogProps) {
-  const [open, setOpen] = useState(false);
+    const { user } = useUser();
+    const editor = getFilesEditor(user);
+    const [open, setOpen] = useState(false);
   const [folderName, setFolderName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -40,7 +44,7 @@ export function CreateFolderDialog({
     setIsLoading(true);
     try {
       await toast.promise(
-        createFolder(account_id, trimmed, parent ?? null),
+        createFolder(account_id, trimmed, parent ?? null, editor),
         {
           loading: "Создание папки…",
           success: `Папка «${trimmed}» создана`,

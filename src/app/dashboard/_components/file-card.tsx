@@ -16,6 +16,7 @@ import { links } from "@/config/routing/links.route"
 import { Id } from "../../../../convex/_generated/dataModel"
 import { useUser } from "@clerk/nextjs"
 import { addToFavorites, removeFromFavorites } from "@/app/api/files"
+import { getFilesEditor, getLastEditorDisplayName, isClerkUserId } from "@/lib/files-editor"
 import { toast } from "@/lib/toast"
 import { FilePreview } from "./file-preview"
 import { FilePreviewModal } from "@/components/modal/file-preview-modal"
@@ -82,25 +83,27 @@ export function FileCard({
         ? (file.fileUrl ?? links.FILES.GET_FILE(file.fileId as string))
         : links.KENYCLOUD.GET_FILE(file.fileId as Id<"_storage">);
 
-    const avatar = isFolder
-        ? user?.imageUrl
-        : shrtl
-        ? user?.imageUrl
-        : notter
-        ? file.avatar
-        : useFilesApi
-        ? user?.imageUrl
-        : userProfile?.image
+    let avatar: string | undefined;
+    let username: string | undefined;
 
-    const username = isFolder
-        ? (file.updatedBy ?? "Папка")
-        : shrtl
-        ? user?.username
-        : notter
-        ? file.username
-        : useFilesApi
-        ? (user?.username ?? user?.fullName ?? "Вы")
-        : userProfile?.name
+    if (shrtl) {
+        avatar = user?.imageUrl ?? undefined;
+        username = user?.username ?? undefined;
+    } else if (notter) {
+        avatar = file.avatar;
+        username = file.username;
+    } else if (useFilesApi || isFolder) {
+        const lastEditorIsRawId = isClerkUserId(file.lastEditorUsername);
+        avatar =
+            file.lastEditorAvatar ??
+            (lastEditorIsRawId ? user?.imageUrl : undefined) ??
+            user?.imageUrl ??
+            undefined;
+        username = getLastEditorDisplayName(file.lastEditorUsername, user);
+    } else {
+        avatar = userProfile?.image;
+        username = userProfile?.name;
+    }
 
     const displayName = file.displayName?.trim() || file.name?.trim() || "Без названия";
     const canFavorite = useFilesApi && !isFolder && !deletedOnly && !isFileExpired(file);
@@ -124,9 +127,10 @@ export function FileCard({
     const handleToggleFavorite = async (e: React.MouseEvent) => {
         e.stopPropagation();
         try {
+            const editor = getFilesEditor(user);
             const promise = file.isFavorited
-                ? removeFromFavorites(file._id as string)
-                : addToFavorites(file._id as string);
+                ? removeFromFavorites(file._id as string, editor)
+                : addToFavorites(file._id as string, editor);
             await toast.promise(promise, {
                 loading: file.isFavorited ? "Убираем из избранного…" : "Добавляем в избранное…",
                 success: file.isFavorited ? "Убрано из избранного" : "Добавлено в избранное",
@@ -191,9 +195,9 @@ export function FileCard({
                 <div className="flex items-center gap-2 text-white/50 text-xs">
                     <Avatar className="w-6 h-6">
                         <AvatarImage src={avatar} />
-                        <AvatarFallback className="text-xs bg-white/10 text-white/60">
-                            {userProfile?.name?.charAt(0) ?? "?"}
-                        </AvatarFallback>
+                    <AvatarFallback className="text-xs bg-white/10 text-white/60">
+                        {username?.charAt(0) ?? "?"}
+                    </AvatarFallback>
                     </Avatar>
                     <span>{username}</span>
                 </div>
