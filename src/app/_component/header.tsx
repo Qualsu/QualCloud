@@ -1,6 +1,6 @@
 "use client";
 
-import { OrganizationSwitcher, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { useConvexAuth } from "convex/react";
 import { Loader2, Menu } from "lucide-react";
 import Link from "next/link";
@@ -54,7 +54,7 @@ export function Header({ showMobileMenuButton, showSearch }: HeaderProps) {
                 </div>
 
                 {shouldShowSearch && (
-                    <div className="flex flex-1 justify-center lg:order-none lg:w-auto">
+                    <div className="flex flex-1 justify-center md:absolute md:left-1/2 md:-translate-x-1/2 md:w-auto md:max-w-xs">
                         <SearchBar syncWithUrl />
                     </div>
                 )}
@@ -63,16 +63,6 @@ export function Header({ showMobileMenuButton, showSearch }: HeaderProps) {
                     <Loader2 className="animate-spin text-white/60" size={20} />
                 ) : (
                     <div className="flex min-w-fit items-center gap-2">
-                        <div className="hidden md:flex">
-                            <OrganizationSwitcher
-                                appearance={{
-                                    elements: {
-                                        rootBox: "text-white",
-                                        organizationSwitcherTrigger: `text-white/80 hover:text-white hover:bg-white/10 rounded-xl px-3 py-2 ${pathname === "/" && "hidden"}`,
-                                    }
-                                }}
-                            />
-                        </div>
                         <div className="flex items-center gap-2">
                             <UserButton
                                 appearance={{

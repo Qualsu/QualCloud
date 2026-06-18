@@ -163,9 +163,9 @@ export function FolderTree({
             )}
           >
             {selected ? (
-              <FolderOpen className="h-4 w-4 shrink-0 text-yellow-400" />
+              <FolderOpen className="h-4 w-4 shrink-0 text-purple" />
             ) : (
-              <Folder className="h-4 w-4 shrink-0 text-yellow-400" />
+              <Folder className="h-4 w-4 shrink-0" />
             )}
             <span className="truncate">{name}</span>
           </button>

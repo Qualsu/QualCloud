@@ -85,7 +85,7 @@ function NameCell({
         className="flex items-center gap-2 font-medium text-white/80 transition-colors hover:text-white"
         title={displayName}
       >
-        <span className="shrink-0 text-yellow-400">{typeIcons.folder}</span>
+        <span className="shrink-0 text-zinc-400">{typeIcons.folder}</span>
         <span>{displayName}</span>
       </button>
     );

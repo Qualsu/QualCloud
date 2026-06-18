@@ -104,8 +104,19 @@ export function SideNav() {
 
   return (
     <nav>
-      <aside className="hidden w-60 shrink-0 md:flex md:flex-col md:pt-1">
+      <aside className="hidden w-60 shrink-0 md:fixed md:top-[7.5rem] md:left-6 lg:left-8 xl:left-10 md:flex md:flex-col md:h-[calc(100vh-7.5rem)] md:pt-1">
         <NavContent />
+        <div className="mt-auto border-t border-white/10 px-2 pt-3 mb-3">
+          <OrganizationSwitcher
+            appearance={{
+              elements: {
+                rootBox: "w-full",
+                organizationSwitcherTrigger:
+                  "w-full justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white/80 hover:bg-white/[0.08] hover:text-white",
+              },
+            }}
+          />
+        </div>
       </aside>
 
       <div className="md:hidden">
@@ -145,7 +156,7 @@ export function SideNav() {
 
             <NavContent onClick={close} />
 
-            <div className="mt-auto border-t border-white/10 px-2 pt-3">
+            <div className="mt-auto mb-3 border-t border-white/10 px-2 pt-3">
               <OrganizationSwitcher
                 appearance={{
                   elements: {

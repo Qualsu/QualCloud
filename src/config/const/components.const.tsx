@@ -97,7 +97,7 @@ export const landingFeatureCards = [
 ] as const;
 
 export const typeIcons: Record<FileType, ReactNode> = {
-    folder: <Folder className="text-yellow-400" />,
+    folder: <Folder />,
     image: <ImageIcon />,
     imageother: <ImageIcon />,
     presentation: <PresentationIcon />,

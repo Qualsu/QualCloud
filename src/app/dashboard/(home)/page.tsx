@@ -10,6 +10,7 @@ import {
   Heart,
   LayoutGrid,
   Loader2,
+  PackageOpen,
   Table as TableIcon,
   Trash2,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFilesView } from "../_components/files-view-context";
 import { DataTable } from "../_components/file-table";
 import { FileCard } from "../_components/file-card";
+import { Placeholder } from "../_components/file-browser";
 import { createColumns } from "../_components/columns";
 import { getUserStats, getRecentFiles } from "@/app/api/files";
 import { FilesUserStatsResponse } from "@/config/types/api.types";
@@ -33,7 +35,7 @@ function formatSize(bytes: number): string {
 }
 
 function formatDays(days: number): string {
-  return `${days.toFixed(1)} д.`;
+  return `${parseFloat(days.toFixed(1))} д.`;
 }
 
 function StatCard({
@@ -127,7 +129,7 @@ export default function Home() {
       value: stats ? formatSize(occupiedSize) : "—",
       hint: stats?.limit_size
         ? `из ${formatSize(stats.limit_size)} (${
-            ((occupiedSize / stats.limit_size) * 100).toFixed(1)
+            parseFloat(((occupiedSize / stats.limit_size) * 100).toFixed(1))
           }%), корзина ${formatSize(stats.trash_size ?? 0)}`
         : `облачное хранилище, корзина ${formatSize(
             stats?.trash_size ?? 0
@@ -216,16 +218,20 @@ export default function Home() {
           </div>
 
           <TabsContent value="grid" className="mt-5">
-            <div className="mr-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {recentFiles.map((file) => (
-                <FileCard
-                  key={file._id}
-                  file={file}
-                  useFilesApi
-                  onRefresh={refreshRecentFiles}
-                />
-              ))}
-            </div>
+            {recentFiles.length === 0 ? (
+              <Placeholder message="Недавних файлов нет" />
+            ) : (
+              <div className="mr-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {recentFiles.map((file) => (
+                  <FileCard
+                    key={file._id}
+                    file={file}
+                    useFilesApi
+                    onRefresh={refreshRecentFiles}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="table" className="mt-5">

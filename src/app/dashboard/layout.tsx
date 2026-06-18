@@ -37,9 +37,9 @@ export default function DashboardLayout({
             <Header showMobileMenuButton showSearch />
             <div className="h-20 md:h-24" />
             <main className="mx-4 sm:mx-6 md:mx-8 lg:mx-10 py-6">
-              <div className="flex w-full gap-6 md:gap-8">
+              <div className="flex w-full items-start">
                 <SideNav />
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 md:pl-[17rem]">
                   <FilesViewProvider>
                     {children}
                   </FilesViewProvider>

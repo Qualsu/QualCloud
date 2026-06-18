@@ -253,7 +253,7 @@ export function FileCard({
 
             <div className="flex h-[160px] items-center justify-center px-5 py-2">
                 {isFolder ? (
-                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-yellow-400">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-zinc-400">
                         {typeIcons.folder}
                     </div>
                 ) : (
