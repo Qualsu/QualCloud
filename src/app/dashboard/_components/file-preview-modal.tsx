@@ -261,9 +261,9 @@ export function FilePreviewModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-h-[90vh] max-w-4xl overflow-hidden border-white/10 bg-[#1e1226] p-0 text-white">
-                <div className="flex max-h-[90vh] flex-col md:flex-row">
-                    <div className="relative flex min-h-[240px] flex-1 items-center justify-center bg-white/[0.03] p-6 md:min-h-[420px]">
+            <DialogContent className="max-h-[95vh] w-[calc(100%-1rem)] max-w-4xl overflow-hidden border-white/10 bg-[#1e1226] p-0 text-white sm:w-full sm:max-h-[90vh]">
+                <div className="flex max-h-[95vh] flex-col overflow-hidden sm:max-h-[90vh] md:flex-row">
+                    <div className="relative flex min-h-[180px] flex-1 items-center justify-center overflow-hidden bg-white/[0.03] p-4 sm:min-h-[240px] md:min-h-[420px] md:p-6">
                         {canFavorite && (
                             <button
                                 onClick={handleToggleFavorite}
@@ -303,14 +303,14 @@ export function FilePreviewModal({
                         )}
                     </div>
 
-                    <div className="flex w-full flex-col gap-5 border-t border-white/10 p-6 md:w-[380px] md:border-l md:border-t-0">
+                    <div className="flex w-full flex-col gap-4 overflow-y-auto border-t border-white/10 p-4 sm:gap-5 md:w-[380px] md:border-l md:border-t-0 md:p-6">
                         <DialogHeader className="space-y-3 text-left">
                             <div className="flex items-center gap-2">
                                 <span className="flex h-4 w-4 shrink-0 items-center justify-center text-zinc-400 [&_svg]:h-4 [&_svg]:w-4">
                                     {typeIcons[file.type]}
                                 </span>
                                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                                    <DialogTitle className="break-words text-xl font-semibold leading-snug">
+                                    <DialogTitle className="break-all text-lg font-semibold leading-snug sm:text-xl">
                                         {displayName}
                                     </DialogTitle>
                                     {canRename && (
@@ -334,7 +334,7 @@ export function FilePreviewModal({
                         </DialogHeader>
 
                         <div className="space-y-3 text-sm text-white/60">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
                                 <span className="text-white/40">Тип:</span>
                                 <span className="capitalize text-white/80">
                                     {file.isFolder ? "Папка" : file.type}
@@ -342,7 +342,7 @@ export function FilePreviewModal({
                             </div>
 
                             {(file.folder !== undefined || canMove) && (
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
                                     <span className="shrink-0 text-white/40">Расположение:</span>
                                     <span className="truncate text-white/80">
                                         {file.folder ? `/${file.folder}` : "/"}
@@ -360,7 +360,7 @@ export function FilePreviewModal({
                                 </div>
                             )}
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
                                 <span className="text-white/40">
                                     {isFolder || !shrtl ? "Дата:" : "Срок:"}
                                 </span>
@@ -368,13 +368,13 @@ export function FilePreviewModal({
                             </div>
 
                             {shrtl && !isFolder && (
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
                                     <span className="text-white/40">Скачиваний:</span>
                                     <span className="text-white/80">{file.downloads ?? 0}</span>
                                 </div>
                             )}
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
                                 <span className="text-white/40">Пользователь:</span>
                                 <div className="flex items-center gap-2 text-white/80">
                                     <Avatar className="h-5 w-5">
@@ -383,7 +383,7 @@ export function FilePreviewModal({
                                             {username?.charAt(0) ?? "?"}
                                         </AvatarFallback>
                                     </Avatar>
-                                    <span>{username}</span>
+                                    <span className="truncate">{username}</span>
                                 </div>
                             </div>
                         </div>
@@ -392,7 +392,7 @@ export function FilePreviewModal({
                             {canOpen && (
                                 <button
                                     onClick={handleOpen}
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-purple px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-purple/90"
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-purple px-4 py-2 text-sm font-medium md:py-2.5 text-white transition-colors hover:bg-purple/90"
                                 >
                                     <ExternalLink className="h-4 w-4" />
                                     {openLabel}
@@ -402,7 +402,7 @@ export function FilePreviewModal({
                             {canDownload && (
                                 <button
                                     onClick={handleDownload}
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium md:py-2.5 text-white transition-colors hover:bg-white/10"
                                 >
                                     <Download className="h-4 w-4" />
                                     Скачать
@@ -412,7 +412,7 @@ export function FilePreviewModal({
                             {canTrash && !deletedOnly && (
                                 <button
                                     onClick={() => setIsTrashConfirmOpen(true)}
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20"
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium md:py-2.5 text-red-400 transition-colors hover:bg-red-500/20"
                                 >
                                     <Trash2 className="h-4 w-4" />
                                     Удалить
@@ -424,7 +424,7 @@ export function FilePreviewModal({
                                     {isFolder ? (
                                         <button
                                             onClick={handleDeleteFolder}
-                                            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20"
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium md:py-2.5 text-red-400 transition-colors hover:bg-red-500/20"
                                         >
                                             <Trash2 className="h-4 w-4" />
                                             Удалить папку
@@ -433,14 +433,14 @@ export function FilePreviewModal({
                                         <>
                                             <button
                                                 onClick={handleRestore}
-                                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+                                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium md:py-2.5 text-white transition-colors hover:bg-white/10"
                                             >
                                                 <RotateCcw className="h-4 w-4" />
                                                 Восстановить
                                             </button>
                                             <button
                                                 onClick={() => setIsDeleteConfirmOpen(true)}
-                                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20"
+                                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium md:py-2.5 text-red-400 transition-colors hover:bg-red-500/20"
                                             >
                                                 <Trash className="h-4 w-4" />
                                                 Удалить навсегда

@@ -3,8 +3,9 @@
 import { useMutation } from "convex/react"
 import { useEffect, useState } from 'react'
 import { useParams } from "next/navigation"
-import { Loader2, FileIcon } from "lucide-react"
+import { Loader2, FileIcon, AudioLinesIcon } from "lucide-react"
 
+import { Skeleton } from "@/components/ui/skeleton"
 import NotFound from "@/app/not-found"
 import { getFileInfo } from "@/app/api/files"
 import { getMimeType } from "@/app/api/utils/get-mime"
@@ -99,58 +100,93 @@ export default function File() {
         return <NotFound />
     }
 
-    if (loading) {
+    const renderPreview = () => {
+        if (loading || !file) {
+            return <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
+        }
+
+        if (file.type === "image" || file.type === "imageother") {
+            return (
+                <Image
+                    src={file.url}
+                    alt={file.name}
+                    width={200}
+                    height={200}
+                    unoptimized
+                    className="rounded-2xl object-contain"
+                />
+            )
+        }
+
+        if (file.type === "video") {
+            return (
+                <video
+                    src={file.url}
+                    controls
+                    preload="metadata"
+                    className="max-h-[300px] w-full max-w-full rounded-2xl"
+                />
+            )
+        }
+
+        if (file.type === "audio") {
+            return (
+                <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                    <AudioLinesIcon className="h-16 w-16" />
+                    <span className="text-sm">Аудио</span>
+                </div>
+            )
+        }
+
         return (
-            <div className="flex justify-center items-center h-screen">
-                <Loader2 className="animate-spin"/>
+            <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                <FileIcon className="h-16 w-16" />
+                <span className="text-sm">Предпросмотр недоступен</span>
             </div>
         )
     }
 
-    if (!file) {
-        return <NotFound />
-    }
-
-    const isImage = file.type === "image" || file.type === "imageother"
-
     return (
         <div className="flex min-h-screen flex-col items-center justify-center m-3">
             <section className="w-full max-w-3xl mx-auto p-6 bg-background/60 border border-border/90 rounded-3xl shadow-[0_16px_80px_-45px_rgba(0,0,0,0.7)]">
-            <div className="flex flex-col md:flex-row items-start gap-6">
-                <div className="w-full md:w-1/3 flex items-center justify-center bg-muted/5 rounded-2xl min-h-[200px]">
-                    {isImage ? (
-                        <Image
-                            src={file.url}
-                            alt={file.name}
-                            width={200}
-                            height={200}
-                            unoptimized
-                            className="rounded-2xl object-contain"
-                        />
-                    ) : (
-                        <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                            <FileIcon className="h-16 w-16" />
-                            <span className="text-sm">Предпросмотр недоступен</span>
-                        </div>
-                    )}
-                </div>
+                <div className="flex flex-col md:flex-row items-start gap-6">
+                    <div className="w-full md:w-1/3 flex items-center justify-center bg-muted/5 rounded-2xl min-h-[200px]">
+                        {renderPreview()}
+                    </div>
 
-                <div className="flex-1 flex flex-col justify-between w-full gap-4">
-                <div>
-                    <h1 className="text-2xl font-semibold truncate">{file.name}</h1>
-                    {typeof file.size === "number" && (
-                        <p className="mt-1 text-sm text-white/50">{formatSize(file.size)}</p>
-                    )}
-                </div>
+                    <div className="flex-1 flex flex-col justify-between w-full gap-4">
+                        {loading || !file ? (
+                            <div className="flex flex-col gap-3">
+                                <Skeleton className="h-8 w-3/4" />
+                                <Skeleton className="h-4 w-1/3" />
+                            </div>
+                        ) : (
+                            <>
+                                <div className="w-full">
+                                    <h1 className="text-2xl font-semibold break-all">{file.name}</h1>
+                                    {typeof file.size === "number" && (
+                                        <p className="mt-1 text-sm text-white/50">{formatSize(file.size)}</p>
+                                    )}
+                                    {file.type === "audio" && (
+                                        <audio
+                                            src={file.url}
+                                            controls
+                                            preload="metadata"
+                                            className="mt-4 w-full"
+                                        />
+                                    )}
+                                </div>
 
-                <div className="flex items-center gap-3">
-                    <Link href={file.url} download={file.name} className="inline-block primary-button">
-                        Скачать
-                    </Link>
+                                <div className="flex items-center gap-3">
+                                    <Link href={file.url} download={file.name} className="inline-block primary-button">
+                                        Скачать
+                                    </Link>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
-                </div>
-            </div>
             </section>
         </div>
-  );
+    );
 }

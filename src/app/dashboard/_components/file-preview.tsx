@@ -35,11 +35,11 @@ export function FilePreview({ file, fileLink, variant = "card" }: FilePreviewPro
         return (
             <Image
                 alt={file.name}
-                width={variant === "modal" ? 400 : 200}
-                height={variant === "modal" ? 400 : 300}
+                width={variant === "modal" ? 800 : 200}
+                height={variant === "modal" ? 800 : 300}
                 className={`rounded-sm object-contain ${
                     variant === "modal"
-                        ? "max-h-[300px] max-w-full"
+                        ? "h-auto max-h-[220px] w-full max-w-full sm:max-h-[300px] md:max-h-[420px]"
                         : "max-h-[150px] max-w-[120px]"
                 }`}
                 src={fileLink}
@@ -55,7 +55,7 @@ export function FilePreview({ file, fileLink, variant = "card" }: FilePreviewPro
                 src={fileLink}
                 className={`rounded-sm ${
                     variant === "modal"
-                        ? "max-h-[300px] max-w-full"
+                        ? "h-auto max-h-[220px] w-full max-w-full sm:max-h-[300px] md:max-h-[420px]"
                         : "max-h-[150px] max-w-[180px]"
                 }`}
                 preload="metadata"
@@ -67,18 +67,19 @@ export function FilePreview({ file, fileLink, variant = "card" }: FilePreviewPro
     }
 
     if (file.type === "audio") {
-        return (
-            <div className="flex flex-col items-center gap-3">
-                <div
-                    className={`flex items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-500 ${
-                        variant === "modal" ? "h-16 w-16" : "h-12 w-12"
-                    }`}
-                >
+        if (variant === "card") {
+            return (
+                <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-500">
                     {typeIcons[file.type]}
                 </div>
+            );
+        }
+
+        return (
+            <div className="flex w-full flex-col items-center gap-3 px-4">
                 <audio
                     src={fileLink}
-                    className={variant === "modal" ? "h-10 w-full max-w-[280px]" : "h-8 w-32"}
+                    className="h-12 w-full max-w-md"
                     preload="metadata"
                     controls
                     onError={() => setFailed(true)}
