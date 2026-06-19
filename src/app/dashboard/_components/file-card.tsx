@@ -6,7 +6,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatRelative } from 'date-fns'
 import { useQuery } from "convex/react"
-import { Heart } from "lucide-react"
+import { Globe, Heart, Lock } from "lucide-react"
 import { useState } from "react"
 import { api } from "../../../../convex/_generated/api"
 import { FileCardActions } from "./file-actions"
@@ -153,6 +153,16 @@ export function FileCard({
                 <div className="flex items-center gap-2 text-sm text-white/80 font-medium break-all min-w-0">
                     <span className="shrink-0 text-zinc-400">{typeIcons[file.type]}</span>
                     <span className="truncate" title={displayName}>{displayName}</span>
+                    {useFilesApi && file.isPublic && (
+                        <span title="Публичный доступ">
+                            <Globe className="h-3.5 w-3.5 shrink-0 text-green-400" />
+                        </span>
+                    )}
+                    {useFilesApi && file.isFolder && !file.isPublic && (
+                        <span title="Приватная папка">
+                            <Lock className="h-3.5 w-3.5 shrink-0 text-white/40" />
+                        </span>
+                    )}
                 </div>
                 <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     {canFavorite && (

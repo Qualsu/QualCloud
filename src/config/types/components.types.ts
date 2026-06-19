@@ -16,6 +16,7 @@ export type FileDoc = Omit<Doc<"files">, "type"> & {
   fileUrl?: string;
   fileSize?: number;
   folder?: string | null;
+  folderId?: string;
   isDeleted?: boolean;
   isFolder?: boolean;
   isPublic?: boolean;

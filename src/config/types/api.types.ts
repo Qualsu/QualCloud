@@ -27,11 +27,13 @@ export interface FilesLastEditor {
 
 export interface FilesFolderItem {
   type: "folder";
+  folder_id?: string;
   name: string;
   created_at: string;
   updated_at?: string | null;
   updated_by?: string | null;
   last_editor?: FilesLastEditor | null;
+  is_public?: boolean;
 }
 
 export interface FilesFileResponse {
@@ -129,6 +131,13 @@ export interface FilesRenameBody extends FilesEditorBody {
 export interface FilesPublicBody extends FilesEditorBody {
   file_id: string;
   is_public: boolean;
+}
+
+export interface FilesFolderPublicBody extends FilesEditorBody {
+    account_id: string;
+    name?: string;
+    folder_id?: string;
+    is_public: boolean;
 }
 
 export interface FilesUserStatsResponse {

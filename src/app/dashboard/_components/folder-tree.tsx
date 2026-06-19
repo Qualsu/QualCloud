@@ -27,8 +27,8 @@ function normalizePath(path: string): string {
   return path === "/" ? "" : path;
 }
 
-function buildPath(parent: string, name: string): string {
-  return parent ? `${parent}/${name}` : name;
+function getBasename(path: string): string {
+  return path.split("/").filter(Boolean).pop() || path;
 }
 
 export function FolderTree({
@@ -63,7 +63,7 @@ export function FolderTree({
       let currentPath = "";
 
       for (const part of parts) {
-        currentPath = buildPath(currentPath, part);
+        currentPath = currentPath ? `${currentPath}/${part}` : part;
         setExpanded((prev) => new Set(prev).add(currentPath));
         await loadChildren(currentPath);
       }
@@ -172,7 +172,7 @@ export function FolderTree({
         </div>
         {isExpanded &&
           children.map((child) =>
-            renderNode(buildPath(path, child.name), child.name, depth + 1)
+            renderNode(child.name, getBasename(child.name), depth + 1)
           )}
         </div>
     );

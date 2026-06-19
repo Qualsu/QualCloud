@@ -10,6 +10,7 @@ import {
     Globe,
     Heart,
     Lock,
+    Loader2,
     Pencil,
     RotateCcw,
     Share2Icon,
@@ -42,10 +43,12 @@ import {
     addToFavorites,
     deleteFilePermanently,
     deleteFolder,
+    downloadFolder,
     moveToTrash,
     removeFromFavorites,
     restoreFromTrash,
     updateFilePublic,
+    updateFolderPublic,
 } from "@/app/api/files";
 import { toast } from "@/lib/toast";
 
@@ -105,6 +108,7 @@ export function FilePreviewModal({
     const [isConfirmLoading, setIsConfirmLoading] = useState(false);
     const [isPublic, setIsPublic] = useState(file.isPublic ?? false);
     const [isPublicLoading, setIsPublicLoading] = useState(false);
+    const [isArchiveLoading, setIsArchiveLoading] = useState(false);
 
     useEffect(() => {
         setIsPublic(file.isPublic ?? false);
@@ -140,8 +144,8 @@ export function FilePreviewModal({
         ? links.NOTTER.GET_FILE(file.fileId as string)
         : links.KENYCLOUD.GET_FILE(file.fileId as Id<"_storage">);
 
-    const shareLink = isFolder
-        ? ""
+    const shareLink = isFolder && file.folderId
+        ? pages.FOLDER.COPY(origin, file.folderId)
         : useFilesApi
         ? pages.FILE.COPY(origin, file.linkId || (file._id as string))
         : openLink;
@@ -187,11 +191,12 @@ export function FilePreviewModal({
         (useFilesApi || isFolder) && !deletedOnly && (!isFolder ? !expired : true);
     const canMove =
         (useFilesApi || isFolder) && !deletedOnly && (!isFolder ? !expired : true);
-    const canShare = !isFolder && !expired && Boolean(shareLink) && !notter && !deletedOnly && (!useFilesApi || isPublic);
+    const canShare = !expired && Boolean(shareLink) && !notter && !deletedOnly && (!useFilesApi || isPublic);
     const canTrash = useFilesApi && !isFolder;
     const canDownload = !isFolder && Boolean(downloadLink);
     const canOpen = !isFolder && !expired && Boolean(openLink);
-    const canTogglePublic = useFilesApi && !isFolder && !deletedOnly && !expired;
+    const canTogglePublic = useFilesApi && !deletedOnly && !expired;
+    const canDownloadFolder = isFolder && useFilesApi;
 
     const handleOpen = () => {
         if (openLink) window.open(openLink, "_blank");
@@ -210,7 +215,15 @@ export function FilePreviewModal({
         setIsPublicLoading(true);
         try {
             const next = !isPublic;
-            await toast.promise(updateFilePublic(file.fileId as string, next, editor), {
+            const promise = isFolder
+                ? updateFolderPublic(
+                    file.orgId,
+                    next,
+                    editor,
+                    file.folderId ? { folder_id: file.folderId } : { name: file.name }
+                  )
+                : updateFilePublic(file.fileId as string, next, editor);
+            await toast.promise(promise, {
                 loading: next ? "Открываем публичный доступ…" : "Закрываем публичный доступ…",
                 success: next ? "Публичный доступ открыт" : "Публичный доступ закрыт",
                 error: "Не удалось изменить публичный доступ",
@@ -219,6 +232,27 @@ export function FilePreviewModal({
             onRefresh?.();
         } catch {} finally {
             setIsPublicLoading(false);
+        }
+    };
+
+    const handleDownloadFolderArchive = async () => {
+        if (!canDownloadFolder || isArchiveLoading) return;
+        setIsArchiveLoading(true);
+        try {
+            const blob = await downloadFolder(file.orgId, file.name, user?.id ?? undefined);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${file.displayName || file.name}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            toast.success("Архив скачан");
+        } catch {
+            toast.error("Не удалось скачать архив");
+        } finally {
+            setIsArchiveLoading(false);
         }
     };
 
@@ -389,7 +423,7 @@ export function FilePreviewModal({
                                 </span>
                             </div>
 
-                            {useFilesApi && !isFolder && (
+                            {useFilesApi && (
                                 <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
                                     <span className="text-white/40">Доступ:</span>
                                     <span className="flex items-center gap-1.5 text-white/80">
@@ -473,6 +507,21 @@ export function FilePreviewModal({
                                 >
                                     <Download className="h-4 w-4" />
                                     Скачать
+                                </button>
+                            )}
+
+                            {canDownloadFolder && (
+                                <button
+                                    onClick={handleDownloadFolderArchive}
+                                    disabled={isArchiveLoading}
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium md:py-2.5 text-white transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isArchiveLoading ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Download className="h-4 w-4" />
+                                    )}
+                                    {isArchiveLoading ? "Формируем архив…" : "Скачать архивом"}
                                 </button>
                             )}
 

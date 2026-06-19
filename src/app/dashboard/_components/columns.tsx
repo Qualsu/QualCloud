@@ -4,6 +4,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { formatRelative } from "date-fns"
 import { useQuery } from "convex/react"
 import { useUser } from "@clerk/nextjs"
+import { Globe, Lock } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import type { FileDoc } from "@/config/types/components.types"
@@ -76,11 +77,22 @@ function UserCell({
 function NameCell({
   file,
   onOpenFolder,
+  useFilesApi,
 }: {
   file: FileDoc;
   onOpenFolder?: (folderName: string) => void;
+  useFilesApi?: boolean;
 }) {
   const displayName = file.displayName?.trim() || file.name?.trim() || "Без названия";
+  const publicIcon = file.isPublic ? (
+    <span title="Публичный доступ">
+      <Globe className="h-3.5 w-3.5 shrink-0 text-green-400" />
+    </span>
+  ) : file.isFolder ? (
+    <span title="Приватная папка">
+      <Lock className="h-3.5 w-3.5 shrink-0 text-white/40" />
+    </span>
+  ) : null;
 
   if (file.isFolder) {
     return (
@@ -94,6 +106,7 @@ function NameCell({
       >
         <span className="shrink-0 text-zinc-400">{typeIcons.folder}</span>
         <span>{displayName}</span>
+        {useFilesApi && publicIcon}
       </button>
     );
   }
@@ -102,6 +115,7 @@ function NameCell({
     <div className="flex items-center gap-2 font-medium text-white/80" title={displayName}>
       <span className="shrink-0 text-zinc-400">{typeIcons[file.type]}</span>
       <span>{displayName}</span>
+      {useFilesApi && publicIcon}
     </div>
   );
 }
@@ -161,7 +175,7 @@ export function createColumns({
     {
       accessorKey: "name",
       header: "Название",
-      cell: ({ row }) => <NameCell file={row.original} onOpenFolder={onOpenFolder} />,
+      cell: ({ row }) => <NameCell file={row.original} onOpenFolder={onOpenFolder} useFilesApi={useFilesApi} />,
     },
     {
       accessorKey: "type",

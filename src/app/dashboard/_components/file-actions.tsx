@@ -7,6 +7,7 @@ import {
     Globe,
     Heart,
     Lock,
+    Loader2,
     MoreVertical,
     Pencil,
     RotateCcw,
@@ -25,6 +26,7 @@ import type { FileCardProps } from "@/config/types/components.types"
 import { useOrigin } from "../../../components/hooks/use-origin"
 import { getFilesEditor } from "@/lib/files-editor"
 import { toast } from "@/lib/toast"
+
 import { useState } from "react"
 import { links } from "@/config/routing/links.route"
 import { DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu"
@@ -42,6 +44,8 @@ import {
     deleteFilePermanently,
     deleteFolder,
     updateFilePublic,
+    updateFolderPublic,
+    downloadFolder,
 } from "@/app/api/files"
 
 const copyTextToClipboard = async (text: string) => {
@@ -67,6 +71,7 @@ export function FileCardActions({
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [isConfirmLoading, setIsConfirmLoading] = useState(false);
     const [isPublicLoading, setIsPublicLoading] = useState(false);
+    const [isArchiveLoading, setIsArchiveLoading] = useState(false);
     const isFolder = file.isFolder;
     const editor = getFilesEditor(user);
     const canPermanentlyDelete = isOrgAdmin;
@@ -167,12 +172,20 @@ export function FileCardActions({
     };
 
     const handleTogglePublic = async () => {
-        if (isPublicLoading || isFolder) return;
+        if (isPublicLoading) return;
         setIsPublicLoading(true);
         try {
             const next = !file.isPublic;
+            const promise = isFolder
+                ? updateFolderPublic(
+                    file.orgId,
+                    next,
+                    editor,
+                    file.folderId ? { folder_id: file.folderId } : { name: file.name }
+                  )
+                : updateFilePublic(file.fileId as string, next, editor);
             await toast.promise(
-                updateFilePublic(file.fileId as string, next, editor),
+                promise,
                 {
                     loading: next ? "Открываем публичный доступ…" : "Закрываем публичный доступ…",
                     success: next ? "Публичный доступ открыт" : "Публичный доступ закрыт",
@@ -184,6 +197,31 @@ export function FileCardActions({
             setIsPublicLoading(false);
         }
     };
+
+    const handleDownloadFolderArchive = async () => {
+        if (!isFolder || isArchiveLoading) return;
+        setIsArchiveLoading(true);
+        try {
+            const blob = await downloadFolder(file.orgId, file.name, user?.id ?? undefined);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${file.displayName || file.name}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            toast.success("Архив скачан");
+        } catch {
+            toast.error("Не удалось скачать архив");
+        } finally {
+            setIsArchiveLoading(false);
+        }
+    };
+
+    const folderShareLink = isFolder && file.folderId
+        ? pages.FOLDER.COPY(origin, file.folderId)
+        : "";
 
     const folderDisplayName = file.displayName ?? file.name;
 
@@ -250,6 +288,45 @@ export function FileCardActions({
                         >
                             <Copy className="w-4 h-4" /> Копировать путь
                         </DropdownMenuItem>
+                        <DropdownMenuItem
+                            className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                            onClick={handleDownloadFolderArchive}
+                            disabled={isArchiveLoading}
+                        >
+                            {isArchiveLoading ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <Download className="w-4 h-4" />
+                            )}
+                            {isArchiveLoading ? "Формируем архив…" : "Скачать архивом"}
+                        </DropdownMenuItem>
+                        {useFilesApi && (
+                            <>
+                                {file.isPublic && (
+                                    <DropdownMenuItem
+                                        className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                        onClick={() => copyTextToClipboard(folderShareLink)}
+                                    >
+                                        <Share2Icon className="w-4 h-4" /> Поделиться
+                                    </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
+                                    className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                    onClick={handleTogglePublic}
+                                    disabled={isPublicLoading}
+                                >
+                                    {file.isPublic ? (
+                                        <>
+                                            <Lock className="w-4 h-4" /> Сделать приватной
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Globe className="w-4 h-4" /> Сделать публичной
+                                        </>
+                                    )}
+                                </DropdownMenuItem>
+                            </>
+                        )}
                         {canPermanentlyDelete && (
                             <>
                                 <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />

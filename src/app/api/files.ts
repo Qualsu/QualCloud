@@ -7,6 +7,7 @@ import {
   FilesFolderDeleteBody,
   FilesFolderItem,
   FilesFolderMoveBody,
+  FilesFolderPublicBody,
   FilesFolderRenameBody,
   FilesFoldersResponse,
   FilesListItem,
@@ -95,6 +96,7 @@ function mapFolder(
     fileId: "" as Id<"_storage">,
     userId: deterministicId,
     linkId: folder.name,
+    folderId: folder.folder_id,
     isFolder: true,
     folder: currentFolder ?? null,
     updatedBy: folder.updated_by,
@@ -105,6 +107,7 @@ function mapFolder(
       : folder.created_at
       ? new Date(folder.created_at).getTime()
       : undefined,
+    isPublic: folder.is_public ?? false,
   };
 }
 
@@ -212,6 +215,31 @@ export async function getFileInfo(
     params: account_id ? { account_id } : undefined,
   });
   return res.data;
+}
+
+export interface FilesFolderContentsResponse {
+  account_id?: string;
+  folder: FilesFolderItem;
+  files: FileDoc[];
+  folders: FileDoc[];
+}
+
+export async function getFolderById(
+  folder_id: string,
+  requester_id?: string
+): Promise<FilesFolderContentsResponse> {
+  const res = await files.get(api.FILES.GET_FOLDER(folder_id), {
+    params: requester_id ? { requester_id } : undefined,
+  });
+  const data: { account_id?: string; folder: FilesFolderItem; files: FilesFileResponse[]; folders: FilesFolderItem[] } = res.data;
+  const accountId = data.account_id ?? "";
+  const currentFolder = data.folder?.name ?? null;
+  return {
+    account_id: accountId,
+    folder: data.folder,
+    files: (data.files ?? []).map((file) => mapFile(file, accountId)),
+    folders: (data.folders ?? []).map((folder) => mapFolder(folder, accountId, currentFolder)),
+  };
 }
 
 export async function downloadFile(
@@ -355,6 +383,37 @@ export async function deleteFolder(
     ...editorBody(editor),
   };
   const res = await files.delete(api.FILES.FOLDER, { data: body });
+  return res.data;
+}
+
+export async function updateFolderPublic(
+  account_id: string,
+  is_public: boolean,
+  editor: FilesApiEditor | undefined,
+  identifier: { name: string } | { folder_id: string }
+): Promise<unknown> {
+  const body: FilesFolderPublicBody = {
+    account_id,
+    is_public,
+    ...editorBody(editor),
+    ...identifier,
+  };
+  const res = await files.post(api.FILES.FOLDER_PUBLIC, body);
+  return res.data;
+}
+
+export async function downloadFolder(
+  account_id: string,
+  folder: string,
+  requester_id?: string
+): Promise<Blob> {
+  const res = await files.get(api.FILES.DOWNLOAD_FOLDER(account_id), {
+    params: {
+      folder,
+      requester_id,
+    },
+    responseType: "blob",
+  });
   return res.data;
 }
 
