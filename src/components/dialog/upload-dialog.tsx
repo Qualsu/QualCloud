@@ -21,6 +21,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useFilesRefresh } from "@/components/context/files-refresh-context";
+import { useUploadProgress } from "@/components/context/upload-progress-context";
 import { FolderTree } from "@/app/dashboard/_components/folder-tree";
 import { FILE_SIZE_LABELS } from "@/config/const/files.const";
 
@@ -62,6 +63,10 @@ export function UploadDialog({
   const [progress, setProgress] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const previewUrlsRef = useRef<Record<string, string>>({});
+  const uploadTrackIdRef = useRef<string | null>(null);
+  const dialogClosedDuringUpload = useRef(false);
+  const { registerUpload, updateProgress, completeUpload, failUpload, showUploadToast } =
+    useUploadProgress();
 
   const isOpen = isOpenControlled ? open : internalOpen;
 
@@ -84,6 +89,16 @@ export function UploadDialog({
       previewUrlsRef.current = {};
     };
   }, []);
+
+  useEffect(() => {
+    if (!isUploading) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isUploading]);
 
   const addFiles = useCallback((incoming: File[] | FileList | null) => {
     if (!incoming) return;
@@ -159,11 +174,16 @@ export function UploadDialog({
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
       setIsOpen(nextOpen);
-      if (!nextOpen && isOpenControlled) {
-        resetUpload();
+      if (!nextOpen) {
+        if (uploadTrackIdRef.current !== null) {
+          dialogClosedDuringUpload.current = true;
+          showUploadToast(uploadTrackIdRef.current);
+        } else {
+          resetUpload();
+        }
       }
     },
-    [setIsOpen, resetUpload, isOpenControlled]
+    [setIsOpen, resetUpload, showUploadToast]
   );
 
   const handleUpload = useCallback(async () => {
@@ -177,6 +197,9 @@ export function UploadDialog({
       return;
     }
 
+    const trackId = registerUpload(files.map((f) => f.file.name));
+    uploadTrackIdRef.current = trackId;
+
     setIsUploading(true);
     setProgress(0);
 
@@ -184,10 +207,9 @@ export function UploadDialog({
 
     const progressInterval = setInterval(() => {
       setProgress((current) => {
-        if (current >= 90) {
-          return current;
-        }
-        return current + 10;
+        const next = current >= 90 ? current : current + 10;
+        updateProgress(trackId, next);
+        return next;
       });
     }, 200);
 
@@ -204,21 +226,33 @@ export function UploadDialog({
       }
 
       setProgress(100);
-      toast.success(
-        files.length === 1
-          ? `Файл «${files[0].file.name}» успешно загружен`
-          : `Успешно загружено ${files.length} файлов`
-      );
+      updateProgress(trackId, 100);
+      completeUpload(trackId);
+      if (!dialogClosedDuringUpload.current) {
+        toast.success(
+          files.length === 1
+            ? `Файл «${files[0].file.name}» успешно загружен`
+            : `Успешно загружено ${files.length} файлов`
+        );
+      }
+      setFiles([]);
+      Object.values(previewUrlsRef.current).forEach(URL.revokeObjectURL);
+      previewUrlsRef.current = {};
       handleOpenChange(false);
       refreshFiles();
       onUploadComplete?.();
     } catch {
-      toast.error("Не удалось загрузить файлы");
+      if (!dialogClosedDuringUpload.current) {
+        toast.error("Не удалось загрузить файлы");
+      }
+      failUpload(trackId, "Не удалось загрузить файлы");
     } finally {
       clearInterval(progressInterval);
       setIsUploading(false);
+      uploadTrackIdRef.current = null;
+      dialogClosedDuringUpload.current = false;
     }
-  }, [files, account_id, folder, handleOpenChange, refreshFiles, onUploadComplete, editor]);
+  }, [files, account_id, folder, handleOpenChange, refreshFiles, onUploadComplete, editor, registerUpload, updateProgress, completeUpload, failUpload]);
 
   const handleUploadRef = useRef(handleUpload);
   useEffect(() => {

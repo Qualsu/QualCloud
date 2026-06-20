@@ -114,17 +114,16 @@ export default function Home() {
     onRefresh: refreshRecentFiles,
   });
 
-  const occupiedSize =
-    (stats?.used_size ?? 0) + (stats?.trash_size ?? 0);
+  const occupiedSize = stats?.used_size ?? 0;
 
   const storageStats = [
     {
       label: "Занято",
       value: stats ? formatSize(occupiedSize) : "—",
       hint: stats?.limit_size
-        ? `из ${formatSize(stats.limit_size)} (${
-            parseFloat(((occupiedSize / stats.limit_size) * 100).toFixed(1))
-          }%), корзина ${formatSize(stats.trash_size ?? 0)}`
+        ? `из ${formatSize(stats.limit_size)} (${parseFloat(
+            ((occupiedSize / stats.limit_size) * 100).toFixed(1)
+          )}%), корзина ${formatSize(stats.trash_size ?? 0)}`
         : `облачное хранилище, корзина ${formatSize(
             stats?.trash_size ?? 0
           )}`,

@@ -10,6 +10,7 @@ import { FilesViewProvider } from "@/components/context/files-view-context";
 import { FilesRefreshProvider } from "@/components/context/files-refresh-context";
 import { MobileNavProvider } from '@/components/context/mobile-nav-context';
 import { SearchSuggestionsProvider } from '@/components/context/search-suggestions-context';
+import { UploadProgressProvider } from "@/components/context/upload-progress-context";
 import { PageDropZone } from '@/components/drop-zone/page-drop-zone';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
@@ -34,6 +35,7 @@ export default function DashboardLayout({
     <MobileNavProvider>
       <SearchSuggestionsProvider>
         <FilesRefreshProvider>
+          <UploadProgressProvider>
           <PageDropZone>
             <div className="relative isolate min-h-screen text-white">
               <Header showMobileMenuButton showSearch />
@@ -50,6 +52,7 @@ export default function DashboardLayout({
               </main>
             </div>
           </PageDropZone>
+          </UploadProgressProvider>
         </FilesRefreshProvider>
       </SearchSuggestionsProvider>
     </MobileNavProvider>
