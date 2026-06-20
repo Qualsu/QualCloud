@@ -32,7 +32,7 @@ export function Header({ showMobileMenuButton, showSearch }: HeaderProps) {
                             <Menu size={18} />
                         </button>
                     )}
-                    <Link href={pages.ROOT}>
+                    <Link href="#">
                         <Image
                             src={images.LOGO}
                             width={140}

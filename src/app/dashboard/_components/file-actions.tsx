@@ -298,7 +298,7 @@ export function FileCardActions({
                             ) : (
                                 <Download className="w-4 h-4" />
                             )}
-                            {isArchiveLoading ? "Формируем архив…" : "Скачать архивом"}
+                            Скачать архивом
                         </DropdownMenuItem>
                         {useFilesApi && (
                             <>

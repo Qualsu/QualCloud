@@ -521,7 +521,7 @@ export function FilePreviewModal({
                                     ) : (
                                         <Download className="h-4 w-4" />
                                     )}
-                                    {isArchiveLoading ? "Формируем архив…" : "Скачать архивом"}
+                                    Скачать архивом
                                 </button>
                             )}
 

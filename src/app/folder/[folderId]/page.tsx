@@ -326,7 +326,7 @@ export default function FolderPage() {
             ) : (
               <Download className="h-4 w-4" />
             )}
-            {isDownloading ? "Формируем архив…" : "Скачать архивом"}
+            Скачать архивом
           </button>
         </div>
 
