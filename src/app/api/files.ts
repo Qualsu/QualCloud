@@ -9,6 +9,8 @@ import {
   FilesFolderMoveBody,
   FilesFolderPublicBody,
   FilesFolderRenameBody,
+  FilesFolderRestoreBody,
+  FilesFolderTrashBody,
   FilesFoldersResponse,
   FilesListItem,
   FilesListResponse,
@@ -107,6 +109,7 @@ function mapFolder(
       : folder.created_at
       ? new Date(folder.created_at).getTime()
       : undefined,
+    isDeleted: folder.is_deleted ?? false,
     isPublic: folder.is_public ?? false,
   };
 }
@@ -372,6 +375,34 @@ export async function moveFolder(
   return res.data;
 }
 
+export async function moveFolderToTrash(
+  account_id: string,
+  name: string,
+  editor?: FilesApiEditor
+): Promise<unknown> {
+  const body: FilesFolderTrashBody = {
+    account_id,
+    name,
+    ...editorBody(editor),
+  };
+  const res = await files.post(api.FILES.FOLDER_TRASH, body);
+  return res.data;
+}
+
+export async function restoreFolder(
+  account_id: string,
+  name: string,
+  editor?: FilesApiEditor
+): Promise<unknown> {
+  const body: FilesFolderRestoreBody = {
+    account_id,
+    name,
+    ...editorBody(editor),
+  };
+  const res = await files.post(api.FILES.FOLDER_RESTORE, body);
+  return res.data;
+}
+
 export async function deleteFolder(
   account_id: string,
   name: string,
@@ -431,10 +462,11 @@ export async function getUserStats(
 
 export async function getFolders(
   account_id: string,
-  folder?: string | null
+  folder?: string | null,
+  deleted?: boolean
 ): Promise<FilesFolderItem[]> {
   const res = await files.get(api.FILES.GET_FOLDERS(account_id), {
-    params: { folder },
+    params: { folder, deleted },
   });
   const data: FilesFoldersResponse = res.data;
 
@@ -443,8 +475,9 @@ export async function getFolders(
 
 export async function getFolderNames(
   account_id: string,
-  folder?: string | null
+  folder?: string | null,
+  deleted?: boolean
 ): Promise<string[]> {
-  const folders = await getFolders(account_id, folder);
+  const folders = await getFolders(account_id, folder, deleted);
   return folders.map((item) => item.name);
 }

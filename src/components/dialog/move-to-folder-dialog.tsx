@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2, FolderInput } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getFilesEditor } from "@/lib/files-editor";
@@ -21,7 +21,8 @@ import { FolderTree } from "@/app/dashboard/_components/folder-tree";
 import type { FileDoc } from "@/config/types/components.types";
 
 interface MoveToFolderDialogProps {
-  file: FileDoc;
+  file?: FileDoc;
+  files?: FileDoc[];
   currentFolder?: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -30,6 +31,7 @@ interface MoveToFolderDialogProps {
 
 export function MoveToFolderDialog({
     file,
+    files,
     currentFolder,
     open,
     onOpenChange,
@@ -41,39 +43,67 @@ export function MoveToFolderDialog({
         currentFolder ?? "/"
     );
   const [isLoading, setIsLoading] = useState(false);
-  const isFolder = file.isFolder;
+
+  const items = useMemo(() => {
+    if (files && files.length > 0) return files;
+    return file ? [file] : [];
+  }, [file, files]);
+
+  const isSingleFolder = items.length === 1 && items[0].isFolder;
+  const count = items.length;
+
+  const initialFolder = useMemo(() => {
+    if (currentFolder !== undefined) return currentFolder ?? "/";
+    const folders = new Set(items.map((item) => item.folder ?? ""));
+    if (folders.size === 1) {
+      const only = Array.from(folders)[0];
+      return only === "" ? "/" : only;
+    }
+    return "/";
+  }, [currentFolder, items]);
+
+  const selectedFolderPaths = useMemo(
+    () => items.filter((item) => item.isFolder).map((item) => item.name),
+    [items]
+  );
 
   useEffect(() => {
     if (open) {
-      setSelectedPath(currentFolder ?? "/");
+      setSelectedPath(initialFolder);
       setIsLoading(false);
     }
-  }, [open, currentFolder]);
+  }, [open, initialFolder]);
 
   const handleMove = async () => {
     const targetFolder = selectedPath === "/" ? null : selectedPath;
 
-    if (targetFolder === (file.folder ?? null)) {
-      onOpenChange(false);
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const promise = isFolder
-        ? moveFolder(file.orgId, file.name, targetFolder, editor)
-        : moveFile(file._id as string, targetFolder, editor);
+      const promises = items.map(async (item) => {
+      if (item.isFolder) {
+        return moveFolder(item.orgId, item.name, targetFolder, editor);
+      }
+      return moveFile(item._id as string, targetFolder, editor);
+    });
 
-      await toast.promise(promise, {
-        loading: isFolder ? "Перемещаем папку…" : "Перемещаем файл…",
-        success: isFolder ? "Папка перемещена" : "Файл перемещён в папку",
-        error: isFolder
-          ? "Не удалось переместить папку"
-          : "Не удалось переместить файл",
-      });
+    const results = await Promise.allSettled(promises);
+    const failed = results.filter((r) => r.status === "rejected").length;
 
+    if (failed === 0) {
+      toast.success(
+        count === 1
+          ? isSingleFolder
+            ? "Папка перемещена"
+            : "Файл перемещён в папку"
+          : `Перемещено ${count} элементов`
+      );
       onOpenChange(false);
       onMoved?.();
+    } else {
+      toast.error(
+        `Не удалось переместить ${failed} из ${count} элементов`
+      );
+    }
     } finally {
       setIsLoading(false);
     }
@@ -85,10 +115,16 @@ export function MoveToFolderDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FolderInput className="h-4 w-4" />
-            {isFolder ? "Переместить папку" : "Переместить в папку"}
+            {count > 1
+              ? `Переместить ${count} элементов`
+              : isSingleFolder
+              ? "Переместить папку"
+              : "Переместить в папку"}
           </DialogTitle>
           <DialogDescription className="text-white/60">
-            {isFolder
+            {count > 1
+              ? "Выберите папку назначения для выбранных элементов."
+              : isSingleFolder
               ? "Выберите папку, в которую нужно переместить текущую папку."
               : "Выберите папку назначения для файла."}
           </DialogDescription>
@@ -97,10 +133,10 @@ export function MoveToFolderDialog({
           <div className="grid gap-2">
             <Label className="text-white/80">Папка назначения</Label>
             <FolderTree
-              account_id={file.orgId}
+              account_id={items[0]?.orgId}
               value={selectedPath}
               onChange={setSelectedPath}
-              disableDescendantsOf={isFolder ? file.name : undefined}
+              disableDescendantsOf={selectedFolderPaths}
             />
           </div>
         </div>

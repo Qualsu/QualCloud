@@ -31,9 +31,12 @@ export interface FilesFolderItem {
   name: string;
   created_at: string;
   updated_at?: string | null;
+  last_modified_at?: string | null;
   updated_by?: string | null;
   last_editor?: FilesLastEditor | null;
   is_public?: boolean;
+  is_deleted?: boolean;
+  deleted_at?: string | null;
 }
 
 export interface FilesFileResponse {
@@ -116,6 +119,16 @@ export interface FilesFolderMoveBody extends FilesEditorBody {
   account_id: string;
   name: string;
   parent?: string | null;
+}
+
+export interface FilesFolderTrashBody extends FilesEditorBody {
+  account_id: string;
+  name: string;
+}
+
+export interface FilesFolderRestoreBody extends FilesEditorBody {
+  account_id: string;
+  name: string;
 }
 
 export interface FilesFolderDeleteBody extends FilesEditorBody {

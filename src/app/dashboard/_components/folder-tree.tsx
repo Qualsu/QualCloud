@@ -17,7 +17,7 @@ interface FolderTreeProps {
   account_id?: string;
   value: string;
   onChange: (path: string) => void;
-  disableDescendantsOf?: string;
+  disableDescendantsOf?: string | string[];
   disabledPaths?: string[];
 }
 
@@ -106,11 +106,16 @@ export function FolderTree({
   const isSelected = (path: string) => selectedPath === path;
 
   const disabledSet = new Set(disabledPaths ?? []);
+  const disabledDescendants = Array.isArray(disableDescendantsOf)
+    ? disableDescendantsOf
+    : disableDescendantsOf
+    ? [disableDescendantsOf]
+    : [];
   const isDisabled = (path: string) => {
     if (disabledSet.has(path)) return true;
-    if (disableDescendantsOf) {
-      if (path === disableDescendantsOf) return true;
-      if (path.startsWith(`${disableDescendantsOf}/`)) return true;
+    for (const parent of disabledDescendants) {
+      if (path === parent) return true;
+      if (path.startsWith(`${parent}/`)) return true;
     }
     return false;
   };

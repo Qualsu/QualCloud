@@ -1,5 +1,5 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, RowSelectionState, Updater } from "@tanstack/react-table";
 import type { Doc, Id } from "../../../convex/_generated/dataModel";
 
 export type FileDoc = Omit<Doc<"files">, "type"> & {
@@ -48,6 +48,9 @@ export interface FileCardProps {
   deletedOnly?: boolean;
   onRefresh?: () => void;
   onOpenFolder?: (folderName: string) => void;
+  selected?: boolean;
+  onSelect?: (id: string, selected: boolean) => void;
+  onClearSelection?: () => void;
 }
 
 export interface UserCellProps {
@@ -63,7 +66,10 @@ export interface NavigationItem {
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  onRowClick?: (row: TData) => void;
+  onRowClick?: (row: TData, e?: React.MouseEvent) => void;
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: (updater: Updater<RowSelectionState>) => void;
+  getRowId?: (row: TData) => string;
 }
 
 export interface HeaderProps {

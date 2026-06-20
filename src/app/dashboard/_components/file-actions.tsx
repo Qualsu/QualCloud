@@ -40,7 +40,9 @@ import {
     addToFavorites,
     removeFromFavorites,
     moveToTrash,
+    moveFolderToTrash,
     restoreFromTrash,
+    restoreFolder,
     deleteFilePermanently,
     deleteFolder,
     updateFilePublic,
@@ -69,6 +71,8 @@ export function FileCardActions({
     const [isMoveOpen, setIsMoveOpen] = useState(false);
     const [isTrashConfirmOpen, setIsTrashConfirmOpen] = useState(false);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [isFolderTrashConfirmOpen, setIsFolderTrashConfirmOpen] = useState(false);
+    const [isFolderDeleteConfirmOpen, setIsFolderDeleteConfirmOpen] = useState(false);
     const [isConfirmLoading, setIsConfirmLoading] = useState(false);
     const [isPublicLoading, setIsPublicLoading] = useState(false);
     const [isArchiveLoading, setIsArchiveLoading] = useState(false);
@@ -225,12 +229,45 @@ export function FileCardActions({
 
     const folderDisplayName = file.displayName ?? file.name;
 
+    const handleMoveFolderToTrash = async () => {
+        setIsConfirmLoading(true);
+        try {
+            await toast.promise(
+                moveFolderToTrash(file.orgId, file.name, editor),
+                {
+                    loading: "Перемещаем папку в корзину…",
+                    success: `Папка «${folderDisplayName}» перемещена в корзину`,
+                    error: "Не удалось переместить папку в корзину",
+                },
+            );
+            setIsFolderTrashConfirmOpen(false);
+            onRefresh?.();
+        } catch {} finally {
+            setIsConfirmLoading(false);
+        }
+    };
+
+    const handleRestoreFolder = async () => {
+        try {
+            await toast.promise(
+                restoreFolder(file.orgId, file.name, editor),
+                {
+                    loading: "Восстанавливаем папку…",
+                    success: `Папка «${folderDisplayName}» восстановлена`,
+                    error: "Не удалось восстановить папку",
+                },
+            );
+            onRefresh?.();
+        } catch {}
+    };
+
     const handleDeleteFolder = async () => {
         if (!canPermanentlyDelete) {
             toast.error("Удаление папки может выполнить только администратор организации");
             return;
         }
 
+        setIsConfirmLoading(true);
         try {
             await toast.promise(
                 deleteFolder(file.orgId, file.name, editor),
@@ -240,8 +277,11 @@ export function FileCardActions({
                     error: "Не удалось удалить папку",
                 },
             );
+            setIsFolderDeleteConfirmOpen(false);
             onRefresh?.();
-        } catch {}
+        } catch {} finally {
+            setIsConfirmLoading(false);
+        }
     };
 
     const handleCopyFolderPath = async () => {
@@ -270,72 +310,106 @@ export function FileCardActions({
                         >
                             <FolderOpen className="w-4 h-4" /> Открыть
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                            className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                            onClick={() => setIsRenameOpen(true)}
-                        >
-                            <Pencil className="w-4 h-4" /> Переименовать
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                            onClick={() => setIsMoveOpen(true)}
-                        >
-                            <FolderInput className="w-4 h-4" /> Переместить в папку
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                            onClick={handleCopyFolderPath}
-                        >
-                            <Copy className="w-4 h-4" /> Копировать путь
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                            onClick={handleDownloadFolderArchive}
-                            disabled={isArchiveLoading}
-                        >
-                            {isArchiveLoading ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <Download className="w-4 h-4" />
-                            )}
-                            Скачать архивом
-                        </DropdownMenuItem>
-                        {useFilesApi && (
+                        {deletedOnly ? (
                             <>
-                                {file.isPublic && (
-                                    <DropdownMenuItem
-                                        className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                                        onClick={() => copyTextToClipboard(folderShareLink)}
-                                    >
-                                        <Share2Icon className="w-4 h-4" /> Поделиться
-                                    </DropdownMenuItem>
-                                )}
                                 <DropdownMenuItem
                                     className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                                    onClick={handleTogglePublic}
-                                    disabled={isPublicLoading}
+                                    onClick={handleDownloadFolderArchive}
+                                    disabled={isArchiveLoading}
                                 >
-                                    {file.isPublic ? (
-                                        <>
-                                            <Lock className="w-4 h-4" /> Сделать приватной
-                                        </>
+                                    {isArchiveLoading ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
                                     ) : (
-                                        <>
-                                            <Globe className="w-4 h-4" /> Сделать публичной
-                                        </>
+                                        <Download className="w-4 h-4" />
                                     )}
+                                    Скачать архивом
                                 </DropdownMenuItem>
-                            </>
-                        )}
-                        {canPermanentlyDelete && (
-                            <>
                                 <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />
                                 <DropdownMenuItem
-                                    className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
-                                    onClick={handleDeleteFolder}
+                                    className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                    onClick={handleRestoreFolder}
                                 >
-                                    <Trash2 className="w-4 h-4" /> Удалить папку
+                                    <RotateCcw className="w-4 h-4" /> Восстановить
                                 </DropdownMenuItem>
+                                {canPermanentlyDelete && (
+                                    <DropdownMenuItem
+                                        className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
+                                        onClick={() => setIsFolderDeleteConfirmOpen(true)}
+                                    >
+                                        <Trash className="w-4 h-4" /> Удалить навсегда
+                                    </DropdownMenuItem>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                <DropdownMenuItem
+                                    className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                    onClick={() => setIsRenameOpen(true)}
+                                >
+                                    <Pencil className="w-4 h-4" /> Переименовать
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                    onClick={() => setIsMoveOpen(true)}
+                                >
+                                    <FolderInput className="w-4 h-4" /> Переместить в папку
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                    onClick={handleCopyFolderPath}
+                                >
+                                    <Copy className="w-4 h-4" /> Копировать путь
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                    onClick={handleDownloadFolderArchive}
+                                    disabled={isArchiveLoading}
+                                >
+                                    {isArchiveLoading ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Download className="w-4 h-4" />
+                                    )}
+                                    Скачать архивом
+                                </DropdownMenuItem>
+                                {useFilesApi && (
+                                    <>
+                                        {file.isPublic && (
+                                            <DropdownMenuItem
+                                                className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                                onClick={() => copyTextToClipboard(folderShareLink)}
+                                            >
+                                                <Share2Icon className="w-4 h-4" /> Поделиться
+                                            </DropdownMenuItem>
+                                        )}
+                                        <DropdownMenuItem
+                                            className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                            onClick={handleTogglePublic}
+                                            disabled={isPublicLoading}
+                                        >
+                                            {file.isPublic ? (
+                                                <>
+                                                    <Lock className="w-4 h-4" /> Сделать приватной
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Globe className="w-4 h-4" /> Сделать публичной
+                                                </>
+                                            )}
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                                {useFilesApi && (
+                                    <>
+                                        <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />
+                                        <DropdownMenuItem
+                                            className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
+                                            onClick={() => setIsFolderTrashConfirmOpen(true)}
+                                        >
+                                            <Trash2 className="w-4 h-4" /> В корзину
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
                             </>
                         )}
                     </>
@@ -501,6 +575,30 @@ export function FileCardActions({
             confirmLabel="Удалить"
             cancelLabel="Отмена"
             onConfirm={handleDeletePermanently}
+            isLoading={isConfirmLoading}
+            destructive={true}
+        />
+
+        <ConfirmDialog
+            open={isFolderTrashConfirmOpen}
+            onOpenChange={setIsFolderTrashConfirmOpen}
+            title="Переместить папку в корзину"
+            description={`Вы уверены, что хотите переместить папку «${file.name}» в корзину? Её можно будет восстановить позже.`}
+            confirmLabel="В корзину"
+            cancelLabel="Отмена"
+            onConfirm={handleMoveFolderToTrash}
+            isLoading={isConfirmLoading}
+            destructive={false}
+        />
+
+        <ConfirmDialog
+            open={isFolderDeleteConfirmOpen}
+            onOpenChange={setIsFolderDeleteConfirmOpen}
+            title="Удалить папку навсегда"
+            description={`Вы уверены, что хотите безвозвратно удалить папку «${file.name}» и всё её содержимое? Это действие нельзя отменить.`}
+            confirmLabel="Удалить"
+            cancelLabel="Отмена"
+            onConfirm={handleDeleteFolder}
             isLoading={isConfirmLoading}
             destructive={true}
         />

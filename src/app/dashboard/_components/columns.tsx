@@ -7,6 +7,7 @@ import { useUser } from "@clerk/nextjs"
 import { Globe, Lock } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Checkbox } from "@/components/ui/checkbox"
 import type { FileDoc } from "@/config/types/components.types"
 import { typeIcons } from "@/config/const/components.const"
 import { api } from "../../../../convex/_generated/api"
@@ -78,13 +79,16 @@ function NameCell({
   file,
   onOpenFolder,
   useFilesApi,
+  deletedOnly,
 }: {
   file: FileDoc;
   onOpenFolder?: (folderName: string) => void;
   useFilesApi?: boolean;
+  deletedOnly?: boolean;
 }) {
   const displayName = file.displayName?.trim() || file.name?.trim() || "Без названия";
-  const publicIcon = file.isPublic ? (
+  const hidePublicStatus = file.isFolder && deletedOnly;
+  const publicIcon = hidePublicStatus ? null : file.isPublic ? (
     <span title="Публичный доступ">
       <Globe className="h-3.5 w-3.5 shrink-0 text-green-400" />
     </span>
@@ -161,6 +165,7 @@ export function createColumns({
   notter,
   useFilesApi,
   deletedOnly,
+  enableSelection,
   onRefresh,
   onOpenFolder,
 }: {
@@ -168,14 +173,48 @@ export function createColumns({
   notter?: boolean;
   useFilesApi?: boolean;
   deletedOnly?: boolean;
+  enableSelection?: boolean;
   onRefresh?: () => void;
   onOpenFolder?: (folderName: string) => void;
 }): ColumnDef<FileDoc>[] {
-  return [
+  const columns: ColumnDef<FileDoc>[] = [];
+
+  if (enableSelection) {
+    columns.push({
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) =>
+            table.toggleAllPageRowsSelected(value === true)
+          }
+          aria-label="Выбрать все"
+          className="border-white/10 bg-white/5 data-[state=checked]:border-primary data-[state=checked]:bg-primary hover:bg-white/10"
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(value === true)}
+          aria-label="Выбрать строку"
+          className="border-white/10 bg-white/5 data-[state=checked]:border-primary data-[state=checked]:bg-primary hover:bg-white/10"
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    });
+  }
+
+  columns.push(
     {
       accessorKey: "name",
       header: "Название",
-      cell: ({ row }) => <NameCell file={row.original} onOpenFolder={onOpenFolder} useFilesApi={useFilesApi} />,
+      cell: ({ row }) => <NameCell file={row.original} onOpenFolder={onOpenFolder} useFilesApi={useFilesApi} deletedOnly={deletedOnly} />,
     },
     {
       accessorKey: "type",
@@ -214,5 +253,7 @@ export function createColumns({
         />
       ),
     },
-  ];
+  );
+
+  return columns;
 }

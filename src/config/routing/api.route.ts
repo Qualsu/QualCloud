@@ -27,6 +27,8 @@ export const api = {
         FOLDER: "/files/folder",
         FOLDER_RENAME: "/files/folder/rename",
         FOLDER_MOVE: "/files/folder/move",
+        FOLDER_TRASH: "/files/folder/trash",
+        FOLDER_RESTORE: "/files/folder/restore",
         FOLDER_PUBLIC: "/files/folder/public",
         DOWNLOAD_FOLDER: (account_id: string) => `/files/download-folder/${account_id}`,
         EMPTY_TRASH: (account_id: string) => `/files/empty-trash/${account_id}`,

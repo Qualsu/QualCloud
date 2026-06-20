@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { useQuery } from "convex/react";
 import { LayoutGrid, Loader2, PackageOpen, Table as TableIcon, ArrowLeft, Trash2, Clock3 } from "lucide-react";
+import type { RowSelectionState } from "@tanstack/react-table";
 import { useEffect, useMemo, useState } from "react";
 
 import { getAllFiles as getNotterFiles } from "@/app/api/notter";
@@ -13,6 +14,13 @@ import {
   getAllFiles as getCloudFiles,
   emptyTrash,
   getUserStats,
+  moveToTrash,
+  moveFolderToTrash,
+  restoreFromTrash,
+  restoreFolder,
+  deleteFilePermanently,
+  deleteFolder,
+  downloadFolder,
 } from "@/app/api/files";
 import { useCurrentOrg } from "@/components/hooks/use-current-org";
 import {
@@ -35,6 +43,8 @@ import { formatTimeRemaining } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import { useFilesRefresh } from "@/components/context/files-refresh-context";
 import { useSyncBackendUser } from "@/components/hooks/use-sync-backend-user";
+import { getFilesEditor } from "@/lib/files-editor";
+import { links } from "@/config/routing/links.route";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
@@ -60,6 +70,9 @@ import { Button } from "@/components/ui/button";
 import { api } from "../../../../convex/_generated/api";
 import { createColumns } from "./columns";
 import { CreateFolderDialog } from "@/components/dialog/create-folder-dialog";
+import { ConfirmDialog } from "@/components/dialog/confirm-dialog";
+import { MoveToFolderDialog } from "@/components/dialog/move-to-folder-dialog";
+import { BulkActionsToolbar } from "./bulk-actions-toolbar";
 import { FileCard } from "./file-card";
 import { DataTable } from "./file-table";
 import { FilePreviewModal } from "@/components/modal/file-preview-modal";
@@ -101,9 +114,16 @@ export function FilesBrowser({
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [previewFile, setPreviewFile] = useState<FileDoc | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkMoveOpen, setIsBulkMoveOpen] = useState(false);
+  const [isBulkTrashOpen, setIsBulkTrashOpen] = useState(false);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+  const [isBulkLoading, setIsBulkLoading] = useState(false);
   const query = searchParams.get("q")?.trim() ?? "";
 
   useSyncBackendUser(user.user?.id);
+
+  const editor = getFilesEditor(user.user);
 
   const useFilesApi = !shrtl && !notter && !kenycloud;
 
@@ -209,7 +229,35 @@ export function FilesBrowser({
     ? currentFolder.split("/").pop()
     : null;
 
-  const handleRowClick = (file: FileDoc) => {
+  const enableSelection = useFilesApi;
+
+  const toggleSelection = (id: string, selected: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (selected) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  useEffect(() => {
+    clearSelection();
+  }, [currentFolder, type, sort, typeSort, query]);
+
+  const handleRowClick = (file: FileDoc, e?: React.MouseEvent) => {
+    if (enableSelection && (e?.ctrlKey || e?.metaKey)) {
+      e?.preventDefault();
+      toggleSelection(file._id as string, !selectedIds.has(file._id as string));
+      return;
+    }
+
+    clearSelection();
+
     if (file.isFolder) {
       setCurrentFolder(file.name);
     } else {
@@ -304,6 +352,159 @@ export function FilesBrowser({
     );
   })();
 
+  const selectedItems = useMemo(
+    () => sortedFiles.filter((file) => selectedIds.has(file._id as string)),
+    [sortedFiles, selectedIds]
+  );
+
+  const rowSelection = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    selectedIds.forEach((id) => {
+      map[id] = true;
+    });
+    return map;
+  }, [selectedIds]);
+
+  const handleRowSelectionChange = (updater: RowSelectionState | ((prev: RowSelectionState) => RowSelectionState)) => {
+    const next = typeof updater === "function" ? updater(rowSelection) : updater;
+
+    setSelectedIds(
+      new Set(Object.keys(next).filter((key) => next[key]))
+    );
+  };
+
+  const handleBulkDownload = async () => {
+    if (selectedItems.length === 0) return;
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const item of selectedItems) {
+      try {
+        if (item.isFolder) {
+          const blob = await downloadFolder(
+            item.orgId,
+            item.name,
+            user.user?.id ?? undefined
+          );
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${item.displayName || item.name}.zip`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } else {
+          const link = item.fileUrl || links.FILES.GET_FILE(item.fileId as string);
+          window.open(link, "_blank");
+        }
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+
+    if (failCount === 0) {
+      toast.success(`Скачивание ${successCount} элементов начато`);
+    } else {
+      toast.error(`Не удалось скачать ${failCount} из ${selectedItems.length} элементов`);
+    }
+  };
+
+  const handleBulkTrash = async () => {
+    if (selectedItems.length === 0) return;
+
+    setIsBulkLoading(true);
+    try {
+      const promises = selectedItems.map((item) =>
+        item.isFolder
+          ? moveFolderToTrash(item.orgId, item.name, editor)
+          : moveToTrash(item._id as string, editor)
+      );
+
+      const results = await Promise.allSettled(promises);
+      const failed = results.filter((r) => r.status === "rejected").length;
+
+      if (failed === 0) {
+        toast.success(`Перемещено в корзину ${selectedItems.length} элементов`);
+        setIsBulkTrashOpen(false);
+        clearSelection();
+        refreshFiles();
+      } else {
+        toast.error(
+          `Не удалось переместить в корзину ${failed} из ${selectedItems.length} элементов`
+        );
+      }
+    } finally {
+      setIsBulkLoading(false);
+    }
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedItems.length === 0) return;
+
+    setIsBulkLoading(true);
+    try {
+      const promises = selectedItems.map((item) =>
+        item.isFolder
+          ? restoreFolder(item.orgId, item.name, editor)
+          : restoreFromTrash(item._id as string, editor)
+      );
+
+      const results = await Promise.allSettled(promises);
+      const failed = results.filter((r) => r.status === "rejected").length;
+
+      if (failed === 0) {
+        toast.success(`Восстановлено ${selectedItems.length} элементов`);
+        clearSelection();
+        refreshFiles();
+      } else {
+        toast.error(
+          `Не удалось восстановить ${failed} из ${selectedItems.length} элементов`
+        );
+      }
+    } finally {
+      setIsBulkLoading(false);
+    }
+  };
+
+  const handleBulkDeletePermanently = async () => {
+    if (selectedItems.length === 0) return;
+
+    if (!isOrgAdmin) {
+      toast.error(
+        "Безвозвратное удаление может выполнить только администратор организации"
+      );
+      return;
+    }
+
+    setIsBulkLoading(true);
+    try {
+      const promises = selectedItems.map((item) =>
+        item.isFolder
+          ? deleteFolder(item.orgId, item.name, editor)
+          : deleteFilePermanently(item._id as string)
+      );
+
+      const results = await Promise.allSettled(promises);
+      const failed = results.filter((r) => r.status === "rejected").length;
+
+      if (failed === 0) {
+        toast.success(`Удалено ${selectedItems.length} элементов`);
+        setIsBulkDeleteOpen(false);
+        clearSelection();
+        refreshFiles();
+      } else {
+        toast.error(
+          `Не удалось удалить ${failed} из ${selectedItems.length} элементов`
+        );
+      }
+    } finally {
+      setIsBulkLoading(false);
+    }
+  };
+
   const fileColumns = useMemo(
     () =>
       createColumns({
@@ -311,10 +512,11 @@ export function FilesBrowser({
         notter,
         useFilesApi,
         deletedOnly,
+        enableSelection,
         onRefresh: refreshFiles,
         onOpenFolder: setCurrentFolder,
       }),
-    [shrtl, notter, useFilesApi, deletedOnly, refreshFiles]
+    [shrtl, notter, useFilesApi, deletedOnly, enableSelection, refreshFiles]
   );
 
   const autocompleteSuggestions = useMemo(
@@ -527,6 +729,21 @@ export function FilesBrowser({
           </div>
         </div>
 
+        {enableSelection && (
+          <BulkActionsToolbar
+            selectedCount={selectedItems.length}
+            deletedOnly={deletedOnly}
+            canPermanentlyDelete={isOrgAdmin}
+            isLoading={isBulkLoading}
+            onClear={clearSelection}
+            onMove={() => setIsBulkMoveOpen(true)}
+            onDownload={handleBulkDownload}
+            onTrash={() => setIsBulkTrashOpen(true)}
+            onRestore={handleBulkRestore}
+            onDeletePermanently={() => setIsBulkDeleteOpen(true)}
+          />
+        )}
+
         {currentFolder !== null && (
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <button
@@ -586,13 +803,23 @@ export function FilesBrowser({
                     deletedOnly={deletedOnly}
                     onRefresh={refreshFiles}
                     onOpenFolder={setCurrentFolder}
+                    selected={selectedIds.has(file._id as string)}
+                    onSelect={enableSelection ? toggleSelection : undefined}
+                    onClearSelection={enableSelection ? clearSelection : undefined}
                   />
                 ))}
               </div>
             </TabsContent>
 
             <TabsContent value="table">
-              <DataTable columns={fileColumns} data={sortedFiles} onRowClick={handleRowClick} />
+              <DataTable
+                columns={fileColumns}
+                data={sortedFiles}
+                onRowClick={handleRowClick}
+                rowSelection={rowSelection}
+                onRowSelectionChange={handleRowSelectionChange}
+                getRowId={(row) => row._id as string}
+              />
             </TabsContent>
           </>
         ) : null}
@@ -617,6 +844,46 @@ export function FilesBrowser({
           deletedOnly={deletedOnly}
           onRefresh={refreshFiles}
           onOpenFolder={setCurrentFolder}
+        />
+      )}
+
+      {enableSelection && (
+        <MoveToFolderDialog
+          files={selectedItems}
+          open={isBulkMoveOpen}
+          onOpenChange={setIsBulkMoveOpen}
+          onMoved={() => {
+            clearSelection();
+            refreshFiles();
+          }}
+        />
+      )}
+
+      {enableSelection && (
+        <ConfirmDialog
+          open={isBulkTrashOpen}
+          onOpenChange={setIsBulkTrashOpen}
+          title="Переместить в корзину"
+          description={`Вы уверены, что хотите переместить ${selectedItems.length} элементов в корзину?`}
+          confirmLabel="В корзину"
+          cancelLabel="Отмена"
+          onConfirm={handleBulkTrash}
+          isLoading={isBulkLoading}
+          destructive={false}
+        />
+      )}
+
+      {enableSelection && (
+        <ConfirmDialog
+          open={isBulkDeleteOpen}
+          onOpenChange={setIsBulkDeleteOpen}
+          title="Удалить выбранные элементы навсегда"
+          description={`Вы уверены, что хотите безвозвратно удалить ${selectedItems.length} элементов? Это действие нельзя отменить.`}
+          confirmLabel="Удалить"
+          cancelLabel="Отмена"
+          onConfirm={handleBulkDeletePermanently}
+          isLoading={isBulkLoading}
+          destructive={true}
         />
       )}
     </div>
