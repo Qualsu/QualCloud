@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     template: "QualCloud | %s",
     default: "QualCloud",
   },
-  description: "Единый доступ к файлам проектов QualCloud",
+  description: "Удобное файловое хранилище — загружайте, храните и делитесь файлами в облаке QualCloud",
   manifest: images.MANIFEST,
   icons: {
     icon: images.ICON,

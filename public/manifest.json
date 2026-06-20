@@ -1,7 +1,7 @@
 {
   "name": "QualCloud",
   "short_name": "QualCloud",
-  "description": "Единый доступ к файлам проектов Qualsu",
+  "description": "Удобное файловое хранилище - загружайте, храните и делитесь файлами в облаке QualCloud",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
