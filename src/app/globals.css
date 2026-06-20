@@ -16,7 +16,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 270 10% 10%;
     --popover-foreground: 0 0% 98%;
-    --primary: 273 100% 60%;
+    --primary: 271 65% 55%;
     --primary-foreground: 0 0% 98%;
     --secondary: 270 8% 16%;
     --secondary-foreground: 0 0% 90%;
@@ -28,7 +28,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 270 10% 18%;
     --input: 270 10% 18%;
-    --ring: 273 100% 60%;
+    --ring: 271 65% 55%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -144,7 +144,7 @@ body::after {
 }
 
 .nav-link-active {
-  background: rgba(164, 49, 255, 0.18);
+  background: rgba(139, 92, 246, 0.18);
   color: #fff;
 }
 

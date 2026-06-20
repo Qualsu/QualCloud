@@ -19,7 +19,7 @@ export default function ConvexClientProvider({
       appearance={{
         baseTheme: dark,
         variables: {
-          colorPrimary: "#a431ff",
+          colorPrimary: "#8B5CF6",
           colorBackground: "#1e1126",
           colorInputBackground: "rgba(255,255,255,0.06)",
           colorInputText: "#ffffff",
@@ -34,7 +34,7 @@ export default function ConvexClientProvider({
         },
       }}
     >
-      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+      <ConvexProviderWithClerk client={convex} useAuth={useAuth as never}>
         {children}
       </ConvexProviderWithClerk>
     </ClerkProvider>

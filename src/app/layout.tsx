@@ -2,16 +2,19 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/provider/theme-provider";
 import { images } from "@/config/routing/image.route";
-import ConvexClientProvider from "../components/convex-client-provider";
+import ConvexClientProvider from "@/components/provider/convex-client-provider";
 import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "QualCloud",
-  description: "Единый доступ к файлам проектов Qualsu",
+  title: {
+    template: "QualCloud | %s",
+    default: "QualCloud",
+  },
+  description: "Единый доступ к файлам проектов QualCloud",
   manifest: images.MANIFEST,
   icons: {
     icon: images.ICON,

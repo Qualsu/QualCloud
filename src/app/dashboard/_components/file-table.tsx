@@ -5,6 +5,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table"
+import type { RowSelectionState } from "@tanstack/react-table"
 
 import {
   Table,
@@ -19,11 +20,21 @@ import type { DataTableProps } from "@/config/types/components.types"
 export function DataTable<TData, TValue>({
   columns,
   data,
+  onRowClick,
+  rowSelection,
+  onRowSelectionChange,
+  getRowId,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
     columns,
+    state: {
+      rowSelection: rowSelection ?? {},
+    },
+    enableRowSelection: true,
+    onRowSelectionChange,
     getCoreRowModel: getCoreRowModel(),
+    getRowId,
   })
 
   return (
@@ -53,10 +64,18 @@ export function DataTable<TData, TValue>({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="border-white/10 text-white/70 hover:bg-white/[0.04]"
+                className="border-white/10 text-white/70 hover:bg-white/[0.04] cursor-pointer data-[state=selected]:bg-white/[0.08]"
+                onClick={(e) => onRowClick?.(row.original, e)}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell
+                    key={cell.id}
+                    onClick={(e) => {
+                      if (cell.column.id === "actions" || cell.column.id === "select") {
+                        e.stopPropagation();
+                      }
+                    }}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}

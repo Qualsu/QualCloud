@@ -12,7 +12,7 @@ export const fileTypes = v.union(
   v.literal("audio"),
   v.literal("programming"),
   v.literal("exe"),
-  v.literal("db"),
+  v.literal("db"), 
   v.literal("archive"),
 )
 

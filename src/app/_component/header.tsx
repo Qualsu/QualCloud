@@ -1,6 +1,6 @@
 "use client";
 
-import { OrganizationSwitcher, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { useConvexAuth } from "convex/react";
 import { Loader2, Menu } from "lucide-react";
 import Link from "next/link";
@@ -8,19 +8,21 @@ import Image from "next/image";
 
 import { pages } from "@/config/routing/pages.route";
 import { images } from "@/config/routing/image.route";
-import { useMobileNav } from "@/components/mobile-nav-context";
+import { useMobileNav } from "@/components/context/mobile-nav-context";
 import { HeaderProps } from "@/config/types/components.types";
 import { usePathname } from "next/navigation";
+import { SearchBar } from "../dashboard/_components/search-bar";
 
-export function Header({ showMobileMenuButton }: HeaderProps) {
+export function Header({ showMobileMenuButton, showSearch }: HeaderProps) {
     const { isLoading } = useConvexAuth();
     const { toggle } = useMobileNav();
     const pathname = usePathname()
+    const shouldShowSearch = showSearch ?? pathname.startsWith("/dashboard");
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-10 px-4 pt-3 sm:px-6">
-            <div className="surface-panel mx-auto flex max-w-[1400px] items-center justify-between rounded-2xl px-4 py-3 sm:px-5 sm:py-4">
-                <div className="flex items-center gap-3">
+        <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-3 sm:px-6">
+            <div className="surface-panel relative flex w-full flex-nowrap items-center justify-between gap-2 overflow-visible rounded-2xl px-4 py-3 sm:gap-4 sm:px-5 sm:py-4">
+                <div className="flex min-w-0 items-center gap-3">
                     {showMobileMenuButton && (
                         <button
                             onClick={toggle}
@@ -30,13 +32,13 @@ export function Header({ showMobileMenuButton }: HeaderProps) {
                             <Menu size={18} />
                         </button>
                     )}
-                    <Link href={pages.ROOT}>
+                    <Link href="#">
                         <Image
                             src={images.LOGO}
                             width={140}
                             height={36}
                             alt="QualCloud Logo"
-                            className={`h-8 w-auto hidden md:block`}
+                            className={`h-8 w-auto hidden lg:block`}
                         />
 
                         <Image
@@ -44,40 +46,42 @@ export function Header({ showMobileMenuButton }: HeaderProps) {
                             width={40}
                             height={40}
                             alt="QualCloud Icon"
-                            className={`h-8 w-auto ${pathname === "/" ? "block md:hidden" : "hidden"}`}
+                            className={`h-8 w-auto ${
+                                pathname === "/" ? "block md:hidden" : "hidden md:block lg:hidden"
+                            }`}
                         />
                     </Link>
                 </div>
 
+                {shouldShowSearch && (
+                    <div className="flex flex-1 justify-center md:absolute md:left-1/2 md:-translate-x-1/2 md:w-auto md:max-w-xs">
+                        <SearchBar syncWithUrl />
+                    </div>
+                )}
+
                 {isLoading ? (
                     <Loader2 className="animate-spin text-white/60" size={20} />
                 ) : (
-                    <div className="flex items-center gap-2">
-                        <OrganizationSwitcher
-                            appearance={{
-                                elements: {
-                                    rootBox: "text-white",
-                                    organizationSwitcherTrigger: `text-white/80 hover:text-white hover:bg-white/10 rounded-xl px-3 py-2 ${pathname === "/" && "hidden"}`,
-                                }
-                            }}
-                        />
-                        <UserButton
-                            appearance={{
-                                elements: {
-                                    avatarBox: "w-8 h-8",
-                                }
-                            }}
-                        />
-                        <SignedOut>
-                            <SignInButton>
-                                <Link
-                                    href={pages.AUTH}
-                                    className="primary-button px-4 py-2 text-sm"
-                                >
-                                    Войти
-                                </Link>
-                            </SignInButton>
-                        </SignedOut>
+                    <div className="flex min-w-fit items-center gap-2">
+                        <div className="flex items-center gap-2">
+                            <UserButton
+                                appearance={{
+                                    elements: {
+                                        avatarBox: "w-8 h-8",
+                                    }
+                                }}
+                            />
+                            <SignedOut>
+                                <SignInButton>
+                                    <Link
+                                        href={pages.AUTH}
+                                        className="primary-button px-4 py-2 text-sm"
+                                    >
+                                        Войти
+                                    </Link>
+                                </SignInButton>
+                            </SignedOut>
+                        </div>
                     </div>
                 )}
             </div>

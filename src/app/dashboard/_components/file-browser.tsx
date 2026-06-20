@@ -1,11 +1,51 @@
 "use client";
 
-import { useOrganization, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
+import { CheckedState } from "@radix-ui/react-checkbox";
 import { useQuery } from "convex/react";
-import { PackageOpen } from "lucide-react";
-import Image from "next/image";
-import { useEffect, useState } from "react";
+import { LayoutGrid, Loader2, PackageOpen, Table as TableIcon, ArrowLeft, Trash2, Clock3 } from "lucide-react";
+import type { RowSelectionState } from "@tanstack/react-table";
+import { useEffect, useMemo, useState } from "react";
 
+import { getAllFiles as getNotterFiles } from "@/app/api/notter";
+import { getAllFiles as getShrtlFiles } from "@/app/api/shrtl";
+import {
+  getAllFiles as getCloudFiles,
+  emptyTrash,
+  getUserStats,
+  moveToTrash,
+  moveFolderToTrash,
+  restoreFromTrash,
+  restoreFolder,
+  deleteFilePermanently,
+  deleteFolder,
+  downloadFolder,
+} from "@/app/api/files";
+import { useCurrentOrg } from "@/components/hooks/use-current-org";
+import {
+  fileSortDirectionOptions,
+  fileSortOptions,
+  fileTypeOptions,
+  fileTypeOrder,
+} from "@/config/const/components.const";
+import type {
+  FileDoc,
+  FileFilterType,
+  FileType,
+  FilesBrowserProps,
+  FileSortDirection,
+  FileSortKey,
+} from "@/config/types/components.types";
+import { useSearchSuggestions } from "@/components/context/search-suggestions-context";
+import { useFilesView } from "@/components/context/files-view-context";
+import { formatTimeRemaining } from "@/lib/utils";
+import { toast } from "@/lib/toast";
+import { useFilesRefresh } from "@/components/context/files-refresh-context";
+import { useSyncBackendUser } from "@/components/hooks/use-sync-backend-user";
+import { getFilesEditor } from "@/lib/files-editor";
+import { links } from "@/config/routing/links.route";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -14,120 +54,286 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import type {
-  FileDoc,
-  FileFilterType,
-  FilesBrowserProps,
-  FileSortDirection,
-  FileSortKey,
-} from "@/config/types/components.types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { api } from "../../../../convex/_generated/api";
-import { columns } from "./columns";
-import { FileCard, FileCardSkeleton } from "./file-card";
+import { createColumns } from "./columns";
+import { CreateFolderDialog } from "@/components/dialog/create-folder-dialog";
+import { ConfirmDialog } from "@/components/dialog/confirm-dialog";
+import { MoveToFolderDialog } from "@/components/dialog/move-to-folder-dialog";
+import { BulkActionsToolbar } from "./bulk-actions-toolbar";
+import { FileCard } from "./file-card";
 import { DataTable } from "./file-table";
-import { SearchBar } from "./search-bar";
-import { fileSortDirectionOptions, fileSortOptions, fileTypeOptions, fileTypeOrder } from "@/config/const/components.const";
-import { getAllFiles as getShrtlFiles } from "@/app/api/shrtl";
-import { getAllFiles as getNotterFiles } from "@/app/api/notter";
-import { Checkbox } from "@/components/ui/checkbox";
-import { CheckedState } from "@radix-ui/react-checkbox";
+import { FilePreviewModal } from "@/components/modal/file-preview-modal";
 
-export function Placeholder() {
+export function Placeholder({ message }: { message?: string }) {
   return (
-    <div className="flex flex-col gap-6 w-full items-center my-12 text-zinc-500">
-      <PackageOpen className="w-32 h-32"/>
-      <div className="text-2xl text-center font-bold">
-        Тут ничего нет. 
+    <div className="my-12 flex w-full flex-col items-center gap-6 text-zinc-500">
+      <PackageOpen className="h-32 w-32" />
+      <div className="text-center text-2xl font-bold">
+        {message ?? "Тут ничего нет."}
       </div>
     </div>
   );
 }
 
-export function FilesBrowser({ title, shrtl, notter }: FilesBrowserProps) {
-  const organization = useOrganization();
+export function FilesBrowser({
+  title,
+  shrtl,
+  notter,
+  kenycloud,
+  favorites,
+  deletedOnly,
+  hideWhenNoConvexUser,
+}: FilesBrowserProps) {
+  const searchParams = useSearchParams();
+  const { setSuggestions } = useSearchSuggestions();
+  const { orgId, isOrgAdmin } = useCurrentOrg();
   const user = useUser();
-  const [query, setQuery] = useState("");
   const [type, setType] = useState<FileFilterType>("all");
   const [sort, setSort] = useState<FileSortKey>("date");
   const [typeSort, setTypeSort] = useState<FileSortDirection>("new");
-  const [checked, setChecked] = useState<boolean>(false)
+  const [checked, setChecked] = useState<boolean>(false);
+  const [view, setView] = useFilesView();
+  const { refreshKey, refreshFiles } = useFilesRefresh();
   const [apiFiles, setApiFiles] = useState<FileDoc[] | undefined>(undefined);
+  const [isFilesLoading, setIsFilesLoading] = useState(false);
+  const [currentFolder, setCurrentFolder] = useState<string | null>(null);
+  const [trashEmptyInSeconds, setTrashEmptyInSeconds] = useState<number | null>(null);
+  const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+  const [previewFile, setPreviewFile] = useState<FileDoc | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkMoveOpen, setIsBulkMoveOpen] = useState(false);
+  const [isBulkTrashOpen, setIsBulkTrashOpen] = useState(false);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+  const [isBulkLoading, setIsBulkLoading] = useState(false);
+  const query = searchParams.get("q")?.trim() ?? "";
 
-  let orgId: string | undefined = undefined;
-  if (organization.isLoaded && user.isLoaded) {
-    orgId = organization.organization?.id ?? user.user?.id;
-  }
+  useSyncBackendUser(user.user?.id);
 
-  const queryFiles = useQuery(api.files.getFiles, !shrtl && orgId ? {
-    orgId,
-    type: type === "all" ? undefined : type,
-    query
-  } : "skip");
+  const editor = getFilesEditor(user.user);
 
-  const handleCheckedChange = (checked: CheckedState) => {
-    if (typeof checked === "boolean") {
-      setChecked(checked);
+  const useFilesApi = !shrtl && !notter && !kenycloud;
+
+  const convexType: Exclude<FileType, "folder" | "all"> | undefined =
+    kenycloud && type !== "all" && type !== "folder" ? type : undefined;
+
+  const queryFiles = useQuery(
+    api.files.getFiles,
+    kenycloud && orgId
+      ? {
+          orgId,
+          type: convexType,
+          query,
+          favorites,
+          deletedOnly,
+        }
+      : "skip"
+  );
+
+  const currentConvexUser = useQuery(
+    api.users.getMe,
+    !shrtl && !notter && hideWhenNoConvexUser ? {} : "skip"
+  );
+
+  const handleCheckedChange = (nextChecked: CheckedState) => {
+    if (typeof nextChecked === "boolean") {
+      setChecked(nextChecked);
     }
   };
 
   useEffect(() => {
-    if (orgId) {
-      if (shrtl) {
-        getShrtlFiles(orgId).then(setApiFiles);
-      }
-
-      if (notter) {
-        getNotterFiles(orgId).then(setApiFiles);
-      }
-      
+    if (!orgId) {
+      return;
     }
-  }, [shrtl, notter, orgId]);
 
-  const files = (shrtl || notter) ? apiFiles : queryFiles;
+    setIsFilesLoading(true);
 
-  const isLoading = files === undefined;
+    const fetchFiles = async () => {
+      try {
+        if (shrtl) {
+          const files = await getShrtlFiles(orgId);
+          setApiFiles(files);
+        } else if (notter) {
+          const files = await getNotterFiles(orgId);
+          setApiFiles(files);
+        } else if (useFilesApi) {
+          const files = await getCloudFiles(orgId, {
+            folder: currentFolder,
+            favorite: favorites ?? null,
+            deleted: deletedOnly ?? false,
+          });
+          setApiFiles(files);
+        }
+      } finally {
+        setIsFilesLoading(false);
+      }
+    };
 
-  const modifiedFiles: FileDoc[] =
-    files?.map((file) => ({
-      ...file,
-    })) ?? [];
+    fetchFiles();
+  }, [shrtl, notter, useFilesApi, orgId, favorites, deletedOnly, refreshKey, currentFolder]);
 
+  useEffect(() => {
+    if (!orgId || !deletedOnly) {
+      setTrashEmptyInSeconds(null);
+      return;
+    }
 
-  // Sorted generated by AI
-  // Bradar wat is zis...
+    getUserStats(orgId)
+      .then((stats) => setTrashEmptyInSeconds(stats.trash_empty_in_seconds))
+      .catch(() => setTrashEmptyInSeconds(null));
+  }, [orgId, deletedOnly]);
+
+  const handleEmptyTrash = async () => {
+    if (!orgId) return;
+
+    if (!isOrgAdmin) {
+      toast.error("Очистку корзины может выполнить только администратор организации");
+      return;
+    }
+
+    setIsClearing(true);
+    try {
+      await toast.promise(
+        emptyTrash(orgId),
+        {
+          loading: "Очищаем корзину…",
+          success: "Корзина очищена",
+          error: "Не удалось очистить корзину",
+        },
+      );
+      setIsClearDialogOpen(false);
+      refreshFiles();
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
+  const shouldShowEmptyState =
+    Boolean(hideWhenNoConvexUser) && currentConvexUser === null;
+  const files = shrtl || notter || useFilesApi ? apiFiles : queryFiles;
+
+  const currentFolderName = currentFolder
+    ? currentFolder.split("/").pop()
+    : null;
+
+  const enableSelection = useFilesApi;
+
+  const toggleSelection = (id: string, selected: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (selected) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  useEffect(() => {
+    clearSelection();
+  }, [currentFolder, type, sort, typeSort, query]);
+
+  const handleRowClick = (file: FileDoc, e?: React.MouseEvent) => {
+    if (enableSelection && (e?.ctrlKey || e?.metaKey)) {
+      e?.preventDefault();
+      toggleSelection(file._id as string, !selectedIds.has(file._id as string));
+      return;
+    }
+
+    clearSelection();
+
+    if (file.isFolder) {
+      setCurrentFolder(file.name);
+    } else {
+      setPreviewFile(file);
+    }
+  };
+
+  const emptyMessage = (() => {
+    if (deletedOnly) return "Корзина пуста";
+    if (favorites) return "В избранном пока ничего нет";
+    if (query) return "Ничего не найдено по запросу";
+    if (currentFolderName) return `Папка «${currentFolderName}» пуста`;
+    return "Тут ничего нет.";
+  })();
+  const isLoading =
+    !shouldShowEmptyState &&
+    (files === undefined ||
+      isFilesLoading ||
+      (hideWhenNoConvexUser &&
+        !shrtl &&
+        !notter &&
+        currentConvexUser === undefined));
+
+  const modifiedFiles = useMemo<FileDoc[]>(
+    () => (files ?? []).map((file) => ({ ...file, name: file.name ?? "" })),
+    [files]
+  );
+
+  const filteredFiles = (() => {
+    let result = [...modifiedFiles];
+
+    if (query) {
+      result = result.filter((file) =>
+        file.name.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+
+    if (useFilesApi && !favorites) {
+      if (currentFolder === null) {
+        result = result.filter((file) => !file.folder || file.isFolder);
+      } else {
+        result = result.filter((file) => file.folder === currentFolder);
+      }
+    }
+
+    if (shrtl && !checked) {
+      result = result.filter((file) => {
+        const expiresInSeconds =
+          "_expiresInSeconds" in file
+            ? ((file._expiresInSeconds as number | null | undefined) ?? null)
+            : null;
+        return expiresInSeconds !== null;
+      });
+    }
+
+    if (type !== "all") {
+      result = result.filter((file) => file.type === type);
+    }
+
+    return result;
+  })();
+
+  const autocompleteFiles = filteredFiles;
+
   const sortedFiles = (() => {
-    let filesToSort = modifiedFiles;
-
-    if (shrtl || notter) {
-      if (type !== "all") {
-        filesToSort = filesToSort.filter((file) => file.type === type);
-      }
-
-      if (query) {
-        filesToSort = filesToSort.filter((file) =>
-          file.name.toLowerCase().includes(query.toLowerCase())
-        );
-      }
-
-      if (shrtl && !checked) {
-        filesToSort = filesToSort.filter((file) => {
-          const expiresInSeconds = "_expiresInSeconds" in file ? (file._expiresInSeconds as number | null | undefined) ?? null : null;
-          return expiresInSeconds !== null;
-        });
-      }
-    }
-
-    const sortedByAlphabet = [...filesToSort].sort((a, b) =>
+    const sortedByAlphabet = [...filteredFiles].sort((a, b) =>
       a.name.localeCompare(b.name)
     );
 
-    const sortedByType = [...filesToSort].sort(
+    const sortedByType = [...filteredFiles].sort(
       (a, b) => fileTypeOrder.indexOf(a.type) - fileTypeOrder.indexOf(b.type)
     );
 
-    const sortedByDate = [...filesToSort].sort(
-      (a, b) => new Date(b._creationTime).valueOf() - new Date(a._creationTime).valueOf()
+    const sortedByDate = [...filteredFiles].sort(
+      (a, b) =>
+        new Date(b._creationTime).valueOf() - new Date(a._creationTime).valueOf()
     );
 
     let result = sortedByDate;
@@ -137,96 +343,549 @@ export function FilesBrowser({ title, shrtl, notter }: FilesBrowserProps) {
       result = sortedByType;
     }
 
-    return typeSort === "reverse" ? [...result].reverse() : result;
+    if (typeSort === "reverse") {
+      result = [...result].reverse();
+    }
+
+    return result.sort(
+      (a, b) => (Number(b.isFolder) || Number(b.type === "folder")) - (Number(a.isFolder) || Number(a.type === "folder"))
+    );
   })();
+
+  const selectedItems = useMemo(
+    () => sortedFiles.filter((file) => selectedIds.has(file._id as string)),
+    [sortedFiles, selectedIds]
+  );
+
+  const rowSelection = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    selectedIds.forEach((id) => {
+      map[id] = true;
+    });
+    return map;
+  }, [selectedIds]);
+
+  const handleRowSelectionChange = (updater: RowSelectionState | ((prev: RowSelectionState) => RowSelectionState)) => {
+    const next = typeof updater === "function" ? updater(rowSelection) : updater;
+
+    setSelectedIds(
+      new Set(Object.keys(next).filter((key) => next[key]))
+    );
+  };
+
+  const handleBulkDownload = async () => {
+    if (selectedItems.length === 0) return;
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const item of selectedItems) {
+      try {
+        if (item.isFolder) {
+          const blob = await downloadFolder(
+            item.orgId,
+            item.name,
+            user.user?.id ?? undefined
+          );
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${item.displayName || item.name}.zip`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } else {
+          const link = item.fileUrl || links.FILES.GET_FILE(item.fileId as string);
+          window.open(link, "_blank");
+        }
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+
+    if (failCount === 0) {
+      toast.success(`Скачивание ${successCount} элементов начато`);
+    } else {
+      toast.error(`Не удалось скачать ${failCount} из ${selectedItems.length} элементов`);
+    }
+  };
+
+  const handleBulkTrash = async () => {
+    if (selectedItems.length === 0) return;
+
+    setIsBulkLoading(true);
+    try {
+      const promises = selectedItems.map((item) =>
+        item.isFolder
+          ? moveFolderToTrash(item.orgId, item.name, editor)
+          : moveToTrash(item._id as string, editor)
+      );
+
+      const results = await Promise.allSettled(promises);
+      const failed = results.filter((r) => r.status === "rejected").length;
+
+      if (failed === 0) {
+        toast.success(`Перемещено в корзину ${selectedItems.length} элементов`);
+        setIsBulkTrashOpen(false);
+        clearSelection();
+        refreshFiles();
+      } else {
+        toast.error(
+          `Не удалось переместить в корзину ${failed} из ${selectedItems.length} элементов`
+        );
+      }
+    } finally {
+      setIsBulkLoading(false);
+    }
+  };
+
+  const handleBulkRestore = async () => {
+    if (selectedItems.length === 0) return;
+
+    setIsBulkLoading(true);
+    try {
+      const promises = selectedItems.map((item) =>
+        item.isFolder
+          ? restoreFolder(item.orgId, item.name, editor)
+          : restoreFromTrash(item._id as string, editor)
+      );
+
+      const results = await Promise.allSettled(promises);
+      const failed = results.filter((r) => r.status === "rejected").length;
+
+      if (failed === 0) {
+        toast.success(`Восстановлено ${selectedItems.length} элементов`);
+        clearSelection();
+        refreshFiles();
+      } else {
+        toast.error(
+          `Не удалось восстановить ${failed} из ${selectedItems.length} элементов`
+        );
+      }
+    } finally {
+      setIsBulkLoading(false);
+    }
+  };
+
+  const handleBulkDeletePermanently = async () => {
+    if (selectedItems.length === 0) return;
+
+    if (!isOrgAdmin) {
+      toast.error(
+        "Безвозвратное удаление может выполнить только администратор организации"
+      );
+      return;
+    }
+
+    setIsBulkLoading(true);
+    try {
+      const promises = selectedItems.map((item) =>
+        item.isFolder
+          ? deleteFolder(item.orgId, item.name, editor)
+          : deleteFilePermanently(item._id as string)
+      );
+
+      const results = await Promise.allSettled(promises);
+      const failed = results.filter((r) => r.status === "rejected").length;
+
+      if (failed === 0) {
+        toast.success(`Удалено ${selectedItems.length} элементов`);
+        setIsBulkDeleteOpen(false);
+        clearSelection();
+        refreshFiles();
+      } else {
+        toast.error(
+          `Не удалось удалить ${failed} из ${selectedItems.length} элементов`
+        );
+      }
+    } finally {
+      setIsBulkLoading(false);
+    }
+  };
+
+  const fileColumns = useMemo(
+    () =>
+      createColumns({
+        shrtl,
+        notter,
+        useFilesApi,
+        deletedOnly,
+        enableSelection,
+        onRefresh: refreshFiles,
+        onOpenFolder: setCurrentFolder,
+      }),
+    [shrtl, notter, useFilesApi, deletedOnly, enableSelection, refreshFiles]
+  );
+
+  const autocompleteSuggestions = useMemo(
+    () =>
+      Array.from(new Set(autocompleteFiles.map((file) => file.name.trim()).filter(Boolean)))
+        .sort((first, second) => first.localeCompare(second)),
+    [autocompleteFiles]
+  );
+
+  useEffect(() => {
+    setSuggestions((currentSuggestions) => {
+      if (
+        currentSuggestions.length === autocompleteSuggestions.length &&
+        currentSuggestions.every(
+          (suggestion, index) => suggestion === autocompleteSuggestions[index]
+        )
+      ) {
+        return currentSuggestions;
+      }
+
+      return autocompleteSuggestions;
+    });
+  }, [autocompleteSuggestions, setSuggestions]);
+
+  useEffect(() => {
+    return () => setSuggestions([]);
+  }, [setSuggestions]);
 
   return (
     <div>
-      <div className="flex justify-between items-start sm:items-center mb-8 flex-col sm:flex-row gap-4">
-        <h1 className="text-3xl font-semibold text-white tracking-tight">{title}</h1>
-        <div><SearchBar query={query} setQuery={setQuery} /></div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-semibold tracking-tight text-white">{title}</h1>
       </div>
 
-      <Tabs defaultValue="grid">
-        <div className="flex flex-col gap-3 mb-6">
-          <div className="flex gap-2 items-start md:items-center flex-col md:flex-row">
-            <Label htmlFor="type-select" className="text-white/60 text-sm shrink-0">Показать:</Label>
-            <Select value={type} onValueChange={(newType) => setType(newType as FileFilterType)}>
-              <SelectTrigger className="w-[160px] border-white/10 bg-white/5 text-white hover:bg-white/10" id="type-select">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="border-white/10 bg-[#211428] text-white">
-                {fileTypeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value} className="focus:bg-white/10">
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <Tabs value={view} onValueChange={(value) => setView(value as "grid" | "table")}>
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end md:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="type-select" className="text-sm text-white/60">
+                {"Показать"}
+              </Label>
+              <Select value={type} onValueChange={(newType) => setType(newType as FileFilterType)}>
+                <SelectTrigger
+                  className="w-[180px] border-white/10 bg-white/5 text-white hover:bg-white/10"
+                  id="type-select"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-white/10 bg-[#211428] text-white">
+                  {fileTypeOptions.map((option) => (
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="focus:bg-white/10"
+                    >
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <Label htmlFor="sort-select" className="text-white/60 text-sm shrink-0">Сортировать:</Label>
-            <Select value={sort} onValueChange={(newSort) => setSort(newSort as FileSortKey)}>
-              <SelectTrigger className="w-[160px] border-white/10 bg-white/5 text-white hover:bg-white/10" id="sort-select">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="border-white/10 bg-[#211428] text-white">
-                {fileSortOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value} className="focus:bg-white/10">
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="sort-select" className="text-sm text-white/60">
+                {"Сортировать"}
+              </Label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Select value={sort} onValueChange={(newSort) => setSort(newSort as FileSortKey)}>
+                  <SelectTrigger
+                    className="w-[180px] border-white/10 bg-white/5 text-white hover:bg-white/10"
+                    id="sort-select"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-white/10 bg-[#211428] text-white">
+                    {fileSortOptions.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="focus:bg-white/10"
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-            <Select value={typeSort} onValueChange={(newSort) => setTypeSort(newSort as FileSortDirection)}>
-              <SelectTrigger className="w-[140px] border-white/10 bg-white/5 text-white hover:bg-white/10" id="sort-direction-select">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="border-white/10 bg-[#211428] text-white">
-                {fileSortDirectionOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value} className="focus:bg-white/10">
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <Select
+                  value={typeSort}
+                  onValueChange={(newSort) => setTypeSort(newSort as FileSortDirection)}
+                >
+                  <SelectTrigger
+                    className="w-[160px] border-white/10 bg-white/5 text-white hover:bg-white/10"
+                    id="sort-direction-select"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-white/10 bg-[#211428] text-white">
+                    {fileSortDirectionOptions.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="focus:bg-white/10"
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
             {shrtl && (
-              <div className="flex gap-1 items-center">
-                <Label htmlFor="expired-checkbox" className="text-white/60 text-sm shrink-0">Истекшие:</Label>
+              <div className="flex items-center gap-2 pb-1">
+                <Label htmlFor="expired-checkbox" className="shrink-0 text-sm text-white/60">
+                  {"Истекшие"}
+                </Label>
                 <Checkbox
                   id="expired-checkbox"
                   name="expired-checkbox"
                   checked={checked}
                   onCheckedChange={handleCheckedChange}
+                  className="border-white/10 bg-white/5 data-[state=checked]:border-primary data-[state=checked]:bg-primary hover:bg-white/10"
                 />
               </div>
+            )}
+
+            {deletedOnly && (
+              <div className="flex items-center gap-2 pb-1 text-sm text-white/60">
+                <Clock3 size={16} className="text-white/40" />
+                <span>
+                  Автоочистка через{" "}
+                  {trashEmptyInSeconds !== null
+                    ? formatTimeRemaining(trashEmptyInSeconds)
+                    : "—"}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-end justify-end gap-3">
+            {deletedOnly && orgId && isOrgAdmin && modifiedFiles.length > 0 && (
+              <AlertDialog open={isClearDialogOpen} onOpenChange={setIsClearDialogOpen}>
+                <AlertDialogTrigger asChild>
+                  <button className="inline-flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/20 hover:text-red-300">
+                    <Trash2 size={16} />
+                    Очистить корзину
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="border-white/10 bg-[#1e1226] text-white">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Очистить корзину?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-white/60">
+                      Все файлы в корзине будут удалены безвозвратно. Это действие нельзя отменить.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel
+                      asChild
+                      className="border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+                    >
+                      <Button variant="outline" disabled={isClearing}>
+                        Отмена
+                      </Button>
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      asChild
+                      className="bg-red-500 text-white hover:bg-red-600"
+                    >
+                      <Button
+                        variant="destructive"
+                        onClick={handleEmptyTrash}
+                        disabled={isClearing}
+                      >
+                        {isClearing ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="mr-2 h-4 w-4" />
+                        )}
+                        Очистить
+                      </Button>
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            <TabsList className="h-10 gap-1 rounded-xl border border-white/10 bg-white/5 p-1">
+              <TabsTrigger
+                value="grid"
+                className="rounded-lg px-3 py-1.5 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                aria-label="Сетка"
+              >
+                <LayoutGrid size={16} />
+              </TabsTrigger>
+              <TabsTrigger
+                value="table"
+                className="rounded-lg px-3 py-1.5 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
+                aria-label="Таблица"
+              >
+                <TableIcon size={16} />
+              </TabsTrigger>
+            </TabsList>
+            {!shrtl && !notter && !kenycloud && !favorites && !deletedOnly && (
+              <CreateFolderDialog
+                account_id={orgId}
+                parent={currentFolder ?? null}
+                onCreated={refreshFiles}
+              />
             )}
           </div>
         </div>
 
-        {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mr-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <FileCardSkeleton key={i} />
-            ))}
+        {enableSelection && (
+          <BulkActionsToolbar
+            selectedCount={selectedItems.length}
+            deletedOnly={deletedOnly}
+            canPermanentlyDelete={isOrgAdmin}
+            isLoading={isBulkLoading}
+            onClear={clearSelection}
+            onMove={() => setIsBulkMoveOpen(true)}
+            onDownload={handleBulkDownload}
+            onTrash={() => setIsBulkTrashOpen(true)}
+            onRestore={handleBulkRestore}
+            onDeletePermanently={() => setIsBulkDeleteOpen(true)}
+          />
+        )}
+
+        {currentFolder !== null && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => {
+                const parts = currentFolder.split("/");
+                const parent = parts.slice(0, -1).join("/") || null;
+                setCurrentFolder(parent);
+              }}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <ArrowLeft size={16} />
+              Назад
+            </button>
+            <div className="flex items-center gap-1 text-sm text-white/50">
+              <button
+                onClick={() => setCurrentFolder(null)}
+                className="hover:text-white"
+              >
+                Корень
+              </button>
+              {currentFolder.split("/").map((part, index, parts) => (
+                <span key={index} className="flex items-center gap-1">
+                  <span>/</span>
+                  <button
+                    onClick={() =>
+                      setCurrentFolder(parts.slice(0, index + 1).join("/"))
+                    }
+                    className={
+                      index === parts.length - 1
+                        ? "text-white"
+                        : "hover:text-white"
+                    }
+                  >
+                    {part}
+                  </button>
+                </span>
+              ))}
+            </div>
           </div>
         )}
 
-        <TabsContent value="grid">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mr-2">
-            {sortedFiles.map((file) => (
-              <FileCard key={file._id} file={file} shrtl={shrtl} notter={notter}/>
-            ))}
+        {isLoading ? (
+          <div className="flex min-h-[320px] items-center justify-center">
+            <Loader2 className="h-16 w-16 animate-spin text-white/50" />
           </div>
-        </TabsContent>
+        ) : !shouldShowEmptyState ? (
+          <>
+            <TabsContent value="grid">
+              <div className="mr-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {sortedFiles.map((file) => (
+                  <FileCard
+                    key={file._id}
+                    file={file}
+                    shrtl={shrtl}
+                    notter={notter}
+                    useFilesApi={useFilesApi}
+                    deletedOnly={deletedOnly}
+                    onRefresh={refreshFiles}
+                    onOpenFolder={setCurrentFolder}
+                    selected={selectedIds.has(file._id as string)}
+                    onSelect={enableSelection ? toggleSelection : undefined}
+                    onClearSelection={enableSelection ? clearSelection : undefined}
+                  />
+                ))}
+              </div>
+            </TabsContent>
 
-        <TabsContent value="table">
-          <DataTable columns={columns} data={sortedFiles} />
-        </TabsContent>
+            <TabsContent value="table">
+              <DataTable
+                columns={fileColumns}
+                data={sortedFiles}
+                onRowClick={handleRowClick}
+                rowSelection={rowSelection}
+                onRowSelectionChange={handleRowSelectionChange}
+                getRowId={(row) => row._id as string}
+              />
+            </TabsContent>
+          </>
+        ) : null}
       </Tabs>
 
-      {!isLoading && sortedFiles.length === 0 && <Placeholder />}
+      {!isLoading &&
+        view !== "table" &&
+        (shouldShowEmptyState || sortedFiles.length === 0) && (
+          <Placeholder message={emptyMessage} />
+        )}
+
+      {previewFile && (
+        <FilePreviewModal
+          file={previewFile}
+          open={!!previewFile}
+          onOpenChange={(open) => {
+            if (!open) setPreviewFile(null);
+          }}
+          shrtl={shrtl}
+          notter={notter}
+          useFilesApi={useFilesApi}
+          deletedOnly={deletedOnly}
+          onRefresh={refreshFiles}
+          onOpenFolder={setCurrentFolder}
+        />
+      )}
+
+      {enableSelection && (
+        <MoveToFolderDialog
+          files={selectedItems}
+          open={isBulkMoveOpen}
+          onOpenChange={setIsBulkMoveOpen}
+          onMoved={() => {
+            clearSelection();
+            refreshFiles();
+          }}
+        />
+      )}
+
+      {enableSelection && (
+        <ConfirmDialog
+          open={isBulkTrashOpen}
+          onOpenChange={setIsBulkTrashOpen}
+          title="Переместить в корзину"
+          description={`Вы уверены, что хотите переместить ${selectedItems.length} элементов в корзину?`}
+          confirmLabel="В корзину"
+          cancelLabel="Отмена"
+          onConfirm={handleBulkTrash}
+          isLoading={isBulkLoading}
+          destructive={false}
+        />
+      )}
+
+      {enableSelection && (
+        <ConfirmDialog
+          open={isBulkDeleteOpen}
+          onOpenChange={setIsBulkDeleteOpen}
+          title="Удалить выбранные элементы навсегда"
+          description={`Вы уверены, что хотите безвозвратно удалить ${selectedItems.length} элементов? Это действие нельзя отменить.`}
+          confirmLabel="Удалить"
+          cancelLabel="Отмена"
+          onConfirm={handleBulkDeletePermanently}
+          isLoading={isBulkLoading}
+          destructive={true}
+        />
+      )}
     </div>
-  )
+  );
 }
