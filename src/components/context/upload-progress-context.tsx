@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { X, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 interface UploadItem {
   id: string;
@@ -52,6 +53,7 @@ function UploadToastItem({
   upload: UploadItem;
   onDismiss: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -91,13 +93,13 @@ function UploadToastItem({
             <span className="truncate text-sm font-medium text-white">
               {upload.fileNames.length === 1
                 ? upload.fileNames[0]
-                : `${upload.fileNames.length} файлов`}
+                : t("upload.filesCount", { count: upload.fileNames.length })}
             </span>
             <button
               type="button"
               onClick={() => onDismiss(upload.id)}
               className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-white/40 transition-colors hover:text-white"
-              aria-label="Закрыть"
+              aria-label={t("upload.close")}
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -105,7 +107,7 @@ function UploadToastItem({
           {upload.status === "uploading" && (
             <div className="mt-2">
               <div className="flex items-center justify-between gap-2 text-xs text-white/50">
-                <span>Загрузка...</span>
+                <span>{t("upload.uploading")}</span>
                 <span>{upload.progress}%</span>
               </div>
               <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
@@ -118,12 +120,12 @@ function UploadToastItem({
           )}
           {upload.status === "completed" && (
             <div className="mt-1 text-xs text-green-400">
-              Загрузка завершена
+              {t("upload.progressCompleted")}
             </div>
           )}
           {upload.status === "error" && (
             <div className="mt-1 text-xs text-red-400">
-              {upload.errorMessage || "Ошибка загрузки"}
+              {upload.errorMessage || t("upload.progressError")}
             </div>
           )}
         </div>

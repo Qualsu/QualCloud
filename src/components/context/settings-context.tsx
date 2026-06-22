@@ -7,15 +7,18 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { isLanguage, type Language } from "@/config/i18n";
 
 const STORAGE_KEY = "qualcloud-settings";
 
 interface SettingsState {
   redirectHomeToDashboard: boolean;
+  language: Language;
 }
 
 const DEFAULT_SETTINGS: SettingsState = {
   redirectHomeToDashboard: true,
+  language: "ru",
 };
 
 function getStoredSettings(): SettingsState {
@@ -25,7 +28,11 @@ function getStoredSettings(): SettingsState {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<SettingsState>;
-      return { ...DEFAULT_SETTINGS, ...parsed };
+      const settings = { ...DEFAULT_SETTINGS, ...parsed };
+      if (!isLanguage(settings.language)) {
+        settings.language = DEFAULT_SETTINGS.language;
+      }
+      return settings;
     }
   } catch {
     // localStorage может быть недоступен или данные повреждены
@@ -37,6 +44,7 @@ function getStoredSettings(): SettingsState {
 interface SettingsContextValue extends SettingsState {
   initialized: boolean;
   setRedirectHomeToDashboard: (value: boolean) => void;
+  setLanguage: (value: Language) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -72,12 +80,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings((prev) => ({ ...prev, redirectHomeToDashboard: value }));
   };
 
+  const setLanguage = (value: Language) => {
+    setSettings((prev) => ({ ...prev, language: value }));
+  };
+
   return (
     <SettingsContext.Provider
       value={{
         ...settings,
         initialized,
         setRedirectHomeToDashboard,
+        setLanguage,
       }}
     >
       {children}

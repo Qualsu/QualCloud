@@ -6,7 +6,9 @@ import { ThemeProvider } from "@/components/provider/theme-provider";
 import { images } from "@/config/routing/image.route";
 import ConvexClientProvider from "@/components/provider/convex-client-provider";
 import { SettingsProvider } from "@/components/context/settings-context";
+import { LanguageSync } from "@/components/provider/language-provider";
 import { Toaster } from "react-hot-toast";
+import ruTranslations from "@/config/i18n/translations/ru.json";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,7 +17,7 @@ export const metadata: Metadata = {
     template: "QualCloud | %s",
     default: "QualCloud",
   },
-  description: "Удобное файловое хранилище — загружайте, храните и делитесь файлами в облаке QualCloud",
+  description: ruTranslations.meta.defaultDescription,
   manifest: images.MANIFEST,
   icons: {
     icon: images.ICON,
@@ -39,6 +41,7 @@ export default function RootLayout({
         >
           <ConvexClientProvider>
             <SettingsProvider>
+              <LanguageSync />
               <Toaster
                 position="bottom-center"
                 reverseOrder={false}

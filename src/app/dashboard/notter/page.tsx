@@ -1,20 +1,13 @@
-import { Metadata } from "next";
+"use client";
 
-import { images } from "@/config/routing/image.route";
 import { FilesBrowser } from "../_components/file-browser";
+import { useTranslation } from "@/components/hooks/use-translation";
 
-export const metadata: Metadata = {
-    title: "Notter",
-    description: "Файлы Notter",
-    icons: {
-      icon: images.ICON,
-    }
-  };
-
-export default function Notter(){
-    return (
-        <div>
-            <FilesBrowser title="Notter" notter/>
-        </div>
-    )
+export default function Notter() {
+  const { t } = useTranslation();
+  return (
+    <div>
+      <FilesBrowser title={t("files.title.notter")} notter />
+    </div>
+  );
 }

@@ -5,18 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { landingFeatureCards } from "@/config/const/components.const";
 import { images } from "@/config/routing/image.route";
 import { pages } from "@/config/routing/pages.route";
 import { useConvexAuth } from "convex/react";
 import { ArrowRight, Cloud, FileText, ShieldCheck } from "lucide-react";
 import { FeatureCards } from "./feature-cards";
-
-const features = [
-    { name: "Любые форматы", icon: FileText, desc: "Изображения, видео, документы и не только" },
-    { name: "Надёжно", icon: ShieldCheck, desc: "Ваши файлы в безопасности" },
-    { name: "Всегда под рукой", icon: Cloud, desc: "Доступ с любого устройства" },
-]
+import { useTranslation } from "@/components/hooks/use-translation";
 
 function ParticleField() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -106,9 +100,9 @@ function MainSkeleton() {
 
             <section className="section-shell py-12">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                    {landingFeatureCards.map((card) => (
+                    {[1, 2, 3].map((i) => (
                         <div
-                            key={card.title}
+                            key={i}
                             className="relative overflow-hidden rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-600/20 to-purple-900/20 p-6"
                         >
                             <div className="flex flex-col items-center gap-4 text-center">
@@ -127,11 +121,18 @@ function MainSkeleton() {
 }
 
 export default function Main() {
+    const { t } = useTranslation();
     const { isAuthenticated, isLoading } = useConvexAuth()
 
     if (isLoading) {
         return <MainSkeleton />;
     }
+
+    const features = [
+        { name: t("landing.featureAnyFormat"), icon: FileText, desc: t("landing.featureAnyFormatDesc") },
+        { name: t("landing.featureReliable"), icon: ShieldCheck, desc: t("landing.featureReliableDesc") },
+        { name: t("landing.featureAlwaysAtHand"), icon: Cloud, desc: t("landing.featureAlwaysAtHandDesc") },
+    ];
 
     return (
         <>
@@ -152,12 +153,12 @@ export default function Main() {
                 </div>
 
                 <h1 className="relative mx-auto mt-6 max-w-[600px] px-2 text-center text-2xl leading-tight text-white/80 sm:mt-8 sm:text-3xl sm:leading-snug">
-                    Удобное файловое хранилище
+                    {t("landing.heroTitle")}
                     <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-purple-300 bg-clip-text text-transparent"> QualCloud</span>
                 </h1>
 
                 <p className="relative mx-auto mt-4 max-w-[460px] px-4 text-center text-sm leading-relaxed text-white/50 sm:text-base">
-                    Загружайте, храните и делитесь файлами — всё в одном надёжном облаке
+                    {t("landing.heroSubtitle")}
                 </p>
 
                 <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -165,7 +166,7 @@ export default function Main() {
                         href={isAuthenticated ? pages.DASHBOARD.ROOT : pages.AUTH}
                         className="group primary-button px-8 py-3 text-lg"
                     >
-                        <span>Перейти</span>
+                        <span>{t("landing.heroCta")}</span>
                         <ArrowRight size={20} className="ml-2 transition-transform duration-300 group-hover:translate-x-1" />
                     </Link>
                 </div>

@@ -14,6 +14,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
+import { useTranslation } from "@/components/hooks/use-translation"
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -26,10 +27,11 @@ function SectionLabel({ children }: { children: ReactNode }) {
 export function SideNav() {
   const pathname = usePathname()
   const { isOpen, close } = useMobileNav()
+  const { t } = useTranslation()
 
   const ServicesLinks = ({ onClick }: { onClick?: () => void }) => (
     <>
-      {navItems.map(({ href, image, label }) => {
+      {navItems.map(({ href, image, key }) => {
         const active = pathname === href
 
         return (
@@ -44,7 +46,7 @@ export function SideNav() {
             }`}
           >
             <Image src={image} alt="nav icon" width={16} height={16} className="h-5 w-5" />
-            <span>{label}</span>
+            <span>{t(key)}</span>
           </Link>
         )
       })}
@@ -59,7 +61,7 @@ export function SideNav() {
     items: (typeof utilityNavItems)[number][]
   }) => (
     <>
-      {items.map(({ id, href, icon: Icon, label }) => {
+      {items.map(({ id, href, icon: Icon, key }) => {
         const active = Boolean(href) && pathname === href
 
         return (
@@ -74,7 +76,7 @@ export function SideNav() {
             }`}
           >
             <Icon size={18} className="shrink-0" />
-            <span>{label}</span>
+            <span>{t(key)}</span>
           </Link>
         )
       })}
@@ -90,7 +92,7 @@ export function SideNav() {
         className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-white/60 transition-all duration-200 hover:bg-white/[0.06] hover:text-white"
       >
         <Upload size={18} className="shrink-0" />
-        <span>Загрузить</span>
+        <span>{t("nav.upload")}</span>
       </button>
     </UploadDialog>
   )
@@ -98,10 +100,10 @@ export function SideNav() {
   const NavContent = ({ onClick }: { onClick?: () => void }) => (
     <div className="flex flex-col gap-1">
       <UploadNavButton onClick={onClick} />
-      <SectionLabel>Облако</SectionLabel>
+      <SectionLabel>{t("sideNav.cloud")}</SectionLabel>
       <UtilityButtons onClick={onClick} items={cloudItems} />
       <div className="my-3 h-px bg-white/10" />
-      <SectionLabel>Сервисы</SectionLabel>
+      <SectionLabel>{t("sideNav.services")}</SectionLabel>
       <ServicesLinks onClick={onClick} />
     </div>
   )
@@ -150,7 +152,7 @@ export function SideNav() {
               />
               <div className="mt-3 flex items-center justify-between">
                 <span className="text-sm font-medium uppercase tracking-wider text-white/50">
-                  Навигация
+                  {t("sideNav.navigation")}
                 </span>
                 <button
                   onClick={close}

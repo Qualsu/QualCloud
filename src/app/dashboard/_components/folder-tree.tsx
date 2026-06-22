@@ -12,6 +12,7 @@ import {
 import { getFolders } from "@/app/api/files";
 import type { FilesFolderItem } from "@/config/types/api.types";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 interface FolderTreeProps {
   account_id?: string;
@@ -38,6 +39,7 @@ export function FolderTree({
   disableDescendantsOf,
   disabledPaths,
 }: FolderTreeProps) {
+  const { t } = useTranslation();
   const [childrenMap, setChildrenMap] = useState<ChildrenMap>({});
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<Set<string>>(new Set());
@@ -148,7 +150,7 @@ export function FolderTree({
               "flex h-5 w-5 shrink-0 items-center justify-center rounded text-white/40 transition-colors hover:text-white",
               !hasChildren && !isLoading && "invisible"
             )}
-            aria-label={isExpanded ? "Свернуть" : "Развернуть"}
+            aria-label={isExpanded ? t("folderTree.collapse") : t("folderTree.expand")}
           >
             {isLoading ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -185,7 +187,7 @@ export function FolderTree({
 
   return (
     <div className="max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-white/5 p-1">
-      {renderNode("", "/", 0)}
+      {renderNode("", t("sideNav.root"), 0)}
     </div>
   );
 }

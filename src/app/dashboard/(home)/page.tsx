@@ -26,12 +26,15 @@ import { getUserStats, getRecentFiles } from "@/app/api/files";
 import { FilesUserStatsResponse } from "@/config/types/api.types";
 import { formatTimeRemaining } from "@/lib/utils";
 import { FILE_SIZE_LABELS } from "@/config/const/files.const";
+import { useTranslation } from "@/components/hooks/use-translation";
 
-function formatSize(bytes: number): string {
-  if (bytes === 0) return "0 Б";
+function formatSize(bytes: number, t: (key: string) => string): string {
+  if (bytes === 0) return `0 ${t("units.b")}`;
   const k = 1024;
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${FILE_SIZE_LABELS[i]}`;
+  const label = FILE_SIZE_LABELS[i];
+  const unit = label === "Б" ? t("units.b") : label === "КБ" ? t("units.kb") : label === "МБ" ? t("units.mb") : label === "ГБ" ? t("units.gb") : t("units.tb");
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${unit}`;
 }
 
 function formatDays(days: number): string {
@@ -72,6 +75,7 @@ function StatCard({
 }
 
 export default function Home() {
+  const { t, language } = useTranslation();
   const [view, setView] = useFilesView();
   const { orgId } = useCurrentOrg();
   const [stats, setStats] = useState<FilesUserStatsResponse | null>(null);
@@ -112,42 +116,42 @@ export default function Home() {
   const recentColumns = createColumns({
     useFilesApi: true,
     onRefresh: refreshRecentFiles,
+    t,
   });
 
   const occupiedSize = stats?.used_size ?? 0;
 
   const storageStats = [
     {
-      label: "Занято",
-      value: stats ? formatSize(occupiedSize) : "—",
+      label: t("dashboard.used"),
+      value: stats ? formatSize(occupiedSize, t) : "—",
       hint: stats?.limit_size
-        ? `из ${formatSize(stats.limit_size)} (${parseFloat(
-            ((occupiedSize / stats.limit_size) * 100).toFixed(1)
-          )}%), корзина ${formatSize(stats.trash_size ?? 0)}`
-        : `облачное хранилище, корзина ${formatSize(
-            stats?.trash_size ?? 0
+        ? `${t("dashboard.cloudStorage")}, ${t("dashboard.trash")} ${formatSize(stats.trash_size ?? 0, t)}`
+        : `${t("dashboard.cloudStorage")}, ${t("dashboard.trash")} ${formatSize(
+            stats?.trash_size ?? 0,
+            t
           )}`,
       icon: HardDrive,
       href: pages.DASHBOARD.CLOUD,
     },
     {
-      label: "Всего файлов",
+      label: t("dashboard.totalFiles"),
       value: stats ? String(stats.total_files) : "—",
-      hint: "во всех папках",
+      hint: t("dashboard.inAllFolders"),
       icon: Files,
       href: pages.DASHBOARD.CLOUD,
     },
     {
-      label: "В избранном",
+      label: t("dashboard.favorites"),
       value: stats ? String(stats.total_favorites) : "—",
-      hint: "быстрый доступ",
+      hint: t("dashboard.quickAccess"),
       icon: Heart,
       href: pages.DASHBOARD.FAVORITES,
     },
     {
-      label: "Корзина",
-      value: stats ? formatTimeRemaining(stats.trash_empty_in_seconds) : "—",
-      hint: "до автоочистки",
+      label: t("dashboard.trash"),
+      value: stats ? formatTimeRemaining(stats.trash_empty_in_seconds, language) : "—",
+      hint: t("dashboard.untilAutoClear"),
       icon: Trash2,
       href: pages.DASHBOARD.TRASH,
     },
@@ -166,10 +170,10 @@ export default function Home() {
       <section className="space-y-5">
         <div className="space-y-1">
           <h1 className="text-3xl font-semibold tracking-tight text-white">
-            Главная
+            {t("dashboard.home")}
           </h1>
           <p className="text-sm text-white/45">
-            Обзор
+            {t("dashboard.overview")}
           </p>
         </div>
 
@@ -188,7 +192,7 @@ export default function Home() {
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
               <h2 className="text-xl font-semibold text-white">
-                Недавние файлы
+                {t("dashboard.recentFiles")}
               </h2>
             </div>
 
@@ -196,14 +200,14 @@ export default function Home() {
               <TabsTrigger
                 value="grid"
                 className="rounded-lg px-3 py-1.5 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-                aria-label="Сетка"
+                aria-label={t("dashboard.gridView")}
               >
                 <LayoutGrid size={16} />
               </TabsTrigger>
               <TabsTrigger
                 value="table"
                 className="rounded-lg px-3 py-1.5 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-                aria-label="Таблица"
+                aria-label={t("dashboard.tableView")}
               >
                 <TableIcon size={16} />
               </TabsTrigger>
@@ -212,7 +216,7 @@ export default function Home() {
 
           <TabsContent value="grid" className="mt-5">
             {recentFiles.length === 0 ? (
-              <Placeholder message="Недавних файлов нет" />
+              <Placeholder message={t("dashboard.noRecentFiles")} />
             ) : (
               <div className="mr-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {recentFiles.map((file) => (

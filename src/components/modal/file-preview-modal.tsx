@@ -57,23 +57,7 @@ import { RenameDialog } from "@/components/dialog/rename-dialog";
 import { MoveToFolderDialog } from "@/components/dialog/move-to-folder-dialog";
 import { ConfirmDialog } from "@/components/dialog/confirm-dialog";
 import { formatExpiresIn, formatSize, getFileFormatDisplay, isFileExpired } from "@/app/dashboard/_components/file-helpers";
-
-const copyTextToClipboard = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    toast.success("Ссылка скопирована");
-};
-
-interface FilePreviewModalProps {
-    file: FileDoc;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    shrtl?: boolean;
-    notter?: boolean;
-    useFilesApi?: boolean;
-    deletedOnly?: boolean;
-    onRefresh?: () => void;
-    onOpenFolder?: (folderName: string) => void;
-}
+import { useTranslation } from "@/components/hooks/use-translation";
 
 export function FilePreviewModal({
     file,
@@ -85,7 +69,18 @@ export function FilePreviewModal({
     deletedOnly,
     onRefresh,
     onOpenFolder,
-}: FilePreviewModalProps) {
+}: {
+    file: FileDoc;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    shrtl?: boolean;
+    notter?: boolean;
+    useFilesApi?: boolean;
+    deletedOnly?: boolean;
+    onRefresh?: () => void;
+    onOpenFolder?: (folderName: string) => void;
+}) {
+    const { t } = useTranslation();
     const { user } = useUser();
     const { isOrgAdmin } = useCurrentOrg();
     const editor = getFilesEditor(user);
@@ -166,23 +161,27 @@ export function FilePreviewModal({
             (lastEditorIsRawId ? user?.imageUrl : undefined) ??
             user?.imageUrl ??
             undefined;
-        username = getLastEditorDisplayName(file.lastEditorUsername, user);
+        username = getLastEditorDisplayName(file.lastEditorUsername, user, {
+            user: t("common.user"),
+            you: t("common.you"),
+        });
     } else {
         avatar = userProfile?.image;
         username = userProfile?.name;
     }
 
-    const displayName = file.displayName?.trim() || file.name?.trim() || "Без названия";
+    const displayName = file.displayName?.trim() || file.name?.trim() || t("filePreview.noName");
 
     const dateDisplay = isFolder
         ? file.updatedAt
             ? formatRelative(new Date(file.updatedAt), new Date())
-            : "—"
+            : t("common.empty")
         : shrtl
         ? formatExpiresIn(
               "_expiresInSeconds" in file
                   ? ((file._expiresInSeconds as number | null | undefined) ?? null)
-                  : null
+                  : null,
+              t
           )
         : formatRelative(new Date(file._creationTime), new Date());
 
@@ -207,7 +206,11 @@ export function FilePreviewModal({
     };
 
     const handleShare = () => {
-        if (shareLink) copyTextToClipboard(shareLink);
+        if (shareLink) {
+            navigator.clipboard.writeText(shareLink).then(() => {
+                toast.success(t("fileActions.copyLink"));
+            });
+        }
     };
 
     const handleTogglePublic = async () => {
@@ -224,9 +227,9 @@ export function FilePreviewModal({
                   )
                 : updateFilePublic(file.fileId as string, next, editor);
             await toast.promise(promise, {
-                loading: next ? "Открываем публичный доступ…" : "Закрываем публичный доступ…",
-                success: next ? "Публичный доступ открыт" : "Публичный доступ закрыт",
-                error: "Не удалось изменить публичный доступ",
+                loading: next ? t("filePreview.loadingPublic") : t("filePreview.loadingPrivate"),
+                success: next ? t("filePreview.publicOpened") : t("filePreview.publicClosed"),
+                error: t("filePreview.publicError"),
             });
             setIsPublic(next);
             onRefresh?.();
@@ -248,9 +251,9 @@ export function FilePreviewModal({
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
-            toast.success("Архив скачан");
+            toast.success(t("filePreview.archiveDownloaded"));
         } catch {
-            toast.error("Не удалось скачать архив");
+            toast.error(t("filePreview.archiveError"));
         } finally {
             setIsArchiveLoading(false);
         }
@@ -263,9 +266,9 @@ export function FilePreviewModal({
                 ? removeFromFavorites(file._id as string, editor)
                 : addToFavorites(file._id as string, editor);
             await toast.promise(promise, {
-                loading: file.isFavorited ? "Убираем из избранного…" : "Добавляем в избранное…",
-                success: file.isFavorited ? "Убрано из избранного" : "Добавлено в избранное",
-                error: "Не удалось обновить избранное",
+                loading: file.isFavorited ? t("filePreview.removeFromFavorites") + "…" : t("filePreview.addToFavorites") + "…",
+                success: file.isFavorited ? t("filePreview.favoriteRemoved") : t("filePreview.favoriteAdded"),
+                error: t("filePreview.favoriteError"),
             });
             onRefresh?.();
         } catch {}
@@ -275,9 +278,9 @@ export function FilePreviewModal({
         setIsConfirmLoading(true);
         try {
             await toast.promise(moveToTrash(file._id as string, editor), {
-                loading: "Перемещаем в корзину…",
-                success: "Перемещено в корзину",
-                error: "Не удалось переместить в корзину",
+                loading: t("filePreview.trashMoved") + "…",
+                success: t("filePreview.trashMoved"),
+                error: t("filePreview.trashError"),
             });
             setIsTrashConfirmOpen(false);
             onRefresh?.();
@@ -290,9 +293,9 @@ export function FilePreviewModal({
     const handleRestore = async () => {
         try {
             await toast.promise(restoreFromTrash(file._id as string, editor), {
-                loading: "Восстанавливаем…",
-                success: "Файл восстановлен",
-                error: "Не удалось восстановить файл",
+                loading: t("filePreview.restored") + "…",
+                success: t("filePreview.restored"),
+                error: t("filePreview.restoreError"),
             });
             onRefresh?.();
             onOpenChange(false);
@@ -301,16 +304,16 @@ export function FilePreviewModal({
 
     const handleDeletePermanently = async () => {
         if (!canPermanentlyDelete) {
-            toast.error("Безвозвратное удаление может выполнить только администратор организации");
+            toast.error(t("files.adminOnlyDelete"));
             return;
         }
 
         setIsConfirmLoading(true);
         try {
             await toast.promise(deleteFilePermanently(file._id as string), {
-                loading: "Удаляем…",
-                success: "Файл удален",
-                error: "Не удалось удалить файл",
+                loading: t("filePreview.deleted") + "…",
+                success: t("filePreview.deleted"),
+                error: t("filePreview.deleteError"),
             });
             setIsDeleteConfirmOpen(false);
             onRefresh?.();
@@ -324,22 +327,22 @@ export function FilePreviewModal({
 
     const handleDeleteFolder = async () => {
         if (!canPermanentlyDelete) {
-            toast.error("Удаление папки может выполнить только администратор организации");
+            toast.error(t("files.adminOnlyFolderDelete"));
             return;
         }
 
         try {
             await toast.promise(deleteFolder(file.orgId, file.name, editor), {
-                loading: "Удаляем папку…",
-                success: `Папка «${folderDisplayName}» удалена`,
-                error: "Не удалось удалить папку",
+                loading: t("filePreview.folderDeleted", { name: folderDisplayName }) + "…",
+                success: t("filePreview.folderDeleted", { name: folderDisplayName }),
+                error: t("filePreview.folderDeleteError"),
             });
             onRefresh?.();
             onOpenChange(false);
         } catch {}
     };
 
-    const openLabel = notter ? "Открыть заметку" : shrtl ? "Открыть ссылку" : "Открыть файл";
+    const openLabel = notter ? t("fileActions.openNote") : shrtl ? t("fileActions.openLink") : t("fileActions.openFile");
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -354,9 +357,9 @@ export function FilePreviewModal({
                                         ? "text-red-500"
                                         : "text-white/60 hover:text-red-500"
                                 }`}
-                                title={file.isFavorited ? "Убрать из избранного" : "В избранное"}
+                                title={file.isFavorited ? t("filePreview.removeFromFavorites") : t("filePreview.addToFavorites")}
                                 aria-label={
-                                    file.isFavorited ? "Убрать из избранного" : "В избранное"
+                                    file.isFavorited ? t("filePreview.removeFromFavorites") : t("filePreview.addToFavorites")
                                 }
                             >
                                 <Heart
@@ -369,8 +372,8 @@ export function FilePreviewModal({
                             <button
                                 onClick={handleShare}
                                 className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/30 text-white/60 backdrop-blur-sm transition-colors hover:bg-black/50 hover:text-white"
-                                title="Поделиться"
-                                aria-label="Поделиться"
+                                title={t("filePreview.share")}
+                                aria-label={t("filePreview.share")}
                             >
                                 <Share2Icon className="h-4 w-4" />
                             </button>
@@ -399,8 +402,8 @@ export function FilePreviewModal({
                                         <button
                                             onClick={() => setIsRenameOpen(true)}
                                             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-white"
-                                            title="Переименовать"
-                                            aria-label="Переименовать"
+                                            title={t("fileActions.rename")}
+                                            aria-label={t("fileActions.rename")}
                                         >
                                             <Pencil className="h-4 w-4" />
                                         </button>
@@ -410,32 +413,32 @@ export function FilePreviewModal({
 
                             {!isFolder && typeof file.fileSize === "number" && (
                                 <p className="text-sm text-white/50">
-                                    Размер: {formatSize(file.fileSize)}
+                                    {t("filePreview.size")}: {formatSize(file.fileSize)}
                                 </p>
                             )}
                         </DialogHeader>
 
                         <div className="space-y-3 text-sm text-white/60">
                             <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
-                                <span className="text-white/40">Тип:</span>
+                                <span className="text-white/40">{t("filePreview.type")}:</span>
                                 <span className="text-white/80">
-                                    {getFileFormatDisplay(file.name, file.type, file.isFolder)}
+                                    {getFileFormatDisplay(file.name, file.type, file.isFolder, t)}
                                 </span>
                             </div>
 
                             {useFilesApi && (
                                 <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
-                                    <span className="text-white/40">Доступ:</span>
+                                    <span className="text-white/40">{t("filePreview.access")}:</span>
                                     <span className="flex items-center gap-1.5 text-white/80">
                                         {isPublic ? (
                                             <>
                                                 <Globe className="h-3.5 w-3.5" />
-                                                Публичный
+                                                {t("filePreview.public")}
                                             </>
                                         ) : (
                                             <>
                                                 <Lock className="h-3.5 w-3.5" />
-                                                Приватный
+                                                {t("filePreview.private")}
                                             </>
                                         )}
                                     </span>
@@ -444,16 +447,16 @@ export function FilePreviewModal({
 
                             {(file.folder !== undefined || canMove) && (
                                 <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
-                                    <span className="shrink-0 text-white/40">Расположение:</span>
+                                    <span className="shrink-0 text-white/40">{t("filePreview.location")}:</span>
                                     <span className="truncate text-white/80">
-                                        {file.folder ? `/${file.folder}` : "/"}
+                                        {file.folder ? t("filePreview.folderLocation", { path: file.folder }) : "/"}
                                     </span>
                                     {canMove && (
                                         <button
                                             onClick={() => setIsMoveOpen(true)}
                                             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-white"
-                                            title="Переместить в папку"
-                                            aria-label="Переместить в папку"
+                                            title={t("fileActions.moveToFolder")}
+                                            aria-label={t("fileActions.moveToFolder")}
                                         >
                                             <FolderInput className="h-4 w-4" />
                                         </button>
@@ -463,20 +466,20 @@ export function FilePreviewModal({
 
                             <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
                                 <span className="text-white/40">
-                                    {isFolder || !shrtl ? "Дата:" : "Срок:"}
+                                    {isFolder || !shrtl ? t("filePreview.date") : t("filePreview.expires")}:
                                 </span>
                                 <span className="text-white/80">{dateDisplay}</span>
                             </div>
 
                             {shrtl && !isFolder && (
                                 <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
-                                    <span className="text-white/40">Скачиваний:</span>
+                                    <span className="text-white/40">{t("filePreview.downloads")}:</span>
                                     <span className="text-white/80">{file.downloads ?? 0}</span>
                                 </div>
                             )}
 
                             <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
-                                <span className="text-white/40">Пользователь:</span>
+                                <span className="text-white/40">{t("filePreview.user")}:</span>
                                 <div className="flex items-center gap-2 text-white/80">
                                     <Avatar className="h-5 w-5">
                                         <AvatarImage src={avatar} />
@@ -506,7 +509,7 @@ export function FilePreviewModal({
                                     className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium md:py-2.5 text-white transition-colors hover:bg-white/10"
                                 >
                                     <Download className="h-4 w-4" />
-                                    Скачать
+                                    {t("filePreview.download")}
                                 </button>
                             )}
 
@@ -521,7 +524,7 @@ export function FilePreviewModal({
                                     ) : (
                                         <Download className="h-4 w-4" />
                                     )}
-                                    Скачать архивом
+                                    {t("filePreview.downloadArchive")}
                                 </button>
                             )}
 
@@ -531,7 +534,7 @@ export function FilePreviewModal({
                                     className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium md:py-2.5 text-red-400 transition-colors hover:bg-red-500/20"
                                 >
                                     <Trash2 className="h-4 w-4" />
-                                    Удалить
+                                    {t("filePreview.delete")}
                                 </button>
                             )}
 
@@ -544,12 +547,12 @@ export function FilePreviewModal({
                                     {isPublic ? (
                                         <>
                                             <Lock className="h-4 w-4" />
-                                            Сделать приватным
+                                            {t("filePreview.makePrivate")}
                                         </>
                                     ) : (
                                         <>
                                             <Globe className="h-4 w-4" />
-                                            Сделать публичным
+                                            {t("filePreview.makePublic")}
                                         </>
                                     )}
                                 </button>
@@ -564,7 +567,7 @@ export function FilePreviewModal({
                                                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium md:py-2.5 text-red-400 transition-colors hover:bg-red-500/20"
                                             >
                                                 <Trash2 className="h-4 w-4" />
-                                                Удалить папку
+                                                {t("filePreview.deleteFolder")}
                                             </button>
                                         )
                                     ) : (
@@ -574,7 +577,7 @@ export function FilePreviewModal({
                                                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium md:py-2.5 text-white transition-colors hover:bg-white/10"
                                             >
                                                 <RotateCcw className="h-4 w-4" />
-                                                Восстановить
+                                                {t("filePreview.restore")}
                                             </button>
                                             {canPermanentlyDelete && (
                                                 <button
@@ -582,7 +585,7 @@ export function FilePreviewModal({
                                                     className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium md:py-2.5 text-red-400 transition-colors hover:bg-red-500/20"
                                                 >
                                                     <Trash className="h-4 w-4" />
-                                                    Удалить навсегда
+                                                    {t("filePreview.deleteForever")}
                                                 </button>
                                             )}
                                         </>
@@ -611,10 +614,10 @@ export function FilePreviewModal({
             <ConfirmDialog
                 open={isTrashConfirmOpen}
                 onOpenChange={setIsTrashConfirmOpen}
-                title="Переместить в корзину"
-                description={`Вы уверены, что хотите переместить «${file.name}» в корзину? Файл можно будет восстановить позже.`}
-                confirmLabel="В корзину"
-                cancelLabel="Отмена"
+                title={t("fileActions.moveToTrashTitle")}
+                description={t("fileActions.moveToTrashDescription", { name: file.name })}
+                confirmLabel={t("files.toTrash")}
+                cancelLabel={t("common.cancel")}
                 onConfirm={handleMoveToTrash}
                 isLoading={isConfirmLoading}
                 destructive={false}
@@ -623,10 +626,10 @@ export function FilePreviewModal({
             <ConfirmDialog
                 open={isDeleteConfirmOpen}
                 onOpenChange={setIsDeleteConfirmOpen}
-                title="Удалить навсегда"
-                description={`Вы уверены, что хотите безвозвратно удалить «${file.name}»? Это действие нельзя отменить.`}
-                confirmLabel="Удалить"
-                cancelLabel="Отмена"
+                title={t("fileActions.deleteForeverTitle")}
+                description={t("fileActions.deleteForeverDescription", { name: file.name })}
+                confirmLabel={t("filePreview.deleteForever")}
+                cancelLabel={t("common.cancel")}
                 onConfirm={handleDeletePermanently}
                 isLoading={isConfirmLoading}
                 destructive={true}

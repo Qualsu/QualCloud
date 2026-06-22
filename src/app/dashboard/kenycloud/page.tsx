@@ -1,20 +1,13 @@
-import { Metadata } from "next";
+"use client";
 
-import { images } from "@/config/routing/image.route";
 import { FilesBrowser } from "../_components/file-browser";
-
-export const metadata: Metadata = {
-  title: "KenyCloud",
-  description: "Архив файлов KenyCloud",
-  icons: {
-    icon: images.ICON,
-  },
-};
+import { useTranslation } from "@/components/hooks/use-translation";
 
 export default function KenyCloud() {
+  const { t } = useTranslation();
   return (
     <div>
-      <FilesBrowser title="KenyCloud (Архив)" kenycloud hideWhenNoConvexUser />
+      <FilesBrowser title={t("files.title.kenycloud")} kenycloud hideWhenNoConvexUser />
     </div>
   );
 }

@@ -1,20 +1,13 @@
-import { Metadata } from "next";
+"use client";
 
-import { images } from "@/config/routing/image.route";
 import { FilesBrowser } from "../_components/file-browser";
-
-export const metadata: Metadata = {
-  title: "Избранное",
-  description: "Избранные файлы",
-  icons: {
-    icon: images.ICON,
-  },
-};
+import { useTranslation } from "@/components/hooks/use-translation";
 
 export default function Favorites() {
+  const { t } = useTranslation();
   return (
     <div>
-      <FilesBrowser title="Избранное" favorites />
+      <FilesBrowser title={t("files.title.favorites")} favorites />
     </div>
   );
 }

@@ -1,20 +1,13 @@
-import { Metadata } from "next";
+"use client";
 
-import { images } from "@/config/routing/image.route";
 import { FilesBrowser } from "../_components/file-browser";
-
-export const metadata: Metadata = {
-  title: "Облако",
-  description: "Все файлы облака",
-  icons: {
-    icon: images.ICON,
-  },
-};
+import { useTranslation } from "@/components/hooks/use-translation";
 
 export default function Cloud() {
+  const { t } = useTranslation();
   return (
     <div>
-      <FilesBrowser title="Облако" />
+      <FilesBrowser title={t("files.title.cloud")} />
     </div>
   );
 }

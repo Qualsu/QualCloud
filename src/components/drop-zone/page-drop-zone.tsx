@@ -5,12 +5,14 @@ import { Upload } from "lucide-react";
 
 import { UploadDialog } from "@/components/dialog/upload-dialog";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 interface PageDropZoneProps {
   children: React.ReactNode;
 }
 
 export function PageDropZone({ children }: PageDropZoneProps) {
+  const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [droppedFiles, setDroppedFiles] = useState<File[] | null>(null);
@@ -91,10 +93,10 @@ export function PageDropZone({ children }: PageDropZoneProps) {
           >
             <Upload className="h-24 w-24 text-purple" />
             <p className="mt-6 text-2xl font-semibold text-white">
-              Перетащите файлы сюда
+              {t("upload.dropHere")}
             </p>
             <p className="mt-2 text-sm text-white/60">
-              Отпустите файлы, чтобы загрузить их в облако
+              {t("upload.dropHint")}
             </p>
           </div>
         </div>

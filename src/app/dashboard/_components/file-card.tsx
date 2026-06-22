@@ -1,33 +1,40 @@
+"use client";
+
 import {
     Avatar,
     AvatarFallback,
     AvatarImage,
-} from "@/components/ui/avatar"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
-import { formatRelative } from 'date-fns'
-import { useQuery } from "convex/react"
-import { Globe, Heart, Lock } from "lucide-react"
-import { useState } from "react"
-import { api } from "../../../../convex/_generated/api"
-import { FileCardActions } from "./file-actions"
-import { FileCardProps } from "@/config/types/components.types"
-import { typeIcons } from "@/config/const/components.const"
-import { links } from "@/config/routing/links.route"
-import { Id } from "../../../../convex/_generated/dataModel"
-import { useUser } from "@clerk/nextjs"
-import { addToFavorites, removeFromFavorites } from "@/app/api/files"
-import { getFilesEditor, getLastEditorDisplayName, isClerkUserId } from "@/lib/files-editor"
-import { toast } from "@/lib/toast"
-import { FilePreview } from "./file-preview"
-import { FilePreviewModal } from "@/components/modal/file-preview-modal"
-import { formatExpiresIn, isFileExpired } from "./file-helpers"
+} from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { formatRelative } from 'date-fns';
+import { useQuery } from "convex/react";
+import { Globe, Heart, Lock } from "lucide-react";
+import { useState } from "react";
+import { api } from "../../../../convex/_generated/api";
+import { FileCardActions } from "./file-actions";
+import { FileCardProps } from "@/config/types/components.types";
+import { typeIcons } from "@/config/const/components.const";
+import { links } from "@/config/routing/links.route";
+import { Id } from "../../../../convex/_generated/dataModel";
+import { useUser } from "@clerk/nextjs";
+import { addToFavorites, removeFromFavorites } from "@/app/api/files";
+import { getFilesEditor, getLastEditorDisplayName, isClerkUserId } from "@/lib/files-editor";
+import { toast } from "@/lib/toast";
+import { FilePreview } from "./file-preview";
+import { FilePreviewModal } from "@/components/modal/file-preview-modal";
+import { formatExpiresIn, isFileExpired } from "./file-helpers";
+import { useTranslation } from "@/components/hooks/use-translation";
 
-function getFileTimeDisplay(file: FileCardProps["file"], shrtl?: boolean): string {
+function getFileTimeDisplay(
+    file: FileCardProps["file"],
+    shrtl?: boolean,
+    t?: (key: string, params?: Record<string, string | number>) => string
+): string {
     if (shrtl) {
         const expiresInSeconds = "_expiresInSeconds" in file ? (file._expiresInSeconds as number | null | undefined) ?? null : null;
-        return formatExpiresIn(expiresInSeconds);
+        return formatExpiresIn(expiresInSeconds, t ?? ((key) => key));
     }
     return formatRelative(new Date(file._creationTime), new Date());
 }
@@ -69,14 +76,15 @@ export function FileCard({
     selected,
     onSelect,
     onClearSelection,
-}: FileCardProps){
-    const { user } = useUser()
+}: FileCardProps) {
+    const { t } = useTranslation();
+    const { user } = useUser();
     const isFromApi = "_isFromApi" in file && file._isFromApi;
     const isApiSource = shrtl || notter || useFilesApi || isFromApi;
     const isFolder = file.isFolder;
     const userProfile = useQuery(api.users.getUserProfile, !isApiSource ? {
         userId: file.userId
-    } : "skip")
+    } : "skip");
 
     const fileLink = isFolder
         ? ""
@@ -104,13 +112,16 @@ export function FileCard({
             (lastEditorIsRawId ? user?.imageUrl : undefined) ??
             user?.imageUrl ??
             undefined;
-        username = getLastEditorDisplayName(file.lastEditorUsername, user);
+        username = getLastEditorDisplayName(file.lastEditorUsername, user, {
+            user: t("common.user"),
+            you: t("common.you"),
+        });
     } else {
         avatar = userProfile?.image;
         username = userProfile?.name;
     }
 
-    const displayName = file.displayName?.trim() || file.name?.trim() || "Без названия";
+    const displayName = file.displayName?.trim() || file.name?.trim() || t("filePreview.noName");
     const canFavorite = useFilesApi && !isFolder && !deletedOnly && !isFileExpired(file);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -145,9 +156,9 @@ export function FileCard({
                 ? removeFromFavorites(file._id as string, editor)
                 : addToFavorites(file._id as string, editor);
             await toast.promise(promise, {
-                loading: file.isFavorited ? "Убираем из избранного…" : "Добавляем в избранное…",
-                success: file.isFavorited ? "Убрано из избранного" : "Добавлено в избранное",
-                error: "Не удалось обновить избранное",
+                loading: file.isFavorited ? t("filePreview.removeFromFavorites") + "…" : t("filePreview.addToFavorites") + "…",
+                success: file.isFavorited ? t("filePreview.favoriteRemoved") : t("filePreview.favoriteAdded"),
+                error: t("filePreview.favoriteError"),
             });
             onRefresh?.();
         } catch {}
@@ -182,7 +193,7 @@ export function FileCard({
                                 onCheckedChange={(value) =>
                                     onSelect(file._id as string, value === true)
                                 }
-                                aria-label={selected ? "Снять выделение" : "Выбрать"}
+                                aria-label={selected ? t("files.deselect") : t("columns.selectRow")}
                                 className="border-white/10 bg-white/5 data-[state=checked]:border-primary data-[state=checked]:bg-primary hover:bg-white/10"
                             />
                         </div>
@@ -192,11 +203,11 @@ export function FileCard({
                     {useFilesApi && !(file.isFolder && deletedOnly) && (
                         <>
                             {file.isPublic ? (
-                                <span title="Публичный доступ">
+                                <span title={t("fileTypes.public")}>
                                     <Globe className="h-3.5 w-3.5 shrink-0 text-green-400" />
                                 </span>
                             ) : file.isFolder ? (
-                                <span title="Приватная папка">
+                                <span title={t("fileTypes.privateFolder")}>
                                     <Lock className="h-3.5 w-3.5 shrink-0 text-white/40" />
                                 </span>
                             ) : null}
@@ -212,8 +223,8 @@ export function FileCard({
                                     ? "text-red-500"
                                     : "text-white/40 hover:text-red-500"
                             }`}
-                            title={file.isFavorited ? "Убрать из избранного" : "В избранное"}
-                            aria-label={file.isFavorited ? "Убрать из избранного" : "В избранное"}
+                            title={file.isFavorited ? t("filePreview.removeFromFavorites") : t("filePreview.addToFavorites")}
+                            aria-label={file.isFavorited ? t("filePreview.removeFromFavorites") : t("filePreview.addToFavorites")}
                         >
                             <Heart className={`h-4 w-4 ${file.isFavorited ? "fill-current" : ""}`} />
                         </button>
@@ -255,7 +266,7 @@ export function FileCard({
                         ? (file.updatedAt
                             ? formatRelative(new Date(file.updatedAt), new Date())
                             : "")
-                        : getFileTimeDisplay(file, shrtl)}
+                        : getFileTimeDisplay(file, shrtl, t)}
                 </div>
             </div>
         </div>
@@ -271,6 +282,6 @@ export function FileCard({
             onOpenFolder={onOpenFolder}
         />
         </>
-    )
+    );
 
 }

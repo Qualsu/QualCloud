@@ -20,6 +20,7 @@ import { toast } from "@/lib/toast";
 import { base64Decode, cn } from "@/lib/utils";
 import NotFound from "@/app/not-found";
 import { links } from "@/config/routing/links.route";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 type TreeNode = {
   file: FileDoc;
@@ -152,6 +153,7 @@ function FolderTreeNode({
 }
 
 export default function FolderPage() {
+  const { t } = useTranslation();
   const { user, isLoaded } = useUser();
   const params = useParams();
 
@@ -203,7 +205,7 @@ export default function FolderPage() {
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        const message = err instanceof Error ? err.message : "Не удалось загрузить папку";
+        const message = err instanceof Error ? err.message : t("files.folderLoadError");
         setError(message);
       })
       .finally(() => {
@@ -213,7 +215,7 @@ export default function FolderPage() {
     return () => {
       cancelled = true;
     };
-  }, [folderId, requesterId]);
+  }, [folderId, requesterId, t]);
 
   const updateNode = (
     nodes: TreeNode[],
@@ -275,9 +277,9 @@ export default function FolderPage() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      toast.success("Архив скачан");
+      toast.success(t("filePreview.archiveDownloaded"));
     } catch {
-      toast.error("Не удалось скачать архив");
+      toast.error(t("filePreview.archiveError"));
     } finally {
       setIsDownloading(false);
     }
@@ -287,7 +289,7 @@ export default function FolderPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center text-white">
         <Loader2 className="h-10 w-10 animate-spin text-white/50" />
-        <p className="mt-4 text-sm text-white/50">Загрузка папки…</p>
+        <p className="mt-4 text-sm text-white/50">{t("files.folderLoading")}</p>
       </div>
     );
   }
@@ -326,13 +328,13 @@ export default function FolderPage() {
             ) : (
               <Download className="h-4 w-4" />
             )}
-            Скачать архивом
+            {t("files.downloadArchive")}
           </button>
         </div>
 
         <div className="space-y-1">
           {tree.length === 0 ? (
-            <div className="py-12 text-center text-white/40">Папка пуста</div>
+            <div className="py-12 text-center text-white/40">{t("files.folderEmptyInTrash")}</div>
           ) : (
             tree.map((node, index) => (
               <FolderTreeNode
