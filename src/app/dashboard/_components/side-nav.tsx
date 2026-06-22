@@ -6,6 +6,10 @@ import { navItems, utilityNavItems } from "@/config/const/components.const"
 import { images } from "@/config/routing/image.route"
 import { Upload, X } from "lucide-react"
 import { UploadDialog } from "@/components/dialog/upload-dialog"
+import {
+  SettingsDialog,
+  SettingsDialogTrigger,
+} from "@/components/dialog/settings-dialog"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -116,6 +120,9 @@ export function SideNav() {
               },
             }}
           />
+          <SettingsDialog>
+            <SettingsDialogTrigger />
+          </SettingsDialog>
         </div>
       </aside>
 
@@ -166,6 +173,9 @@ export function SideNav() {
                   },
                 }}
               />
+              <SettingsDialog>
+                <SettingsDialogTrigger onClick={close} />
+              </SettingsDialog>
             </div>
           </div>
         </div>

@@ -4,20 +4,37 @@ import Main from "./_component/main"
 import { HowItWorks } from "./_component/how-it-works"
 import { ServicesShowcase } from "./_component/services-showcase"
 import { CTASection } from "./_component/cta-section"
+import { HomeRedirect } from "./_component/home-redirect"
+
+const INSTANT_REDIRECT_SCRIPT = `
+(function () {
+  try {
+    const raw = localStorage.getItem('qualcloud-settings');
+    const settings = raw ? JSON.parse(raw) : {};
+    if (settings.redirectHomeToDashboard !== false) {
+      location.replace('/dashboard');
+    }
+  } catch (e) {}
+})();
+`;
 
 export default async function Landing(){
     return (
-        <div className="relative isolate min-h-screen text-white overflow-x-hidden">
-            <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[42rem] bg-[radial-gradient(circle_at_top,rgba(164,93,255,0.18),transparent_55%)]" />
-            <div className="pointer-events-none absolute left-1/4 top-20 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-purple-600/15 blur-[120px]" />
-            <div className="pointer-events-none absolute right-1/4 top-40 -z-10 h-80 w-80 translate-x-1/2 rounded-full bg-blue-600/10 blur-[140px]" />
-            <Header/>
-            <div className="h-20 md:h-24" />
-            <Main/>
-            <HowItWorks/>
-            <ServicesShowcase/>
-            <CTASection/>
-            <Footer/>
-        </div>
+        <>
+            <script dangerouslySetInnerHTML={{ __html: INSTANT_REDIRECT_SCRIPT }} />
+            <div className="relative isolate min-h-screen text-white overflow-x-hidden">
+                <HomeRedirect />
+                <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[42rem] bg-[radial-gradient(circle_at_top,rgba(164,93,255,0.18),transparent_55%)]" />
+                <div className="pointer-events-none absolute left-1/4 top-20 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-purple-600/15 blur-[120px]" />
+                <div className="pointer-events-none absolute right-1/4 top-40 -z-10 h-80 w-80 translate-x-1/2 rounded-full bg-blue-600/10 blur-[140px]" />
+                <Header/>
+                <div className="h-20 md:h-24" />
+                <Main/>
+                <HowItWorks/>
+                <ServicesShowcase/>
+                <CTASection/>
+                <Footer/>
+            </div>
+        </>
     )
 }
