@@ -18,12 +18,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SearchBarProps } from "@/config/types/components.types";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 const formSchema = z.object({
     query: z.string().min(0).max(99),
 });
 
 export function SearchBar({ query, setQuery, syncWithUrl = false }: SearchBarProps) {
+    const { t } = useTranslation();
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -127,7 +129,7 @@ export function SearchBar({ query, setQuery, syncWithUrl = false }: SearchBarPro
                             <FormItem>
                                 <FormControl>
                                     <Input
-                                        placeholder="Поиск файлов..."
+                                        placeholder={t("search.placeholder")}
                                         className="w-[140px] min-w-0 border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/20 focus:ring-purple-500/30 sm:w-[180px] md:w-auto md:min-w-[320px]"
                                         autoComplete="off"
                                         {...field}

@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createFolder } from "@/app/api/files";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 interface CreateFolderDialogProps {
   account_id?: string;
@@ -32,6 +33,7 @@ export function CreateFolderDialog({
     parent,
     onCreated,
 }: CreateFolderDialogProps) {
+    const { t } = useTranslation();
     const { user } = useUser();
     const currentOrg = useCurrentOrg();
     const editor = getFilesEditor(user);
@@ -49,9 +51,9 @@ export function CreateFolderDialog({
       await toast.promise(
         createFolder(account_id, trimmed, parent ?? null, editor),
         {
-          loading: "Создание папки…",
-          success: `Папка «${trimmed}» создана`,
-          error: "Не удалось создать папку",
+          loading: t("createFolder.loading"),
+          success: t("createFolder.success", { name: trimmed }),
+          error: t("createFolder.error"),
         },
       );
       setFolderName("");
@@ -67,30 +69,30 @@ export function CreateFolderDialog({
       <DialogTrigger asChild>
         <Button className="h-10 gap-2 rounded-xl">
           <FolderPlus size={16} />
-          Создать
+          {t("createFolder.create")}
         </Button>
       </DialogTrigger>
       <DialogContent className="border-white/10 bg-[#1e1126] text-white sm:rounded-xl">
         <DialogHeader>
           <DialogTitle>
-            {parent ? `Создать папку в «${parent}»` : "Создать папку"}
+            {parent ? t("createFolder.titleInParent", { parent }) : t("createFolder.title")}
           </DialogTitle>
           <DialogDescription className="text-white/60">
             {parent
-              ? "Введите название для новой вложенной папки."
-              : "Введите название для новой папки."}
+              ? t("createFolder.descriptionNested")
+              : t("createFolder.description")}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="folder-name" className="text-white/80">
-              Название папки
+              {t("createFolder.nameLabel")}
             </Label>
             <Input
               id="folder-name"
               value={folderName}
               onChange={(e) => setFolderName(e.target.value)}
-              placeholder="Например, Документы"
+              placeholder={t("createFolder.placeholder")}
               className="border-white/10 bg-white/5 text-white placeholder:text-white/40 focus-visible:ring-purple"
             />
           </div>
@@ -102,7 +104,7 @@ export function CreateFolderDialog({
             disabled={isLoading}
             className="border-white/10 bg-transparent text-white hover:bg-white/10 hover:text-white"
           >
-            Отмена
+            {t("createFolder.cancel")}
           </Button>
           <Button
             onClick={handleCreate}
@@ -112,7 +114,7 @@ export function CreateFolderDialog({
             {isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : null}
-            Создать
+            {t("createFolder.create")}
           </Button>
         </DialogFooter>
       </DialogContent>

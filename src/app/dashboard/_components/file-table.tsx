@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
 import {
   flexRender,
   getCoreRowModel,
   useReactTable,
-} from "@tanstack/react-table"
-import type { RowSelectionState } from "@tanstack/react-table"
+} from "@tanstack/react-table";
+import type { RowSelectionState } from "@tanstack/react-table";
 
 import {
   Table,
@@ -14,8 +14,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import type { DataTableProps } from "@/config/types/components.types"
+} from "@/components/ui/table";
+import type { DataTableProps } from "@/config/types/components.types";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 export function DataTable<TData, TValue>({
   columns,
@@ -25,6 +26,7 @@ export function DataTable<TData, TValue>({
   onRowSelectionChange,
   getRowId,
 }: DataTableProps<TData, TValue>) {
+  const { t } = useTranslation();
   const table = useReactTable({
     data,
     columns,
@@ -35,7 +37,7 @@ export function DataTable<TData, TValue>({
     onRowSelectionChange,
     getCoreRowModel: getCoreRowModel(),
     getRowId,
-  })
+  });
 
   return (
     <div className="rounded-xl border border-white/10 overflow-hidden">
@@ -53,7 +55,7 @@ export function DataTable<TData, TValue>({
                           header.getContext()
                         )}
                   </TableHead>
-                )
+                );
               })}
             </TableRow>
           ))}
@@ -84,12 +86,12 @@ export function DataTable<TData, TValue>({
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center text-white/40">
-                Ничего не найдено
+                {t("files.nothingFound")}
               </TableCell>
             </TableRow>
           )}
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }

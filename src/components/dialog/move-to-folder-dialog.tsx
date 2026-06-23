@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { moveFile, moveFolder } from "@/app/api/files";
 import { FolderTree } from "@/app/dashboard/_components/folder-tree";
 import type { FileDoc } from "@/config/types/components.types";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 interface MoveToFolderDialogProps {
   file?: FileDoc;
@@ -37,6 +38,7 @@ export function MoveToFolderDialog({
     onOpenChange,
     onMoved,
 }: MoveToFolderDialogProps) {
+    const { t } = useTranslation();
     const { user } = useUser();
     const editor = getFilesEditor(user);
     const [selectedPath, setSelectedPath] = useState<string>(
@@ -93,15 +95,15 @@ export function MoveToFolderDialog({
       toast.success(
         count === 1
           ? isSingleFolder
-            ? "Папка перемещена"
-            : "Файл перемещён в папку"
-          : `Перемещено ${count} элементов`
+            ? t("moveToFolder.folderMoved")
+            : t("moveToFolder.fileMoved")
+          : t("moveToFolder.multipleMoved", { count })
       );
       onOpenChange(false);
       onMoved?.();
     } else {
       toast.error(
-        `Не удалось переместить ${failed} из ${count} элементов`
+        t("moveToFolder.error", { failed, count })
       );
     }
     } finally {
@@ -116,22 +118,22 @@ export function MoveToFolderDialog({
           <DialogTitle className="flex items-center gap-2">
             <FolderInput className="h-4 w-4" />
             {count > 1
-              ? `Переместить ${count} элементов`
+              ? t("moveToFolder.multipleTitle", { count })
               : isSingleFolder
-              ? "Переместить папку"
-              : "Переместить в папку"}
+              ? t("moveToFolder.singleFolderTitle")
+              : t("moveToFolder.singleFileTitle")}
           </DialogTitle>
           <DialogDescription className="text-white/60">
             {count > 1
-              ? "Выберите папку назначения для выбранных элементов."
+              ? t("moveToFolder.multipleDescription")
               : isSingleFolder
-              ? "Выберите папку, в которую нужно переместить текущую папку."
-              : "Выберите папку назначения для файла."}
+              ? t("moveToFolder.singleFolderDescription")
+              : t("moveToFolder.singleFileDescription")}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label className="text-white/80">Папка назначения</Label>
+            <Label className="text-white/80">{t("moveToFolder.destination")}</Label>
             <FolderTree
               account_id={items[0]?.orgId}
               value={selectedPath}
@@ -147,7 +149,7 @@ export function MoveToFolderDialog({
             disabled={isLoading}
             className="border-white/10 bg-transparent text-white hover:bg-white/10 hover:text-white"
           >
-            Отмена
+            {t("moveToFolder.cancel")}
           </Button>
           <Button
             onClick={handleMove}
@@ -157,7 +159,7 @@ export function MoveToFolderDialog({
             {isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : null}
-            Переместить
+            {t("moveToFolder.move")}
           </Button>
         </DialogFooter>
       </DialogContent>

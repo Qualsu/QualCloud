@@ -24,6 +24,7 @@ import { useFilesRefresh } from "@/components/context/files-refresh-context";
 import { useUploadProgress } from "@/components/context/upload-progress-context";
 import { FolderTree } from "@/app/dashboard/_components/folder-tree";
 import { FILE_SIZE_LABELS } from "@/config/const/files.const";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 interface UploadFile {
   id: string;
@@ -51,6 +52,7 @@ export function UploadDialog({
   initialFiles,
   autoStart = false,
 }: UploadDialogProps) {
+  const { t } = useTranslation();
   const { user } = useUser();
   const currentOrg = useCurrentOrg();
   const { refreshFiles } = useFilesRefresh();
@@ -188,12 +190,12 @@ export function UploadDialog({
 
   const handleUpload = useCallback(async () => {
     if (files.length === 0) {
-      toast.error("Выберите файлы для загрузки");
+      toast.error(t("upload.noFiles"));
       return;
     }
 
     if (!account_id) {
-      toast.error("Не удалось определить аккаунт");
+      toast.error(t("upload.noAccount"));
       return;
     }
 
@@ -231,8 +233,8 @@ export function UploadDialog({
       if (!dialogClosedDuringUpload.current) {
         toast.success(
           files.length === 1
-            ? `Файл «${files[0].file.name}» успешно загружен`
-            : `Успешно загружено ${files.length} файлов`
+            ? t("upload.singleSuccess", { name: files[0].file.name })
+            : t("upload.multipleSuccess", { count: files.length })
         );
       }
       setFiles([]);
@@ -243,16 +245,16 @@ export function UploadDialog({
       onUploadComplete?.();
     } catch {
       if (!dialogClosedDuringUpload.current) {
-        toast.error("Не удалось загрузить файлы");
+        toast.error(t("upload.error"));
       }
-      failUpload(trackId, "Не удалось загрузить файлы");
+      failUpload(trackId, t("upload.error"));
     } finally {
       clearInterval(progressInterval);
       setIsUploading(false);
       uploadTrackIdRef.current = null;
       dialogClosedDuringUpload.current = false;
     }
-  }, [files, account_id, folder, handleOpenChange, refreshFiles, onUploadComplete, editor, registerUpload, updateProgress, completeUpload, failUpload]);
+  }, [files, account_id, folder, handleOpenChange, refreshFiles, onUploadComplete, editor, registerUpload, updateProgress, completeUpload, failUpload, t]);
 
   const handleUploadRef = useRef(handleUpload);
   useEffect(() => {
@@ -266,11 +268,22 @@ export function UploadDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, isOpen, files.length, isUploading, account_id]);
 
+  const getSizeLabel = (label: (typeof FILE_SIZE_LABELS)[number]) => {
+    switch (label) {
+      case "Б": return t("units.b");
+      case "КБ": return t("units.kb");
+      case "МБ": return t("units.mb");
+      case "ГБ": return t("units.gb");
+      case "ТБ": return t("units.tb");
+      default: return label;
+    }
+  };
+
   const formatSize = (bytes: number) => {
-    if (bytes === 0) return "0 Б";
+    if (bytes === 0) return `0 ${t("units.b")}`;
     const k = 1024;
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${FILE_SIZE_LABELS[i]}`;
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${getSizeLabel(FILE_SIZE_LABELS[i])}`;
   };
 
   const getFilePreviewUrl = (id: string) => previewUrlsRef.current[id] || null;
@@ -280,9 +293,9 @@ export function UploadDialog({
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="max-w-md border-white/10 bg-[#1e1126] text-white sm:rounded-xl">
         <DialogHeader>
-          <DialogTitle>Загрузить файлы</DialogTitle>
+          <DialogTitle>{t("upload.title")}</DialogTitle>
           <DialogDescription className="text-white/60">
-            Выберите файлы или перетащите их в область ниже.
+            {t("upload.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -303,7 +316,7 @@ export function UploadDialog({
               <Upload className="h-6 w-6 text-purple" />
             </div>
             <div className="text-center text-sm text-white/70">
-              <span className="font-medium text-white">Нажмите</span> или перетащите файлы сюда
+              {t("upload.clickOrDrop", { click: t("upload.click") })}
             </div>
             <input
               ref={inputRef}
@@ -316,7 +329,7 @@ export function UploadDialog({
 
           {files.length > 0 && (
             <div className="grid gap-2">
-              <Label className="text-sm text-white/80">Выбранные файлы</Label>
+              <Label className="text-sm text-white/80">{t("upload.selectedFiles")}</Label>
               <div className="max-h-48 overflow-y-auto rounded-xl border border-white/10 bg-white/5 p-1">
                 <div className="flex flex-col gap-1">
                   {files.map((item) => {
@@ -349,7 +362,7 @@ export function UploadDialog({
                           type="button"
                           onClick={() => removeFile(item.id)}
                           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/10 hover:text-white"
-                          aria-label="Удалить файл"
+                          aria-label={t("upload.removeFile")}
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -362,7 +375,7 @@ export function UploadDialog({
           )}
 
           <div className="grid gap-2">
-            <Label className="text-sm text-white/80">Папка назначения</Label>
+            <Label className="text-sm text-white/80">{t("upload.destinationFolder")}</Label>
             <FolderTree
               account_id={account_id}
               value={folder}
@@ -374,7 +387,7 @@ export function UploadDialog({
         {isUploading && (
           <div className="grid gap-2">
             <div className="flex justify-between text-xs text-white/70">
-              <span>Загрузка...</span>
+              <span>{t("upload.uploading")}</span>
               <span>{progress}%</span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
@@ -398,7 +411,7 @@ export function UploadDialog({
             disabled={isUploading}
             className="border-white/10 bg-transparent text-white hover:bg-white/10 hover:text-white"
           >
-            Отмена
+            {t("upload.cancel")}
           </Button>
           <Button
             onClick={handleUpload}
@@ -408,10 +421,10 @@ export function UploadDialog({
             {isUploading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Загрузка...
+                {t("upload.uploading")}
               </>
             ) : (
-              "Загрузить"
+              t("upload.upload")
             )}
           </Button>
         </div>

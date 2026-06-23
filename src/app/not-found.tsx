@@ -1,10 +1,15 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 
 import { pages } from "@/config/routing/pages.route";
 import { images } from "@/config/routing/image.route";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 export default function NotFound() {
+  const { t } = useTranslation();
+
   return (
     <div className="relative isolate flex min-h-screen items-center justify-center text-white">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(164,93,255,0.16),transparent_55%)]" />
@@ -16,16 +21,16 @@ export default function NotFound() {
 
         <div className="flex flex-col gap-4 text-center">
           <h1 className="relative text-2xl font-semibold text-white sm:text-3xl">
-            Страница не найдена
+            {t("notFound.title")}
           </h1>
           <p className="relative text-sm text-white/50">
-            Кажется, вы заблудились. Возможно, страница была удалена или переехала
+            {t("notFound.description")}
           </p>
           <Link
             href={pages.ROOT}
             className="primary-button relative px-8 py-3 text-base"
           >
-            На главную
+            {t("notFound.backHome")}
           </Link>
         </div>        
       </div>

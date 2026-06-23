@@ -1,3 +1,5 @@
+"use client";
+
 import {
     Copy,
     Download,
@@ -14,28 +16,29 @@ import {
     Share2Icon,
     Trash,
     Trash2,
-} from "lucide-react"
+} from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { pages } from "@/config/routing/pages.route"
-import type { FileCardProps } from "@/config/types/components.types"
-import { useOrigin } from "../../../components/hooks/use-origin"
-import { getFilesEditor } from "@/lib/files-editor"
-import { toast } from "@/lib/toast"
+} from "@/components/ui/dropdown-menu";
+import { pages } from "@/config/routing/pages.route";
+import type { FileCardProps } from "@/config/types/components.types";
+import { useOrigin } from "../../../components/hooks/use-origin";
+import { getFilesEditor } from "@/lib/files-editor";
+import { toast } from "@/lib/toast";
 
-import { useState } from "react"
-import { links } from "@/config/routing/links.route"
-import { DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu"
-import { isFileExpired } from "./file-helpers"
-import { useUser } from "@clerk/nextjs"
-import { RenameDialog } from "@/components/dialog/rename-dialog"
-import { MoveToFolderDialog } from "@/components/dialog/move-to-folder-dialog"
-import { ConfirmDialog } from "@/components/dialog/confirm-dialog"
-import { useCurrentOrg } from "@/components/hooks/use-current-org"
+import { useState } from "react";
+import { links } from "@/config/routing/links.route";
+import { DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu";
+import { isFileExpired } from "./file-helpers";
+import { useUser } from "@clerk/nextjs";
+import { RenameDialog } from "@/components/dialog/rename-dialog";
+import { MoveToFolderDialog } from "@/components/dialog/move-to-folder-dialog";
+import { ConfirmDialog } from "@/components/dialog/confirm-dialog";
+import { useCurrentOrg } from "@/components/hooks/use-current-org";
+import { useTranslation } from "@/components/hooks/use-translation";
 import {
     addToFavorites,
     removeFromFavorites,
@@ -48,12 +51,7 @@ import {
     updateFilePublic,
     updateFolderPublic,
     downloadFolder,
-} from "@/app/api/files"
-
-const copyTextToClipboard = async (text: string) => {
-    await navigator.clipboard.writeText(text)
-    toast.success("Ссылка скопирована")
-}
+} from "@/app/api/files";
 
 export function FileCardActions({
     file,
@@ -64,9 +62,10 @@ export function FileCardActions({
     onRefresh,
     onOpenFolder,
 }: FileCardProps) {
+    const { t } = useTranslation();
     const { user } = useUser();
     const { isOrgAdmin } = useCurrentOrg();
-    const origin = useOrigin()
+    const origin = useOrigin();
     const [isRenameOpen, setIsRenameOpen] = useState(false);
     const [isMoveOpen, setIsMoveOpen] = useState(false);
     const [isTrashConfirmOpen, setIsTrashConfirmOpen] = useState(false);
@@ -86,17 +85,17 @@ export function FileCardActions({
         ? links.NOTTER.GET_NOTE(file.noteId || (file._id as string))
         : useFilesApi
         ? pages.FILE.BY_ID(file.fileId as string)
-        : pages.FILE.COPY(origin, file.linkId || "")
+        : pages.FILE.COPY(origin, file.linkId || "");
 
     const downloadLink = useFilesApi
         ? (file.fileUrl || links.FILES.GET_FILE(file.fileId as string))
-        : undefined
+        : undefined;
 
     const shareLink = useFilesApi
         ? pages.FILE.COPY(origin, file.linkId || (file._id as string))
-        : openLink
+        : openLink;
 
-    const expired = isFileExpired(file)
+    const expired = isFileExpired(file);
 
     const handleToggleFavorite = async () => {
         try {
@@ -104,9 +103,9 @@ export function FileCardActions({
                 ? removeFromFavorites(file._id as string, editor)
                 : addToFavorites(file._id as string, editor);
             await toast.promise(promise, {
-                loading: file.isFavorited ? "Убираем из избранного…" : "Добавляем в избранное…",
-                success: file.isFavorited ? "Убрано из избранного" : "Добавлено в избранное",
-                error: "Не удалось обновить избранное",
+                loading: file.isFavorited ? t("filePreview.removeFromFavorites") + "…" : t("filePreview.addToFavorites") + "…",
+                success: file.isFavorited ? t("filePreview.favoriteRemoved") : t("filePreview.favoriteAdded"),
+                error: t("filePreview.favoriteError"),
             });
             onRefresh?.();
         } catch {}
@@ -118,9 +117,9 @@ export function FileCardActions({
             await toast.promise(
                 moveToTrash(file._id as string, editor),
                 {
-                    loading: "Перемещаем в корзину…",
-                    success: "Перемещено в корзину",
-                    error: "Не удалось переместить в корзину",
+                    loading: t("filePreview.trashMoved") + "…",
+                    success: t("filePreview.trashMoved"),
+                    error: t("filePreview.trashError"),
                 },
             );
             setIsTrashConfirmOpen(false);
@@ -135,9 +134,9 @@ export function FileCardActions({
             await toast.promise(
                 restoreFromTrash(file._id as string, editor),
                 {
-                    loading: "Восстанавливаем…",
-                    success: "Файл восстановлен",
-                    error: "Не удалось восстановить файл",
+                    loading: t("filePreview.restored") + "…",
+                    success: t("filePreview.restored"),
+                    error: t("filePreview.restoreError"),
                 },
             );
             onRefresh?.();
@@ -146,7 +145,7 @@ export function FileCardActions({
 
     const handleDeletePermanently = async () => {
         if (!canPermanentlyDelete) {
-            toast.error("Безвозвратное удаление может выполнить только администратор организации");
+            toast.error(t("files.adminOnlyDelete"));
             return;
         }
 
@@ -155,9 +154,9 @@ export function FileCardActions({
             await toast.promise(
                 deleteFilePermanently(file._id as string),
                 {
-                    loading: "Удаляем…",
-                    success: "Файл удален",
-                    error: "Не удалось удалить файл",
+                    loading: t("filePreview.deleted") + "…",
+                    success: t("filePreview.deleted"),
+                    error: t("filePreview.deleteError"),
                 },
             );
             setIsDeleteConfirmOpen(false);
@@ -169,7 +168,7 @@ export function FileCardActions({
 
     const handleDownload = () => {
         if (!downloadLink) {
-            toast.error("Ссылка для скачивания недоступна");
+            toast.error(t("fileActions.downloadUnavailable"));
             return;
         }
         window.open(downloadLink, "_blank");
@@ -191,9 +190,9 @@ export function FileCardActions({
             await toast.promise(
                 promise,
                 {
-                    loading: next ? "Открываем публичный доступ…" : "Закрываем публичный доступ…",
-                    success: next ? "Публичный доступ открыт" : "Публичный доступ закрыт",
-                    error: "Не удалось изменить публичный доступ",
+                    loading: next ? t("filePreview.loadingPublic") : t("filePreview.loadingPrivate"),
+                    success: next ? t("filePreview.publicOpened") : t("filePreview.publicClosed"),
+                    error: t("filePreview.publicError"),
                 },
             );
             onRefresh?.();
@@ -215,9 +214,9 @@ export function FileCardActions({
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
-            toast.success("Архив скачан");
+            toast.success(t("filePreview.archiveDownloaded"));
         } catch {
-            toast.error("Не удалось скачать архив");
+            toast.error(t("filePreview.archiveError"));
         } finally {
             setIsArchiveLoading(false);
         }
@@ -235,9 +234,9 @@ export function FileCardActions({
             await toast.promise(
                 moveFolderToTrash(file.orgId, file.name, editor),
                 {
-                    loading: "Перемещаем папку в корзину…",
-                    success: `Папка «${folderDisplayName}» перемещена в корзину`,
-                    error: "Не удалось переместить папку в корзину",
+                    loading: t("filePreview.folderMovedToTrash", { name: folderDisplayName }) + "…",
+                    success: t("filePreview.folderMovedToTrash", { name: folderDisplayName }),
+                    error: t("filePreview.folderTrashedError"),
                 },
             );
             setIsFolderTrashConfirmOpen(false);
@@ -252,9 +251,9 @@ export function FileCardActions({
             await toast.promise(
                 restoreFolder(file.orgId, file.name, editor),
                 {
-                    loading: "Восстанавливаем папку…",
-                    success: `Папка «${folderDisplayName}» восстановлена`,
-                    error: "Не удалось восстановить папку",
+                    loading: t("filePreview.folderRestored", { name: folderDisplayName }) + "…",
+                    success: t("filePreview.folderRestored", { name: folderDisplayName }),
+                    error: t("filePreview.folderRestoreError"),
                 },
             );
             onRefresh?.();
@@ -263,7 +262,7 @@ export function FileCardActions({
 
     const handleDeleteFolder = async () => {
         if (!canPermanentlyDelete) {
-            toast.error("Удаление папки может выполнить только администратор организации");
+            toast.error(t("files.adminOnlyFolderDelete"));
             return;
         }
 
@@ -272,9 +271,9 @@ export function FileCardActions({
             await toast.promise(
                 deleteFolder(file.orgId, file.name, editor),
                 {
-                    loading: "Удаляем папку…",
-                    success: `Папка «${folderDisplayName}» удалена`,
-                    error: "Не удалось удалить папку",
+                    loading: t("filePreview.folderDeleted", { name: folderDisplayName }) + "…",
+                    success: t("filePreview.folderDeleted", { name: folderDisplayName }),
+                    error: t("filePreview.folderDeleteError"),
                 },
             );
             setIsFolderDeleteConfirmOpen(false);
@@ -287,10 +286,24 @@ export function FileCardActions({
     const handleCopyFolderPath = async () => {
         try {
             await navigator.clipboard.writeText(file.name);
-            toast.success("Путь к папке скопирован");
+            toast.success(t("fileActions.copyFolderPath"));
         } catch {
-            toast.error("Не удалось скопировать путь");
+            toast.error(t("fileActions.copyError"));
         }
+    };
+
+    const handleShare = async () => {
+        try {
+            await navigator.clipboard.writeText(shareLink);
+            toast.success(t("fileActions.copyLink"));
+        } catch {}
+    };
+
+    const handleShareFolder = async () => {
+        try {
+            await navigator.clipboard.writeText(folderShareLink);
+            toast.success(t("fileActions.copyLink"));
+        } catch {}
     };
 
     return (
@@ -308,7 +321,7 @@ export function FileCardActions({
                             className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
                             onClick={() => onOpenFolder?.(file.name)}
                         >
-                            <FolderOpen className="w-4 h-4" /> Открыть
+                            <FolderOpen className="w-4 h-4" /> {t("fileActions.open")}
                         </DropdownMenuItem>
                         {deletedOnly ? (
                             <>
@@ -322,21 +335,21 @@ export function FileCardActions({
                                     ) : (
                                         <Download className="w-4 h-4" />
                                     )}
-                                    Скачать архивом
+                                    {t("filePreview.downloadArchive")}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />
                                 <DropdownMenuItem
                                     className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
                                     onClick={handleRestoreFolder}
                                 >
-                                    <RotateCcw className="w-4 h-4" /> Восстановить
+                                    <RotateCcw className="w-4 h-4" /> {t("filePreview.restore")}
                                 </DropdownMenuItem>
                                 {canPermanentlyDelete && (
                                     <DropdownMenuItem
                                         className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
                                         onClick={() => setIsFolderDeleteConfirmOpen(true)}
                                     >
-                                        <Trash className="w-4 h-4" /> Удалить навсегда
+                                        <Trash className="w-4 h-4" /> {t("filePreview.deleteForever")}
                                     </DropdownMenuItem>
                                 )}
                             </>
@@ -346,19 +359,19 @@ export function FileCardActions({
                                     className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
                                     onClick={() => setIsRenameOpen(true)}
                                 >
-                                    <Pencil className="w-4 h-4" /> Переименовать
+                                    <Pencil className="w-4 h-4" /> {t("fileActions.rename")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
                                     onClick={() => setIsMoveOpen(true)}
                                 >
-                                    <FolderInput className="w-4 h-4" /> Переместить в папку
+                                    <FolderInput className="w-4 h-4" /> {t("fileActions.moveToFolder")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
                                     onClick={handleCopyFolderPath}
                                 >
-                                    <Copy className="w-4 h-4" /> Копировать путь
+                                    <Copy className="w-4 h-4" /> {t("fileActions.copyPath")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
@@ -370,16 +383,16 @@ export function FileCardActions({
                                     ) : (
                                         <Download className="w-4 h-4" />
                                     )}
-                                    Скачать архивом
+                                    {t("filePreview.downloadArchive")}
                                 </DropdownMenuItem>
                                 {useFilesApi && (
                                     <>
                                         {file.isPublic && (
                                             <DropdownMenuItem
                                                 className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                                                onClick={() => copyTextToClipboard(folderShareLink)}
+                                                onClick={handleShareFolder}
                                             >
-                                                <Share2Icon className="w-4 h-4" /> Поделиться
+                                                <Share2Icon className="w-4 h-4" /> {t("fileActions.share")}
                                             </DropdownMenuItem>
                                         )}
                                         <DropdownMenuItem
@@ -389,11 +402,11 @@ export function FileCardActions({
                                         >
                                             {file.isPublic ? (
                                                 <>
-                                                    <Lock className="w-4 h-4" /> Сделать приватной
+                                                    <Lock className="w-4 h-4" /> {t("fileActions.makePrivateFolder")}
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Globe className="w-4 h-4" /> Сделать публичной
+                                                    <Globe className="w-4 h-4" /> {t("fileActions.makePublicFolder")}
                                                 </>
                                             )}
                                         </DropdownMenuItem>
@@ -406,7 +419,7 @@ export function FileCardActions({
                                             className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
                                             onClick={() => setIsFolderTrashConfirmOpen(true)}
                                         >
-                                            <Trash2 className="w-4 h-4" /> В корзину
+                                            <Trash2 className="w-4 h-4" /> {t("files.toTrash")}
                                         </DropdownMenuItem>
                                     </>
                                 )}
@@ -420,14 +433,14 @@ export function FileCardActions({
                                 <DropdownMenuItem className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white" onClick={() => {
                                     window.open(openLink, "_blank")
                                 }}>
-                                    <FileIcon className="w-4 h-4" /> Открыть {notter && 'заметку'}
+                                    <FileIcon className="w-4 h-4" /> {t("fileActions.open")} {notter && t("fileActions.openNote")}
                                 </DropdownMenuItem>
 
                                 {(!useFilesApi || file.isPublic) && !notter && (
                                     <DropdownMenuItem className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white" onClick={() => {
-                                        copyTextToClipboard(shareLink)
+                                        handleShare()
                                     }}>
-                                        <Share2Icon className="w-4 h-4" /> Поделиться
+                                        <Share2Icon className="w-4 h-4" /> {t("fileActions.share")}
                                     </DropdownMenuItem>
                                 )}
                             </>
@@ -442,11 +455,11 @@ export function FileCardActions({
                                     >
                                         {file.isFavorited ? (
                                             <>
-                                                <Heart className="w-4 h-4" /> Убрать из избранного
+                                                <Heart className="w-4 h-4" /> {t("fileActions.removeFromFavorites")}
                                             </>
                                         ) : (
                                             <>
-                                                <Heart className="w-4 h-4" /> В избранное
+                                                <Heart className="w-4 h-4" /> {t("fileActions.addToFavorites")}
                                             </>
                                         )}
                                     </DropdownMenuItem>
@@ -457,7 +470,7 @@ export function FileCardActions({
                                         className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
                                         onClick={() => setIsRenameOpen(true)}
                                     >
-                                        <Pencil className="w-4 h-4" /> Переименовать
+                                        <Pencil className="w-4 h-4" /> {t("fileActions.rename")}
                                     </DropdownMenuItem>
                                 )}
 
@@ -466,7 +479,7 @@ export function FileCardActions({
                                         className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
                                         onClick={() => setIsMoveOpen(true)}
                                     >
-                                        <FolderInput className="w-4 h-4" /> Переместить в папку
+                                        <FolderInput className="w-4 h-4" /> {t("fileActions.moveToFolder")}
                                     </DropdownMenuItem>
                                 )}
 
@@ -478,11 +491,11 @@ export function FileCardActions({
                                     >
                                         {file.isPublic ? (
                                             <>
-                                                <Lock className="w-4 h-4" /> Сделать приватным
+                                                <Lock className="w-4 h-4" /> {t("fileActions.makePrivate")}
                                             </>
                                         ) : (
                                             <>
-                                                <Globe className="w-4 h-4" /> Сделать публичным
+                                                <Globe className="w-4 h-4" /> {t("fileActions.makePublic")}
                                             </>
                                         )}
                                     </DropdownMenuItem>
@@ -492,7 +505,7 @@ export function FileCardActions({
                                     className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
                                     onClick={handleDownload}
                                 >
-                                    <Download className="w-4 h-4" /> Скачать
+                                    <Download className="w-4 h-4" /> {t("filePreview.download")}
                                 </DropdownMenuItem>
 
                                 {deletedOnly ? (
@@ -502,14 +515,14 @@ export function FileCardActions({
                                             className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
                                             onClick={handleRestore}
                                         >
-                                            <RotateCcw className="w-4 h-4" /> Восстановить
+                                            <RotateCcw className="w-4 h-4" /> {t("filePreview.restore")}
                                         </DropdownMenuItem>
                                         {canPermanentlyDelete && (
                                             <DropdownMenuItem
                                                 className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
                                                 onClick={() => setIsDeleteConfirmOpen(true)}
                                             >
-                                                <Trash className="w-4 h-4" /> Удалить навсегда
+                                                <Trash className="w-4 h-4" /> {t("filePreview.deleteForever")}
                                             </DropdownMenuItem>
                                         )}
                                     </>
@@ -520,7 +533,7 @@ export function FileCardActions({
                                             className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
                                             onClick={() => setIsTrashConfirmOpen(true)}
                                         >
-                                            <Trash2 className="w-4 h-4" /> В корзину
+                                            <Trash2 className="w-4 h-4" /> {t("files.toTrash")}
                                         </DropdownMenuItem>
                                     </>
                                 )}
@@ -532,7 +545,7 @@ export function FileCardActions({
                                 {!expired && <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />}
 
                                 <div className="flex gap-1 items-center cursor-default text-white/70 px-2 py-1.5 text-sm">
-                                    <Download className="w-4 h-4" /> {file.downloads} скачиваний
+                                    <Download className="w-4 h-4" /> {t("fileActions.downloadsCount", { count: file.downloads ?? 0 })}
                                 </div>
                             </>
                         )}
@@ -558,10 +571,10 @@ export function FileCardActions({
         <ConfirmDialog
             open={isTrashConfirmOpen}
             onOpenChange={setIsTrashConfirmOpen}
-            title="Переместить в корзину"
-            description={`Вы уверены, что хотите переместить «${file.name}» в корзину? Файл можно будет восстановить позже.`}
-            confirmLabel="В корзину"
-            cancelLabel="Отмена"
+            title={t("fileActions.moveToTrashTitle")}
+            description={t("fileActions.moveToTrashDescription", { name: file.name })}
+            confirmLabel={t("files.toTrash")}
+            cancelLabel={t("common.cancel")}
             onConfirm={handleMoveToTrash}
             isLoading={isConfirmLoading}
             destructive={false}
@@ -570,10 +583,10 @@ export function FileCardActions({
         <ConfirmDialog
             open={isDeleteConfirmOpen}
             onOpenChange={setIsDeleteConfirmOpen}
-            title="Удалить навсегда"
-            description={`Вы уверены, что хотите безвозвратно удалить «${file.name}»? Это действие нельзя отменить.`}
-            confirmLabel="Удалить"
-            cancelLabel="Отмена"
+            title={t("fileActions.deleteForeverTitle")}
+            description={t("fileActions.deleteForeverDescription", { name: file.name })}
+            confirmLabel={t("filePreview.deleteForever")}
+            cancelLabel={t("common.cancel")}
             onConfirm={handleDeletePermanently}
             isLoading={isConfirmLoading}
             destructive={true}
@@ -582,10 +595,10 @@ export function FileCardActions({
         <ConfirmDialog
             open={isFolderTrashConfirmOpen}
             onOpenChange={setIsFolderTrashConfirmOpen}
-            title="Переместить папку в корзину"
-            description={`Вы уверены, что хотите переместить папку «${file.name}» в корзину? Её можно будет восстановить позже.`}
-            confirmLabel="В корзину"
-            cancelLabel="Отмена"
+            title={t("fileActions.moveFolderToTrashTitle")}
+            description={t("fileActions.moveFolderToTrashDescription", { name: file.name })}
+            confirmLabel={t("files.toTrash")}
+            cancelLabel={t("common.cancel")}
             onConfirm={handleMoveFolderToTrash}
             isLoading={isConfirmLoading}
             destructive={false}
@@ -594,14 +607,14 @@ export function FileCardActions({
         <ConfirmDialog
             open={isFolderDeleteConfirmOpen}
             onOpenChange={setIsFolderDeleteConfirmOpen}
-            title="Удалить папку навсегда"
-            description={`Вы уверены, что хотите безвозвратно удалить папку «${file.name}» и всё её содержимое? Это действие нельзя отменить.`}
-            confirmLabel="Удалить"
-            cancelLabel="Отмена"
+            title={t("fileActions.deleteFolderForeverTitle")}
+            description={t("fileActions.deleteFolderForeverDescription", { name: file.name })}
+            confirmLabel={t("filePreview.deleteForever")}
+            cancelLabel={t("common.cancel")}
             onConfirm={handleDeleteFolder}
             isLoading={isConfirmLoading}
             destructive={true}
         />
         </>
-    )
+    );
 }

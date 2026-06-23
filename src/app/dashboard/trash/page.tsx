@@ -1,20 +1,13 @@
-import { Metadata } from "next";
+"use client";
 
-import { images } from "@/config/routing/image.route";
 import { FilesBrowser } from "../_components/file-browser";
-
-export const metadata: Metadata = {
-  title: "Корзина",
-  description: "Удаленные файлы",
-  icons: {
-    icon: images.ICON,
-  },
-};
+import { useTranslation } from "@/components/hooks/use-translation";
 
 export default function Trash() {
+  const { t } = useTranslation();
   return (
     <div>
-      <FilesBrowser title="Корзина" deletedOnly />
+      <FilesBrowser title={t("files.title.trash")} deletedOnly />
     </div>
   );
 }

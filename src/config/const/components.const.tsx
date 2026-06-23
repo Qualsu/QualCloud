@@ -1,20 +1,17 @@
 import { pages } from "../routing/pages.route";
-import { Cloud, Files, Folder, Heart, House, Lamp, Link2Icon, Trash2, Upload } from "lucide-react"
+import { Cloud, Folder, Heart, House, Trash2, Upload } from "lucide-react"
 import { FileType } from "../types/components.types";
 import { ReactNode } from "react";
-import Image from "next/image";
 import {
     AppWindow,
     ArchiveIcon,
     AudioLinesIcon,
-  Boxes,
     Code2Icon,
     DatabaseIcon,
     FileIcon,
     ImageIcon,
     ListIcon,
     PresentationIcon,
-  ShieldCheck,
     VideoIcon
 } from "lucide-react"
 import { images } from "../routing/image.route";
@@ -36,64 +33,38 @@ export const fileTypeOrder = [
 ] as const;
 
 export const fileTypeOptions = [
-  { value: "all", label: "Все" },
-  { value: "folder", label: "Папки" },
-  { value: "image", label: "Изображения" },
-  { value: "audio", label: "Аудио" },
-  { value: "video", label: "Видео" },
-  { value: "table", label: "Таблицы" },
-  { value: "presentation", label: "Презентации" },
+  { value: "all", key: "files.filterAll" },
+  { value: "folder", key: "files.filterFolders" },
+  { value: "image", key: "files.filterImages" },
+  { value: "audio", key: "files.filterAudio" },
+  { value: "video", key: "files.filterVideo" },
+  { value: "table", key: "files.filterTables" },
+  { value: "presentation", key: "files.filterPresentations" },
 ] as const;
 
 export const fileSortOptions = [
-  { value: "date", label: "По дате" },
-  { value: "alphabet", label: "По алфавиту" },
-  { value: "types", label: "По типу файла" },
+  { value: "date", key: "files.sortDate" },
+  { value: "alphabet", key: "files.sortAlphabet" },
+  { value: "types", key: "files.sortType" },
 ] as const;
 
 export const fileSortDirectionOptions = [
-  { value: "new", label: "Сначала новые" },
-  { value: "reverse", label: "В обратном порядке" },
+  { value: "new", key: "files.sortNewFirst" },
+  { value: "reverse", key: "files.sortReverse" },
 ] as const;
 
 export const navItems = [
-  { href: pages.DASHBOARD.NOTTER, image: images.ICONS.NOTTER, label: "Notter" },
-  { href: pages.DASHBOARD.SHRTL, image: images.ICONS.SHRTL, label: "Shrtl" },
-  { href: pages.DASHBOARD.KENYCLOUD, image: images.ICONS.KENYCLOUD, label: "KenyCloud" },
-]
+  { href: pages.DASHBOARD.NOTTER, image: images.ICONS.NOTTER, key: "nav.notter" },
+  { href: pages.DASHBOARD.SHRTL, image: images.ICONS.SHRTL, key: "nav.shrtl" },
+  { href: pages.DASHBOARD.KENYCLOUD, image: images.ICONS.KENYCLOUD, key: "nav.kenycloud" },
+];
 
 export const utilityNavItems = [
-  { id: "home", href: pages.DASHBOARD.ROOT, label: "Главная", icon: House },
-  { id: "upload", href: pages.DASHBOARD.ROOT, label: "Загрузить", icon: Upload },
-  { id: "cloud", href: pages.DASHBOARD.CLOUD, label: "Облако", icon: Cloud },
-  { id: "favorites", href: pages.DASHBOARD.FAVORITES, label: "Избранное", icon: Heart },
-  { id: "trash", href: pages.DASHBOARD.TRASH, label: "Корзина", icon: Trash2 },
-] as const;
-
-export const landingFeatureCards = [
-  {
-    title: "Единый доступ",
-    description: "Файлы всех приложений QualCloud в одном месте",
-    icon: <Boxes className="h-8 w-8 text-white" />,
-  },
-  {
-    title: "Архив KenyCloud",
-    description: "Если вы пользовались KenyCloud, все ваши файлы сохранены и доступны в QualCloud.",
-    icon: (
-      <Image
-        src={images.ICONS.KENYCLOUD}
-        width={100}
-        height={100}
-        alt="KenyCloud icon"
-        className="h-8 w-8"
-      />
-    ),
-  },
-  {
-    title: "Безопасность",
-    description: "Файлы защищены и не передаются третьим лицам",
-    icon: <ShieldCheck className="h-8 w-8 text-white" />,
-  },
+  { id: "home", href: pages.DASHBOARD.ROOT, key: "nav.home", icon: House },
+  { id: "upload", href: pages.DASHBOARD.ROOT, key: "nav.upload", icon: Upload },
+  { id: "cloud", href: pages.DASHBOARD.CLOUD, key: "nav.cloud", icon: Cloud },
+  { id: "favorites", href: pages.DASHBOARD.FAVORITES, key: "nav.favorites", icon: Heart },
+  { id: "trash", href: pages.DASHBOARD.TRASH, key: "nav.trash", icon: Trash2 },
 ] as const;
 
 export const typeIcons: Record<FileType, ReactNode> = {

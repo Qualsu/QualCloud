@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { renameFile, renameFolder } from "@/app/api/files";
 import type { FileDoc } from "@/config/types/components.types";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 interface RenameDialogProps {
   file: FileDoc;
@@ -33,6 +34,7 @@ export function RenameDialog({
     onOpenChange,
     onRenamed,
 }: RenameDialogProps) {
+    const { t } = useTranslation();
     const { user } = useUser();
     const editor = getFilesEditor(user);
     const isFolder = file.isFolder;
@@ -56,7 +58,7 @@ export function RenameDialog({
   const handleRename = async () => {
     const trimmed = newName.trim();
     if (!trimmed) {
-      toast.error(isFolder ? "Введите название папки" : "Введите название файла");
+      toast.error(isFolder ? t("rename.emptyFolderName") : t("rename.emptyFileName"));
       return;
     }
 
@@ -74,11 +76,11 @@ export function RenameDialog({
             : renameFile(file._id as string, trimmed, editor);
 
       await toast.promise(promise, {
-        loading: isFolder ? "Переименовываем папку…" : "Переименовываем файл…",
-        success: isFolder ? "Папка переименована" : "Файл переименован",
+        loading: isFolder ? t("rename.folderLoading") : t("rename.fileLoading"),
+        success: isFolder ? t("rename.folderSuccess") : t("rename.fileSuccess"),
         error: isFolder
-          ? "Не удалось переименовать папку"
-          : "Не удалось переименовать файл",
+          ? t("rename.folderError")
+          : t("rename.fileError"),
       });
 
       onOpenChange(false);
@@ -94,24 +96,24 @@ export function RenameDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Pencil className="h-4 w-4" />
-            {isFolder ? "Переименовать папку" : "Переименовать файл"}
+            {isFolder ? t("rename.folderTitle") : t("rename.fileTitle")}
           </DialogTitle>
           <DialogDescription className="text-white/60">
             {isFolder
-              ? "Введите новое название для папки."
-              : "Введите новое название для файла."}
+              ? t("rename.folderDescription")
+              : t("rename.fileDescription")}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="rename-file-name" className="text-white/80">
-              Новое название
+              {t("rename.nameLabel")}
             </Label>
             <Input
               id="rename-file-name"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="Новое название файла"
+              placeholder={t("rename.placeholder")}
               disabled={isLoading}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -130,7 +132,7 @@ export function RenameDialog({
             disabled={isLoading}
             className="border-white/10 bg-transparent text-white hover:bg-white/10 hover:text-white"
           >
-            Отмена
+            {t("rename.cancel")}
           </Button>
           <Button
             onClick={handleRename}
@@ -140,7 +142,7 @@ export function RenameDialog({
             {isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : null}
-            Сохранить
+            {t("rename.save")}
           </Button>
         </DialogFooter>
       </DialogContent>

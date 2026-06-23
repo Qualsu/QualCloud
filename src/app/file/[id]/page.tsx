@@ -1,22 +1,23 @@
-"use client"
+"use client";
 
-import { useMutation } from "convex/react"
-import { useEffect, useState } from 'react'
-import { useParams, useSearchParams } from "next/navigation"
-import { Loader2, FileIcon, AudioLinesIcon, Globe, Lock } from "lucide-react"
+import { useMutation } from "convex/react";
+import { useEffect, useState } from 'react';
+import { useParams, useSearchParams } from "next/navigation";
+import { Loader2, FileIcon, AudioLinesIcon } from "lucide-react";
 
-import { Skeleton } from "@/components/ui/skeleton"
-import NotFound from "@/app/not-found"
-import { getFileInfo } from "@/app/api/files"
-import { getMimeType } from "@/app/api/utils/get-mime"
-import { api } from "../../../../convex/_generated/api"
-import { Doc, Id } from "../../../../convex/_generated/dataModel"
-import Image from "next/image"
-import Link from "next/link"
-import { links } from "@/config/routing/links.route"
-import { FileType } from "@/config/types/components.types"
-import { FilesFileResponse } from "@/config/types/api.types"
-import { FILE_SIZE_LABELS } from "@/config/const/files.const"
+import { Skeleton } from "@/components/ui/skeleton";
+import NotFound from "@/app/not-found";
+import { getFileInfo } from "@/app/api/files";
+import { getMimeType } from "@/app/api/utils/get-mime";
+import { api } from "../../../../convex/_generated/api";
+import { Doc, Id } from "../../../../convex/_generated/dataModel";
+import Image from "next/image";
+import Link from "next/link";
+import { links } from "@/config/routing/links.route";
+import { FileType } from "@/config/types/components.types";
+import { FilesFileResponse } from "@/config/types/api.types";
+import { FILE_SIZE_LABELS } from "@/config/const/files.const";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 type ConvexFile = Doc<"files">;
 type ApiFile = FilesFileResponse;
@@ -30,34 +31,37 @@ type FileView = {
   isPublic?: boolean;
 };
 
-function formatSize(bytes: number): string {
-  if (bytes === 0) return "0 Б";
+function formatSize(bytes: number, t: (key: string) => string): string {
+  if (bytes === 0) return `0 ${t("units.b")}`;
   const k = 1024;
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${FILE_SIZE_LABELS[i]}`;
+  const label = FILE_SIZE_LABELS[i];
+  const unit = label === "Б" ? t("units.b") : label === "КБ" ? t("units.kb") : label === "МБ" ? t("units.mb") : label === "ГБ" ? t("units.gb") : t("units.tb");
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${unit}`;
 }
 
 export default function File() {
-    const [loading, setLoading] = useState(true)
-    const [file, setFile] = useState<FileView | null>(null)
-    const [found, setFound] = useState(true)
-    const fileLink = useMutation(api.files.getFile)
-    const params = useParams()
-    const searchParams = useSearchParams()
-    const id = Array.isArray(params?.id) ? params.id[0] : (params?.id ?? "")
-    const accountId = searchParams.get("account_id") || undefined
+    const { t } = useTranslation();
+    const [loading, setLoading] = useState(true);
+    const [file, setFile] = useState<FileView | null>(null);
+    const [found, setFound] = useState(true);
+    const fileLink = useMutation(api.files.getFile);
+    const params = useParams();
+    const searchParams = useSearchParams();
+    const id = Array.isArray(params?.id) ? params.id[0] : (params?.id ?? "");
+    const accountId = searchParams.get("account_id") || undefined;
 
     useEffect(() => {
         const fetchLink = async () => {
             if (!id) {
-                setFound(false)
-                setLoading(false)
-                return
+                setFound(false);
+                setLoading(false);
+                return;
             }
 
             try {
-                const convexResult = await fileLink({ linkId: id })
-                const convexFile = convexResult?.[0]
+                const convexResult = await fileLink({ linkId: id });
+                const convexFile = convexResult?.[0];
 
                 if (convexFile) {
                     setFile({
@@ -65,24 +69,24 @@ export default function File() {
                         type: convexFile.type,
                         url: links.KENYCLOUD.GET_FILE(convexFile.fileId as Id<"_storage">),
                         isConvex: true,
-                    })
-                    setFound(true)
-                    setLoading(false)
-                    return
+                    });
+                    setFound(true);
+                    setLoading(false);
+                    return;
                 }
             } catch {
                 // ignore convex error and try API files
             }
 
             try {
-                const apiFile: ApiFile = await getFileInfo(id, accountId)
+                const apiFile: ApiFile = await getFileInfo(id, accountId);
 
                 if (apiFile && apiFile.file_id) {
                     const downloadUrl =
                         apiFile.file_url ||
                         `${links.FILES.GET_FILE(apiFile.file_id)}${
                             accountId ? `?account_id=${encodeURIComponent(accountId)}` : ""
-                        }`
+                        }`;
                     setFile({
                         name: apiFile.file_name,
                         type: getMimeType(apiFile.file_type),
@@ -90,20 +94,20 @@ export default function File() {
                         size: apiFile.file_size,
                         isConvex: false,
                         isPublic: apiFile.is_public,
-                    })
-                    setFound(true)
-                    setLoading(false)
-                    return
+                    });
+                    setFound(true);
+                    setLoading(false);
+                    return;
                 }
             } catch {
-                setFound(false)
+                setFound(false);
             } finally {
-                setLoading(false)
+                setLoading(false);
             }
         }
 
-        fetchLink()
-    }, [fileLink, id, accountId])
+        fetchLink();
+    }, [fileLink, id, accountId]);
 
     if (!found) {
         return <NotFound />
@@ -142,7 +146,7 @@ export default function File() {
             return (
                 <div className="flex flex-col items-center gap-3 text-muted-foreground">
                     <AudioLinesIcon className="h-16 w-16" />
-                    <span className="text-sm">Аудио</span>
+                    <span className="text-sm">{t("fileTypes.audio")}</span>
                 </div>
             )
         }
@@ -150,7 +154,7 @@ export default function File() {
         return (
             <div className="flex flex-col items-center gap-3 text-muted-foreground">
                 <FileIcon className="h-16 w-16" />
-                <span className="text-sm">Предпросмотр недоступен</span>
+                <span className="text-sm">{t("fileTypes.noPreview")}</span>
             </div>
         )
     }
@@ -176,7 +180,7 @@ export default function File() {
                                         <h1 className="text-2xl font-semibold break-all">{file.name}</h1>
                                     </div>
                                     {typeof file.size === "number" && (
-                                        <p className="mt-1 text-sm text-white/50">{formatSize(file.size)}</p>
+                                        <p className="mt-1 text-sm text-white/50">{formatSize(file.size, t)}</p>
                                     )}
                                     {file.type === "audio" && (
                                         <audio
@@ -190,7 +194,7 @@ export default function File() {
 
                                 <div className="flex items-center gap-3">
                                     <Link href={file.url} download={file.name} className="inline-block primary-button">
-                                        Скачать
+                                        {t("filePreview.download")}
                                     </Link>
                                 </div>
                             </>

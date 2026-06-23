@@ -76,13 +76,15 @@ import { BulkActionsToolbar } from "./bulk-actions-toolbar";
 import { FileCard } from "./file-card";
 import { DataTable } from "./file-table";
 import { FilePreviewModal } from "@/components/modal/file-preview-modal";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 export function Placeholder({ message }: { message?: string }) {
+  const { t } = useTranslation();
   return (
     <div className="my-12 flex w-full flex-col items-center gap-6 text-zinc-500">
       <PackageOpen className="h-32 w-32" />
       <div className="text-center text-2xl font-bold">
-        {message ?? "Тут ничего нет."}
+        {message ?? t("files.empty")}
       </div>
     </div>
   );
@@ -97,6 +99,7 @@ export function FilesBrowser({
   deletedOnly,
   hideWhenNoConvexUser,
 }: FilesBrowserProps) {
+  const { t, language } = useTranslation();
   const searchParams = useSearchParams();
   const { setSuggestions } = useSearchSuggestions();
   const { orgId, isOrgAdmin } = useCurrentOrg();
@@ -200,7 +203,7 @@ export function FilesBrowser({
     if (!orgId) return;
 
     if (!isOrgAdmin) {
-      toast.error("Очистку корзины может выполнить только администратор организации");
+      toast.error(t("files.adminOnlyTrash"));
       return;
     }
 
@@ -209,9 +212,9 @@ export function FilesBrowser({
       await toast.promise(
         emptyTrash(orgId),
         {
-          loading: "Очищаем корзину…",
-          success: "Корзина очищена",
-          error: "Не удалось очистить корзину",
+          loading: t("files.emptyTrashLoading"),
+          success: t("files.emptyTrashSuccess"),
+          error: t("files.emptyTrashError"),
         },
       );
       setIsClearDialogOpen(false);
@@ -266,11 +269,11 @@ export function FilesBrowser({
   };
 
   const emptyMessage = (() => {
-    if (deletedOnly) return "Корзина пуста";
-    if (favorites) return "В избранном пока ничего нет";
-    if (query) return "Ничего не найдено по запросу";
-    if (currentFolderName) return `Папка «${currentFolderName}» пуста`;
-    return "Тут ничего нет.";
+    if (deletedOnly) return t("files.emptyTrashMessage");
+    if (favorites) return t("files.emptyFavorites");
+    if (query) return t("files.emptySearch");
+    if (currentFolderName) return t("files.emptyFolder", { name: currentFolderName });
+    return t("files.empty");
   })();
   const isLoading =
     !shouldShowEmptyState &&
@@ -406,9 +409,9 @@ export function FilesBrowser({
     }
 
     if (failCount === 0) {
-      toast.success(`Скачивание ${successCount} элементов начато`);
+      toast.success(t("files.bulkDownloadStarted", { count: successCount }));
     } else {
-      toast.error(`Не удалось скачать ${failCount} из ${selectedItems.length} элементов`);
+      toast.error(t("files.bulkDownloadError", { failed: failCount, total: selectedItems.length }));
     }
   };
 
@@ -427,13 +430,13 @@ export function FilesBrowser({
       const failed = results.filter((r) => r.status === "rejected").length;
 
       if (failed === 0) {
-        toast.success(`Перемещено в корзину ${selectedItems.length} элементов`);
+        toast.success(t("files.bulkTrashSuccess", { count: selectedItems.length }));
         setIsBulkTrashOpen(false);
         clearSelection();
         refreshFiles();
       } else {
         toast.error(
-          `Не удалось переместить в корзину ${failed} из ${selectedItems.length} элементов`
+          t("files.bulkTrashError", { failed, total: selectedItems.length })
         );
       }
     } finally {
@@ -456,12 +459,12 @@ export function FilesBrowser({
       const failed = results.filter((r) => r.status === "rejected").length;
 
       if (failed === 0) {
-        toast.success(`Восстановлено ${selectedItems.length} элементов`);
+        toast.success(t("files.bulkRestoreSuccess", { count: selectedItems.length }));
         clearSelection();
         refreshFiles();
       } else {
         toast.error(
-          `Не удалось восстановить ${failed} из ${selectedItems.length} элементов`
+          t("files.bulkRestoreError", { failed, total: selectedItems.length })
         );
       }
     } finally {
@@ -474,7 +477,7 @@ export function FilesBrowser({
 
     if (!isOrgAdmin) {
       toast.error(
-        "Безвозвратное удаление может выполнить только администратор организации"
+        t("files.adminOnlyDelete")
       );
       return;
     }
@@ -491,13 +494,13 @@ export function FilesBrowser({
       const failed = results.filter((r) => r.status === "rejected").length;
 
       if (failed === 0) {
-        toast.success(`Удалено ${selectedItems.length} элементов`);
+        toast.success(t("files.bulkDeleteSuccess", { count: selectedItems.length }));
         setIsBulkDeleteOpen(false);
         clearSelection();
         refreshFiles();
       } else {
         toast.error(
-          `Не удалось удалить ${failed} из ${selectedItems.length} элементов`
+          t("files.bulkDeleteError", { failed, total: selectedItems.length })
         );
       }
     } finally {
@@ -515,8 +518,9 @@ export function FilesBrowser({
         enableSelection,
         onRefresh: refreshFiles,
         onOpenFolder: setCurrentFolder,
+        t,
       }),
-    [shrtl, notter, useFilesApi, deletedOnly, enableSelection, refreshFiles]
+    [shrtl, notter, useFilesApi, deletedOnly, enableSelection, refreshFiles, t]
   );
 
   const autocompleteSuggestions = useMemo(
@@ -556,7 +560,7 @@ export function FilesBrowser({
           <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
             <div className="flex flex-col gap-2">
               <Label htmlFor="type-select" className="text-sm text-white/60">
-                {"Показать"}
+                {t("files.show")}
               </Label>
               <Select value={type} onValueChange={(newType) => setType(newType as FileFilterType)}>
                 <SelectTrigger
@@ -572,7 +576,7 @@ export function FilesBrowser({
                       value={option.value}
                       className="focus:bg-white/10"
                     >
-                      {option.label}
+                      {t(option.key)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -581,7 +585,7 @@ export function FilesBrowser({
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="sort-select" className="text-sm text-white/60">
-                {"Сортировать"}
+                {t("files.sort")}
               </Label>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Select value={sort} onValueChange={(newSort) => setSort(newSort as FileSortKey)}>
@@ -598,7 +602,7 @@ export function FilesBrowser({
                         value={option.value}
                         className="focus:bg-white/10"
                       >
-                        {option.label}
+                        {t(option.key)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -621,7 +625,7 @@ export function FilesBrowser({
                         value={option.value}
                         className="focus:bg-white/10"
                       >
-                        {option.label}
+                        {t(option.key)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -632,7 +636,7 @@ export function FilesBrowser({
             {shrtl && (
               <div className="flex items-center gap-2 pb-1">
                 <Label htmlFor="expired-checkbox" className="shrink-0 text-sm text-white/60">
-                  {"Истекшие"}
+                  {t("files.expired")}
                 </Label>
                 <Checkbox
                   id="expired-checkbox"
@@ -648,10 +652,10 @@ export function FilesBrowser({
               <div className="flex items-center gap-2 pb-1 text-sm text-white/60">
                 <Clock3 size={16} className="text-white/40" />
                 <span>
-                  Автоочистка через{" "}
+                  {t("files.autoCleanup")}{" "}
                   {trashEmptyInSeconds !== null
-                    ? formatTimeRemaining(trashEmptyInSeconds)
-                    : "—"}
+                    ? formatTimeRemaining(trashEmptyInSeconds, language)
+                    : t("common.empty")}
                 </span>
               </div>
             )}
@@ -663,14 +667,14 @@ export function FilesBrowser({
                 <AlertDialogTrigger asChild>
                   <button className="inline-flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/20 hover:text-red-300">
                     <Trash2 size={16} />
-                    Очистить корзину
+                    {t("files.emptyTrash")}
                   </button>
                 </AlertDialogTrigger>
                 <AlertDialogContent className="border-white/10 bg-[#1e1226] text-white">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Очистить корзину?</AlertDialogTitle>
+                    <AlertDialogTitle>{t("files.emptyTrashConfirm")}</AlertDialogTitle>
                     <AlertDialogDescription className="text-white/60">
-                      Все файлы в корзине будут удалены безвозвратно. Это действие нельзя отменить.
+                      {t("files.emptyTrashDescription")}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -679,7 +683,7 @@ export function FilesBrowser({
                       className="border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white"
                     >
                       <Button variant="outline" disabled={isClearing}>
-                        Отмена
+                        {t("common.cancel")}
                       </Button>
                     </AlertDialogCancel>
                     <AlertDialogAction
@@ -696,7 +700,7 @@ export function FilesBrowser({
                         ) : (
                           <Trash2 className="mr-2 h-4 w-4" />
                         )}
-                        Очистить
+                        {t("files.clear")}
                       </Button>
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -707,14 +711,14 @@ export function FilesBrowser({
               <TabsTrigger
                 value="grid"
                 className="rounded-lg px-3 py-1.5 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-                aria-label="Сетка"
+                aria-label={t("dashboard.gridView")}
               >
                 <LayoutGrid size={16} />
               </TabsTrigger>
               <TabsTrigger
                 value="table"
                 className="rounded-lg px-3 py-1.5 text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white"
-                aria-label="Таблица"
+                aria-label={t("dashboard.tableView")}
               >
                 <TableIcon size={16} />
               </TabsTrigger>
@@ -755,14 +759,14 @@ export function FilesBrowser({
               className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/70 transition-colors hover:bg-white/10 hover:text-white"
             >
               <ArrowLeft size={16} />
-              Назад
+              {t("files.back")}
             </button>
             <div className="flex items-center gap-1 text-sm text-white/50">
               <button
                 onClick={() => setCurrentFolder(null)}
                 className="hover:text-white"
               >
-                Корень
+                {t("files.root")}
               </button>
               {currentFolder.split("/").map((part, index, parts) => (
                 <span key={index} className="flex items-center gap-1">
@@ -863,10 +867,10 @@ export function FilesBrowser({
         <ConfirmDialog
           open={isBulkTrashOpen}
           onOpenChange={setIsBulkTrashOpen}
-          title="Переместить в корзину"
-          description={`Вы уверены, что хотите переместить ${selectedItems.length} элементов в корзину?`}
-          confirmLabel="В корзину"
-          cancelLabel="Отмена"
+          title={t("files.bulkMoveTitle")}
+          description={t("files.bulkMoveDescription", { count: selectedItems.length })}
+          confirmLabel={t("files.toTrash")}
+          cancelLabel={t("common.cancel")}
           onConfirm={handleBulkTrash}
           isLoading={isBulkLoading}
           destructive={false}
@@ -877,10 +881,10 @@ export function FilesBrowser({
         <ConfirmDialog
           open={isBulkDeleteOpen}
           onOpenChange={setIsBulkDeleteOpen}
-          title="Удалить выбранные элементы навсегда"
-          description={`Вы уверены, что хотите безвозвратно удалить ${selectedItems.length} элементов? Это действие нельзя отменить.`}
-          confirmLabel="Удалить"
-          cancelLabel="Отмена"
+          title={t("files.bulkDeleteTitle")}
+          description={t("files.bulkDeleteDescription", { count: selectedItems.length })}
+          confirmLabel={t("files.deleteForever")}
+          cancelLabel={t("common.cancel")}
           onConfirm={handleBulkDeletePermanently}
           isLoading={isBulkLoading}
           destructive={true}

@@ -1,25 +1,26 @@
-"use client"
+"use client";
 
-import { ColumnDef } from "@tanstack/react-table"
-import { formatRelative } from "date-fns"
-import { useQuery } from "convex/react"
-import { useUser } from "@clerk/nextjs"
-import { Globe, Lock } from "lucide-react"
+import { ColumnDef } from "@tanstack/react-table";
+import { formatRelative } from "date-fns";
+import { useQuery } from "convex/react";
+import { useUser } from "@clerk/nextjs";
+import { Globe, Lock } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Checkbox } from "@/components/ui/checkbox"
-import type { FileDoc } from "@/config/types/components.types"
-import { typeIcons } from "@/config/const/components.const"
-import { api } from "../../../../convex/_generated/api"
-import { FileCardActions } from "./file-actions"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
+import type { FileDoc } from "@/config/types/components.types";
+import { typeIcons } from "@/config/const/components.const";
+import { api } from "../../../../convex/_generated/api";
+import { FileCardActions } from "./file-actions";
 import {
   formatExpiresIn,
   getFileFormatDisplay,
-} from "./file-helpers"
+} from "./file-helpers";
 import {
   getLastEditorDisplayName,
   isClerkUserId,
-} from "@/lib/files-editor"
+} from "@/lib/files-editor";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 function UserCell({
   file,
@@ -32,6 +33,7 @@ function UserCell({
   notter?: boolean;
   useFilesApi?: boolean;
 }) {
+  const { t } = useTranslation();
   const { user } = useUser();
   const isFromApi = "_isFromApi" in file && file._isFromApi;
   const isApiSource = shrtl || notter || useFilesApi || isFromApi;
@@ -56,7 +58,10 @@ function UserCell({
       (lastEditorIsRawId ? user?.imageUrl : undefined) ??
       user?.imageUrl ??
       undefined;
-    username = getLastEditorDisplayName(file.lastEditorUsername, user);
+    username = getLastEditorDisplayName(file.lastEditorUsername, user, {
+      user: t("common.user"),
+      you: t("common.you"),
+    });
   } else {
     avatar = userProfile?.image;
     username = userProfile?.name;
@@ -86,14 +91,15 @@ function NameCell({
   useFilesApi?: boolean;
   deletedOnly?: boolean;
 }) {
-  const displayName = file.displayName?.trim() || file.name?.trim() || "Без названия";
+  const { t } = useTranslation();
+  const displayName = file.displayName?.trim() || file.name?.trim() || t("filePreview.noName");
   const hidePublicStatus = file.isFolder && deletedOnly;
   const publicIcon = hidePublicStatus ? null : file.isPublic ? (
-    <span title="Публичный доступ">
+    <span title={t("fileTypes.public")}>
       <Globe className="h-3.5 w-3.5 shrink-0 text-green-400" />
     </span>
   ) : file.isFolder ? (
-    <span title="Приватная папка">
+    <span title={t("fileTypes.privateFolder")}>
       <Lock className="h-3.5 w-3.5 shrink-0 text-white/40" />
     </span>
   ) : null;
@@ -125,7 +131,8 @@ function NameCell({
 }
 
 function TypeCell({ file }: { file: FileDoc }) {
-  const displayFormat = getFileFormatDisplay(file.name, file.type, file.isFolder);
+  const { t } = useTranslation();
+  const displayFormat = getFileFormatDisplay(file.name, file.type, file.isFolder, t);
   return (
     <div className="flex items-center gap-2 text-white/70">
       <span className="shrink-0 text-zinc-400">{typeIcons[file.type]}</span>
@@ -135,12 +142,13 @@ function TypeCell({ file }: { file: FileDoc }) {
 }
 
 function DateCell({ file, shrtl }: { file: FileDoc; shrtl?: boolean }) {
+  const { t } = useTranslation();
   if (file.isFolder) {
     return (
       <div className="text-white/50">
         {file.updatedAt
           ? formatRelative(new Date(file.updatedAt), new Date())
-          : "—"}
+          : t("common.empty")}
       </div>
     );
   }
@@ -150,7 +158,7 @@ function DateCell({ file, shrtl }: { file: FileDoc; shrtl?: boolean }) {
       "_expiresInSeconds" in file
         ? ((file._expiresInSeconds as number | null | undefined) ?? null)
         : null;
-    return <div className="text-white/50">{formatExpiresIn(expiresInSeconds)}</div>;
+    return <div className="text-white/50">{formatExpiresIn(expiresInSeconds, t)}</div>;
   }
 
   return (
@@ -168,6 +176,7 @@ export function createColumns({
   enableSelection,
   onRefresh,
   onOpenFolder,
+  t,
 }: {
   shrtl?: boolean;
   notter?: boolean;
@@ -176,6 +185,7 @@ export function createColumns({
   enableSelection?: boolean;
   onRefresh?: () => void;
   onOpenFolder?: (folderName: string) => void;
+  t: (key: string) => string;
 }): ColumnDef<FileDoc>[] {
   const columns: ColumnDef<FileDoc>[] = [];
 
@@ -191,7 +201,7 @@ export function createColumns({
           onCheckedChange={(value) =>
             table.toggleAllPageRowsSelected(value === true)
           }
-          aria-label="Выбрать все"
+          aria-label={t("columns.selectAll")}
           className="border-white/10 bg-white/5 data-[state=checked]:border-primary data-[state=checked]:bg-primary hover:bg-white/10"
           onClick={(e) => e.stopPropagation()}
         />
@@ -200,7 +210,7 @@ export function createColumns({
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(value === true)}
-          aria-label="Выбрать строку"
+          aria-label={t("columns.selectRow")}
           className="border-white/10 bg-white/5 data-[state=checked]:border-primary data-[state=checked]:bg-primary hover:bg-white/10"
           onClick={(e) => e.stopPropagation()}
         />
@@ -213,17 +223,17 @@ export function createColumns({
   columns.push(
     {
       accessorKey: "name",
-      header: "Название",
+      header: t("columns.name"),
       cell: ({ row }) => <NameCell file={row.original} onOpenFolder={onOpenFolder} useFilesApi={useFilesApi} deletedOnly={deletedOnly} />,
     },
     {
       accessorKey: "type",
-      header: "Тип",
+      header: t("columns.type"),
       cell: ({ row }) => <TypeCell file={row.original} />,
     },
     {
       accessorKey: "userId",
-      header: "Пользователь",
+      header: t("columns.user"),
       cell: ({ row }) => (
         <UserCell
           file={row.original}
@@ -235,12 +245,12 @@ export function createColumns({
     },
     {
       accessorKey: "_creationTime",
-      header: shrtl ? "Истекает" : "Дата",
+      header: shrtl ? t("columns.expires") : t("columns.date"),
       cell: ({ row }) => <DateCell file={row.original} shrtl={shrtl} />,
     },
     {
       id: "actions",
-      header: "Действия",
+      header: t("columns.actions"),
       cell: ({ row }) => (
         <FileCardActions
           file={row.original}

@@ -12,6 +12,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 interface BulkActionsToolbarProps {
   selectedCount: number;
@@ -40,6 +41,8 @@ export function BulkActionsToolbar({
   onRestore,
   onDeletePermanently,
 }: BulkActionsToolbarProps) {
+  const { t } = useTranslation();
+
   if (selectedCount === 0) return null;
 
   return (
@@ -51,7 +54,7 @@ export function BulkActionsToolbar({
     >
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <span className="text-sm font-medium text-white">
-          Выбрано: {selectedCount}
+          {t("files.selected")}: {selectedCount}
         </span>
 
         {!deletedOnly && (
@@ -60,12 +63,12 @@ export function BulkActionsToolbar({
             size="sm"
             onClick={onMove}
             disabled={isLoading}
-            aria-label="Переместить"
+            aria-label={t("files.move")}
             className="h-8 gap-1.5 border-white/10 bg-white/5 px-2.5 text-white hover:bg-white/10 hover:text-white sm:px-3"
           >
             <FolderInput className="h-4 w-4" />
-            <span className="sm:hidden">Перенести</span>
-            <span className="hidden sm:inline">Переместить</span>
+            <span className="sm:hidden">{t("files.moveShort")}</span>
+            <span className="hidden sm:inline">{t("files.move")}</span>
           </Button>
         )}
 
@@ -74,11 +77,11 @@ export function BulkActionsToolbar({
           size="sm"
           onClick={onDownload}
           disabled={isLoading || isDownloadDisabled}
-          aria-label="Скачать"
+          aria-label={t("files.download")}
           className="h-8 gap-1.5 border-white/10 bg-white/5 px-2.5 text-white hover:bg-white/10 hover:text-white sm:px-3"
         >
           <Download className="h-4 w-4" />
-            <span>Скачать</span>
+            <span>{t("files.download")}</span>
         </Button>
 
         {deletedOnly ? (
@@ -88,12 +91,12 @@ export function BulkActionsToolbar({
               size="sm"
               onClick={onRestore}
               disabled={isLoading}
-              aria-label="Восстановить"
+              aria-label={t("files.restore")}
               className="h-8 gap-1.5 border-white/10 bg-white/5 px-2.5 text-white hover:bg-white/10 hover:text-white sm:px-3"
             >
               <RotateCcw className="h-4 w-4" />
-              <span className="sm:hidden">Вернуть</span>
-              <span className="hidden sm:inline">Восстановить</span>
+              <span className="sm:hidden">{t("files.restoreShort")}</span>
+              <span className="hidden sm:inline">{t("files.restore")}</span>
             </Button>
             {canPermanentlyDelete && (
               <Button
@@ -101,12 +104,12 @@ export function BulkActionsToolbar({
                 size="sm"
                 onClick={onDeletePermanently}
                 disabled={isLoading}
-                aria-label="Удалить навсегда"
+                aria-label={t("files.deleteForever")}
                 className="h-8 gap-1.5 border-red-500/30 bg-red-500/10 px-2.5 text-red-400 hover:bg-red-500/20 hover:text-red-300 sm:px-3"
               >
                 <Trash className="h-4 w-4" />
-                <span className="sm:hidden">Удалить</span>
-                <span className="hidden sm:inline">Удалить навсегда</span>
+                <span className="sm:hidden">{t("files.deleteForeverShort")}</span>
+                <span className="hidden sm:inline">{t("files.deleteForever")}</span>
               </Button>
             )}
           </>
@@ -116,11 +119,11 @@ export function BulkActionsToolbar({
             size="sm"
             onClick={onTrash}
             disabled={isLoading}
-            aria-label="В корзину"
+            aria-label={t("files.toTrash")}
             className="h-8 gap-1.5 border-red-500/30 bg-red-500/10 px-2.5 text-red-400 hover:bg-red-500/20 hover:text-red-300 sm:px-3"
           >
             <Trash2 className="h-4 w-4" />
-            <span>В корзину</span>
+            <span>{t("files.toTrash")}</span>
           </Button>
         )}
       </div>
@@ -130,7 +133,7 @@ export function BulkActionsToolbar({
         size="sm"
         onClick={onClear}
         disabled={isLoading}
-        aria-label="Снять выделение"
+        aria-label={t("files.deselect")}
         className="h-8 gap-1.5 self-start px-2.5 text-white/60 hover:bg-white/10 hover:text-white sm:self-auto sm:px-3"
       >
         {isLoading ? (
@@ -138,8 +141,8 @@ export function BulkActionsToolbar({
         ) : (
           <X className="h-4 w-4" />
         )}
-        <span className="sm:hidden">Снять</span>
-        <span className="hidden sm:inline">Снять выделение</span>
+        <span className="sm:hidden">{t("files.deselectShort")}</span>
+        <span className="hidden sm:inline">{t("files.deselect")}</span>
       </Button>
     </div>
   );

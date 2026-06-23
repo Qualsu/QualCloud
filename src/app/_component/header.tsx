@@ -12,11 +12,13 @@ import { useMobileNav } from "@/components/context/mobile-nav-context";
 import { HeaderProps } from "@/config/types/components.types";
 import { usePathname } from "next/navigation";
 import { SearchBar } from "../dashboard/_components/search-bar";
+import { useTranslation } from "@/components/hooks/use-translation";
 
 export function Header({ showMobileMenuButton, showSearch }: HeaderProps) {
+    const { t } = useTranslation();
     const { isLoading } = useConvexAuth();
     const { toggle } = useMobileNav();
-    const pathname = usePathname()
+    const pathname = usePathname();
     const shouldShowSearch = showSearch ?? pathname.startsWith("/dashboard");
 
     return (
@@ -27,7 +29,7 @@ export function Header({ showMobileMenuButton, showSearch }: HeaderProps) {
                         <button
                             onClick={toggle}
                             className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/70 transition-colors hover:bg-white/[0.08] hover:text-white md:hidden"
-                            aria-label="Открыть меню"
+                            aria-label={t("header.openMenu")}
                         >
                             <Menu size={18} />
                         </button>
@@ -77,7 +79,7 @@ export function Header({ showMobileMenuButton, showSearch }: HeaderProps) {
                                         href={pages.AUTH}
                                         className="primary-button px-4 py-2 text-sm"
                                     >
-                                        Войти
+                                        {t("header.signIn")}
                                     </Link>
                                 </SignInButton>
                             </SignedOut>

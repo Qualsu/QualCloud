@@ -39,19 +39,20 @@ export function getFilesEditor(user?: ClerkUserLike | null): FilesApiEditor {
 
 export function getLastEditorDisplayName(
   lastEditorUsername: string | null | undefined,
-  currentUser?: ClerkUserLike | null
+  currentUser?: ClerkUserLike | null,
+  labels?: { user: string; you: string }
 ): string {
   if (isClerkUserId(lastEditorUsername) && currentUser?.id) {
     if (lastEditorUsername === currentUser.id) {
       const currentName = buildDisplayName(currentUser);
       if (currentName && !isClerkUserId(currentName)) return currentName;
     }
-    return "Пользователь";
+    return labels?.user ?? "User";
   }
 
   return (
     lastEditorUsername ||
     (currentUser ? buildDisplayName(currentUser) : "") ||
-    "Вы"
+    (labels?.you ?? "You")
   );
 }
