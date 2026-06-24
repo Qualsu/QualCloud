@@ -104,10 +104,16 @@ export function FilePreviewModal({
     const [isPublic, setIsPublic] = useState(file.isPublic ?? false);
     const [isPublicLoading, setIsPublicLoading] = useState(false);
     const [isArchiveLoading, setIsArchiveLoading] = useState(false);
+    const [isFavorited, setIsFavorited] = useState(file.isFavorited ?? false);
+    const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
 
     useEffect(() => {
         setIsPublic(file.isPublic ?? false);
     }, [file.isPublic]);
+
+    useEffect(() => {
+        setIsFavorited(file.isFavorited ?? false);
+    }, [file.isFavorited]);
 
     const fileLink = isFolder
         ? ""
@@ -260,18 +266,23 @@ export function FilePreviewModal({
     };
 
     const handleToggleFavorite = async () => {
-        if (!canFavorite) return;
+        if (!canFavorite || isFavoriteLoading) return;
+        setIsFavoriteLoading(true);
         try {
-            const promise = file.isFavorited
-                ? removeFromFavorites(file._id as string, editor)
-                : addToFavorites(file._id as string, editor);
+            const next = !isFavorited;
+            const promise = next
+                ? addToFavorites(file._id as string, editor)
+                : removeFromFavorites(file._id as string, editor);
             await toast.promise(promise, {
-                loading: file.isFavorited ? t("filePreview.removeFromFavorites") + "…" : t("filePreview.addToFavorites") + "…",
-                success: file.isFavorited ? t("filePreview.favoriteRemoved") : t("filePreview.favoriteAdded"),
+                loading: next ? t("filePreview.addToFavorites") + "…" : t("filePreview.removeFromFavorites") + "…",
+                success: next ? t("filePreview.favoriteAdded") : t("filePreview.favoriteRemoved"),
                 error: t("filePreview.favoriteError"),
             });
+            setIsFavorited(next);
             onRefresh?.();
-        } catch {}
+        } catch {} finally {
+            setIsFavoriteLoading(false);
+        }
     };
 
     const handleMoveToTrash = async () => {
@@ -352,18 +363,19 @@ export function FilePreviewModal({
                         {canFavorite && (
                             <button
                                 onClick={handleToggleFavorite}
-                                className={`absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm transition-colors hover:bg-black/50 ${
-                                    file.isFavorited
+                                disabled={isFavoriteLoading}
+                                className={`absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm transition-colors hover:bg-black/50 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    isFavorited
                                         ? "text-red-500"
                                         : "text-white/60 hover:text-red-500"
                                 }`}
-                                title={file.isFavorited ? t("filePreview.removeFromFavorites") : t("filePreview.addToFavorites")}
+                                title={isFavorited ? t("filePreview.removeFromFavorites") : t("filePreview.addToFavorites")}
                                 aria-label={
-                                    file.isFavorited ? t("filePreview.removeFromFavorites") : t("filePreview.addToFavorites")
+                                    isFavorited ? t("filePreview.removeFromFavorites") : t("filePreview.addToFavorites")
                                 }
                             >
                                 <Heart
-                                    className={`h-5 w-5 ${file.isFavorited ? "fill-current" : ""}`}
+                                    className={`h-5 w-5 ${isFavorited ? "fill-current" : ""}`}
                                 />
                             </button>
                         )}
