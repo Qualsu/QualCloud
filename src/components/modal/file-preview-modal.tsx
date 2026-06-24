@@ -407,7 +407,7 @@ export function FilePreviewModal({
                                     {typeIcons[file.type]}
                                 </span>
                                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                                    <DialogTitle className="break-all text-lg font-semibold leading-snug sm:text-xl">
+                                    <DialogTitle className="truncate text-lg font-semibold leading-snug sm:text-xl" title={displayName}>
                                         {displayName}
                                     </DialogTitle>
                                     {canRename && (

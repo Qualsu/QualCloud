@@ -310,10 +310,10 @@ export default function FolderPage() {
                 <FolderOpen className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-2xl font-semibold tracking-tight text-white">
+                <h1 className="truncate text-2xl font-semibold tracking-tight text-white" title={folderName}>
                   {folderName}
                 </h1>
-                <p className="text-sm text-white/50">{folderPath}</p>
+                <p className="truncate text-sm text-white/50" title={folderPath}>{folderPath}</p>
               </div>
             </div>
           </div>

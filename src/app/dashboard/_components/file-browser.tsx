@@ -777,9 +777,10 @@ export function FilesBrowser({
                     }
                     className={
                       index === parts.length - 1
-                        ? "text-white"
-                        : "hover:text-white"
+                        ? "truncate text-white"
+                        : "truncate hover:text-white"
                     }
+                    title={part}
                   >
                     {part}
                   </button>

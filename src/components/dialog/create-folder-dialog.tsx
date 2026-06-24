@@ -93,6 +93,7 @@ export function CreateFolderDialog({
               value={folderName}
               onChange={(e) => setFolderName(e.target.value)}
               placeholder={t("createFolder.placeholder")}
+              maxLength={100}
               className="border-white/10 bg-white/5 text-white placeholder:text-white/40 focus-visible:ring-purple"
             />
           </div>
