@@ -355,6 +355,11 @@ export function FilesBrowser({
     );
   })();
 
+  const currentPreviewFile = useMemo(() => {
+    if (!previewFile) return null;
+    return sortedFiles.find((f) => f._id === previewFile._id) ?? previewFile;
+  }, [previewFile, sortedFiles]);
+
   const selectedItems = useMemo(
     () => sortedFiles.filter((file) => selectedIds.has(file._id as string)),
     [sortedFiles, selectedIds]
@@ -836,10 +841,10 @@ export function FilesBrowser({
           <Placeholder message={emptyMessage} />
         )}
 
-      {previewFile && (
+      {currentPreviewFile && (
         <FilePreviewModal
-          file={previewFile}
-          open={!!previewFile}
+          file={currentPreviewFile}
+          open={!!currentPreviewFile}
           onOpenChange={(open) => {
             if (!open) setPreviewFile(null);
           }}
