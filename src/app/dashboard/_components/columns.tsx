@@ -132,7 +132,13 @@ function NameCell({
 
 function TypeCell({ file }: { file: FileDoc }) {
   const { t } = useTranslation();
-  const displayFormat = getFileFormatDisplay(file.name, file.type, file.isFolder, t);
+  const displayFormat = getFileFormatDisplay(
+    file.name,
+    file.type,
+    file.isFolder,
+    t,
+    file.contentType
+  );
   return (
     <div className="flex items-center gap-2 text-white/70">
       <span className="shrink-0 text-zinc-400">{typeIcons[file.type]}</span>

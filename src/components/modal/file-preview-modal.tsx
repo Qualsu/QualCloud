@@ -434,7 +434,13 @@ export function FilePreviewModal({
                             <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
                                 <span className="text-white/40">{t("filePreview.type")}:</span>
                                 <span className="text-white/80">
-                                    {getFileFormatDisplay(file.name, file.type, file.isFolder, t)}
+                                    {getFileFormatDisplay(
+                                      file.name,
+                                      file.type,
+                                      file.isFolder,
+                                      t,
+                                      file.contentType
+                                    )}
                                 </span>
                             </div>
 

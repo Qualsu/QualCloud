@@ -1,3 +1,4 @@
+import { extension } from "mime-types";
 import { FileDoc } from "@/config/types/components.types";
 import { extensionFormatMap, FILE_SIZE_LABELS } from "@/config/const/files.const";
 
@@ -31,11 +32,23 @@ export function getFileFormatDisplay(
   fileName: string,
   fileType: string,
   isFolder: boolean | undefined,
-  t: (key: string) => string
+  t: (key: string) => string,
+  contentType?: string | null
 ): string {
   if (isFolder) return t("fileTypes.folder");
 
-  const ext = fileName.split(".").pop()?.toLowerCase() || "";
+  let ext = "";
+  if (contentType) {
+    const mimeExt = extension(contentType);
+    if (mimeExt) {
+      ext = mimeExt.toLowerCase();
+    }
+  }
+
+  if (!ext) {
+    ext = fileName.split(".").pop()?.toLowerCase() || "";
+  }
+
   if (!ext) return fileType;
 
   return extensionFormatMap[ext] || ext;

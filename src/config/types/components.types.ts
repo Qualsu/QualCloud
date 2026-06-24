@@ -15,6 +15,7 @@ export type FileDoc = Omit<Doc<"files">, "type"> & {
   noteId?: string;
   fileUrl?: string;
   fileSize?: number;
+  contentType?: string;
   folder?: string | null;
   folderId?: string;
   isDeleted?: boolean;
