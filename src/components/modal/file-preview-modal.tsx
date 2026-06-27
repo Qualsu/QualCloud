@@ -199,7 +199,7 @@ export function FilePreviewModal({
     const canShare = !expired && Boolean(shareLink) && !notter && !deletedOnly && (!useFilesApi || isPublic);
     const canTrash = useFilesApi && !isFolder;
     const canDownload = !isFolder && Boolean(downloadLink);
-    const canOpen = !isFolder && !expired && Boolean(openLink);
+    const canOpen = !isFolder && !expired && Boolean(openLink) && isPublic;
     const canTogglePublic = useFilesApi && !deletedOnly && !expired;
     const canDownloadFolder = isFolder && useFilesApi;
 

@@ -339,11 +339,17 @@ export function FilesBrowser({
         new Date(b._creationTime).valueOf() - new Date(a._creationTime).valueOf()
     );
 
+    const sortedByStatus = [...filteredFiles].sort(
+      (a, b) => Number(b.isPublic) - Number(a.isPublic)
+    );
+
     let result = sortedByDate;
     if (sort === "alphabet") {
       result = sortedByAlphabet;
     } else if (sort === "types") {
       result = sortedByType;
+    } else if (sort === "status") {
+      result = sortedByStatus;
     }
 
     if (typeSort === "reverse") {

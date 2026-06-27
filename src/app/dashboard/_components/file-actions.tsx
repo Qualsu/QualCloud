@@ -317,12 +317,14 @@ export function FileCardActions({
             <DropdownMenuContent className="border-white/10 bg-[#1e1226] text-white min-w-[180px]">
                 {isFolder ? (
                     <>
-                        <DropdownMenuItem
-                            className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                            onClick={() => onOpenFolder?.(file.name)}
-                        >
-                            <FolderOpen className="w-4 h-4" /> {t("fileActions.open")}
-                        </DropdownMenuItem>
+                        {file.isPublic && (
+                            <DropdownMenuItem
+                                className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                onClick={() => onOpenFolder?.(file.name)}
+                            >
+                                <FolderOpen className="w-4 h-4" /> {t("fileActions.open")}
+                            </DropdownMenuItem>
+                        )}
                         {deletedOnly ? (
                             <>
                                 <DropdownMenuItem
@@ -428,7 +430,7 @@ export function FileCardActions({
                     </>
                 ) : (
                     <>
-                        {!expired && openLink && (
+                        {!expired && openLink && file.isPublic && (
                             <>
                                 <DropdownMenuItem className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white" onClick={() => {
                                     window.open(openLink, "_blank")
@@ -528,7 +530,7 @@ export function FileCardActions({
                                     </>
                                 ) : (
                                     <>
-                                        {!expired && openLink && <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />}
+                                        {!expired && openLink && file.isPublic && <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />}
                                         <DropdownMenuItem
                                             className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
                                             onClick={() => setIsTrashConfirmOpen(true)}

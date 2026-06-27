@@ -46,6 +46,7 @@ export const fileSortOptions = [
   { value: "date", key: "files.sortDate" },
   { value: "alphabet", key: "files.sortAlphabet" },
   { value: "types", key: "files.sortType" },
+  { value: "status", key: "files.sortStatus" },
 ] as const;
 
 export const fileSortDirectionOptions = [

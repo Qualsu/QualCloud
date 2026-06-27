@@ -28,7 +28,7 @@ export type FileDoc = Omit<Doc<"files">, "type"> & {
 export type FavoritedFile = FileDoc;
 export type FileType = Doc<"files">["type"] | "folder";
 export type FileFilterType = FileType | "all";
-export type FileSortKey = "date" | "alphabet" | "types";
+export type FileSortKey = "date" | "alphabet" | "types" | "status";
 export type FileSortDirection = "new" | "reverse";
 
 export interface FilesBrowserProps {

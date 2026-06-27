@@ -124,6 +124,7 @@
     "sortDate": "By date",
     "sortAlphabet": "Alphabetically",
     "sortType": "By file type",
+    "sortStatus": "By status",
     "sortNewFirst": "Newest first",
     "sortReverse": "Reverse order",
     "expired": "Expired",
