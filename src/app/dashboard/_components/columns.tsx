@@ -104,27 +104,27 @@ function NameCell({
     </span>
   ) : null;
 
-  if (file.isFolder) {
+    if (file.isFolder) {
     return (
       <button
         onClick={(e) => {
           e.stopPropagation();
           onOpenFolder?.(file.name);
         }}
-        className="flex items-center gap-2 font-medium text-white/80 transition-colors hover:text-white"
+        className="flex min-w-0 items-center gap-2 font-medium text-white/80 transition-colors hover:text-white"
         title={displayName}
       >
         <span className="shrink-0 text-zinc-400">{typeIcons.folder}</span>
-        <span>{displayName}</span>
+        <span className="truncate">{displayName}</span>
         {useFilesApi && publicIcon}
       </button>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 font-medium text-white/80" title={displayName}>
+    <div className="flex min-w-0 items-center gap-2 font-medium text-white/80" title={displayName}>
       <span className="shrink-0 text-zinc-400">{typeIcons[file.type]}</span>
-      <span>{displayName}</span>
+      <span className="truncate">{displayName}</span>
       {useFilesApi && publicIcon}
     </div>
   );
@@ -132,7 +132,13 @@ function NameCell({
 
 function TypeCell({ file }: { file: FileDoc }) {
   const { t } = useTranslation();
-  const displayFormat = getFileFormatDisplay(file.name, file.type, file.isFolder, t);
+  const displayFormat = getFileFormatDisplay(
+    file.name,
+    file.type,
+    file.isFolder,
+    t,
+    file.contentType
+  );
   return (
     <div className="flex items-center gap-2 text-white/70">
       <span className="shrink-0 text-zinc-400">{typeIcons[file.type]}</span>

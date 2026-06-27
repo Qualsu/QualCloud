@@ -23,6 +23,7 @@ export async function getAllFiles(account_id: string) {
       name: file.filename,
       orgId: account_id,
       type: getMimeType(file.type),
+      contentType: file.type,
       fileId: file.fileid as Id<"_storage">,
       userId: deterministicId,
       linkId: "",

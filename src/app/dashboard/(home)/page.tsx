@@ -27,6 +27,7 @@ import { FilesUserStatsResponse } from "@/config/types/api.types";
 import { formatTimeRemaining } from "@/lib/utils";
 import { FILE_SIZE_LABELS } from "@/config/const/files.const";
 import { useTranslation } from "@/components/hooks/use-translation";
+import { useFilesRefresh } from "@/components/context/files-refresh-context";
 
 function formatSize(bytes: number, t: (key: string) => string): string {
   if (bytes === 0) return `0 ${t("units.b")}`;
@@ -78,6 +79,7 @@ export default function Home() {
   const { t, language } = useTranslation();
   const [view, setView] = useFilesView();
   const { orgId } = useCurrentOrg();
+  const { refreshKey } = useFilesRefresh();
   const [stats, setStats] = useState<FilesUserStatsResponse | null>(null);
   const [recentFiles, setRecentFiles] = useState<FileDoc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,7 +108,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [orgId]);
+  }, [orgId, refreshKey]);
 
   const refreshRecentFiles = useCallback(() => {
     if (!orgId) return Promise.resolve();

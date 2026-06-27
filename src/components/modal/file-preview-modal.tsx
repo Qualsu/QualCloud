@@ -104,10 +104,16 @@ export function FilePreviewModal({
     const [isPublic, setIsPublic] = useState(file.isPublic ?? false);
     const [isPublicLoading, setIsPublicLoading] = useState(false);
     const [isArchiveLoading, setIsArchiveLoading] = useState(false);
+    const [isFavorited, setIsFavorited] = useState(file.isFavorited ?? false);
+    const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
 
     useEffect(() => {
         setIsPublic(file.isPublic ?? false);
     }, [file.isPublic]);
+
+    useEffect(() => {
+        setIsFavorited(file.isFavorited ?? false);
+    }, [file.isFavorited]);
 
     const fileLink = isFolder
         ? ""
@@ -193,7 +199,7 @@ export function FilePreviewModal({
     const canShare = !expired && Boolean(shareLink) && !notter && !deletedOnly && (!useFilesApi || isPublic);
     const canTrash = useFilesApi && !isFolder;
     const canDownload = !isFolder && Boolean(downloadLink);
-    const canOpen = !isFolder && !expired && Boolean(openLink);
+    const canOpen = !isFolder && !expired && Boolean(openLink) && isPublic;
     const canTogglePublic = useFilesApi && !deletedOnly && !expired;
     const canDownloadFolder = isFolder && useFilesApi;
 
@@ -260,18 +266,23 @@ export function FilePreviewModal({
     };
 
     const handleToggleFavorite = async () => {
-        if (!canFavorite) return;
+        if (!canFavorite || isFavoriteLoading) return;
+        setIsFavoriteLoading(true);
         try {
-            const promise = file.isFavorited
-                ? removeFromFavorites(file._id as string, editor)
-                : addToFavorites(file._id as string, editor);
+            const next = !isFavorited;
+            const promise = next
+                ? addToFavorites(file._id as string, editor)
+                : removeFromFavorites(file._id as string, editor);
             await toast.promise(promise, {
-                loading: file.isFavorited ? t("filePreview.removeFromFavorites") + "…" : t("filePreview.addToFavorites") + "…",
-                success: file.isFavorited ? t("filePreview.favoriteRemoved") : t("filePreview.favoriteAdded"),
+                loading: next ? t("filePreview.addToFavorites") + "…" : t("filePreview.removeFromFavorites") + "…",
+                success: next ? t("filePreview.favoriteAdded") : t("filePreview.favoriteRemoved"),
                 error: t("filePreview.favoriteError"),
             });
+            setIsFavorited(next);
             onRefresh?.();
-        } catch {}
+        } catch {} finally {
+            setIsFavoriteLoading(false);
+        }
     };
 
     const handleMoveToTrash = async () => {
@@ -352,18 +363,19 @@ export function FilePreviewModal({
                         {canFavorite && (
                             <button
                                 onClick={handleToggleFavorite}
-                                className={`absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm transition-colors hover:bg-black/50 ${
-                                    file.isFavorited
+                                disabled={isFavoriteLoading}
+                                className={`absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-black/30 backdrop-blur-sm transition-colors hover:bg-black/50 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    isFavorited
                                         ? "text-red-500"
                                         : "text-white/60 hover:text-red-500"
                                 }`}
-                                title={file.isFavorited ? t("filePreview.removeFromFavorites") : t("filePreview.addToFavorites")}
+                                title={isFavorited ? t("filePreview.removeFromFavorites") : t("filePreview.addToFavorites")}
                                 aria-label={
-                                    file.isFavorited ? t("filePreview.removeFromFavorites") : t("filePreview.addToFavorites")
+                                    isFavorited ? t("filePreview.removeFromFavorites") : t("filePreview.addToFavorites")
                                 }
                             >
                                 <Heart
-                                    className={`h-5 w-5 ${file.isFavorited ? "fill-current" : ""}`}
+                                    className={`h-5 w-5 ${isFavorited ? "fill-current" : ""}`}
                                 />
                             </button>
                         )}
@@ -395,7 +407,7 @@ export function FilePreviewModal({
                                     {typeIcons[file.type]}
                                 </span>
                                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                                    <DialogTitle className="break-all text-lg font-semibold leading-snug sm:text-xl">
+                                    <DialogTitle className="truncate text-lg font-semibold leading-snug sm:text-xl" title={displayName}>
                                         {displayName}
                                     </DialogTitle>
                                     {canRename && (
@@ -422,7 +434,13 @@ export function FilePreviewModal({
                             <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
                                 <span className="text-white/40">{t("filePreview.type")}:</span>
                                 <span className="text-white/80">
-                                    {getFileFormatDisplay(file.name, file.type, file.isFolder, t)}
+                                    {getFileFormatDisplay(
+                                      file.name,
+                                      file.type,
+                                      file.isFolder,
+                                      t,
+                                      file.contentType
+                                    )}
                                 </span>
                             </div>
 
@@ -493,14 +511,46 @@ export function FilePreviewModal({
                         </div>
 
                         <div className="mt-auto flex flex-col gap-3 pt-4">
-                            {canOpen && (
-                                <button
-                                    onClick={handleOpen}
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-purple px-4 py-2 text-sm font-medium md:py-2.5 text-white transition-colors hover:bg-purple/90"
-                                >
-                                    <ExternalLink className="h-4 w-4" />
-                                    {openLabel}
-                                </button>
+                            {canTogglePublic ? (
+                                <div className="flex w-full gap-2">
+                                    <button
+                                        onClick={handleTogglePublic}
+                                        disabled={isPublicLoading}
+                                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-purple px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple/90 disabled:opacity-50 disabled:cursor-not-allowed md:py-2.5"
+                                    >
+                                        {isPublic ? (
+                                            <>
+                                                <Lock className="h-4 w-4" />
+                                                {t("filePreview.makePrivate")}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Globe className="h-4 w-4" />
+                                                {t("filePreview.makePublic")}
+                                            </>
+                                        )}
+                                    </button>
+                                    {isPublic && canOpen && (
+                                        <button
+                                            onClick={handleOpen}
+                                            className="inline-flex aspect-square h-auto items-center justify-center rounded-xl bg-purple px-3 text-white transition-colors hover:bg-purple/90"
+                                            title={openLabel}
+                                            aria-label={openLabel}
+                                        >
+                                            <ExternalLink className="h-4 w-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                canOpen && (
+                                    <button
+                                        onClick={handleOpen}
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-purple px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple/90 md:py-2.5"
+                                    >
+                                        <ExternalLink className="h-4 w-4" />
+                                        {openLabel}
+                                    </button>
+                                )
                             )}
 
                             {canDownload && (
@@ -535,26 +585,6 @@ export function FilePreviewModal({
                                 >
                                     <Trash2 className="h-4 w-4" />
                                     {t("filePreview.delete")}
-                                </button>
-                            )}
-
-                            {canTogglePublic && (
-                                <button
-                                    onClick={handleTogglePublic}
-                                    disabled={isPublicLoading}
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium md:py-2.5 text-white transition-colors hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isPublic ? (
-                                        <>
-                                            <Lock className="h-4 w-4" />
-                                            {t("filePreview.makePrivate")}
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Globe className="h-4 w-4" />
-                                            {t("filePreview.makePublic")}
-                                        </>
-                                    )}
                                 </button>
                             )}
 

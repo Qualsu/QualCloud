@@ -110,9 +110,9 @@ export function SideNav() {
 
   return (
     <nav>
-      <aside className="hidden w-60 shrink-0 md:fixed md:top-[7.5rem] md:left-6 lg:left-8 xl:left-10 md:flex md:flex-col md:h-[calc(100vh-7.5rem)] md:pt-1">
+      <aside className="hidden w-60 shrink-0 overflow-y-auto md:fixed md:top-[7.5rem] md:left-6 lg:left-8 xl:left-10 md:flex md:flex-col md:h-[calc(100vh-7.5rem)] md:pt-1 md:pb-3">
         <NavContent />
-        <div className="mt-auto border-t border-white/10 px-2 pt-3 mb-3">
+        <div className="mt-auto border-t border-white/10 px-2 pt-3">
           <OrganizationSwitcher
             appearance={{
               elements: {
@@ -141,7 +141,7 @@ export function SideNav() {
             isOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          <div className="surface-panel flex h-full flex-col rounded-r-2xl px-3 py-5">
+          <div className="surface-panel flex h-full flex-col overflow-y-auto rounded-r-2xl px-3 py-5">
             <div className="mb-4 px-2">
               <Image
                 src={images.LOGO}

@@ -177,7 +177,7 @@ export default function File() {
                             <>
                                 <div className="w-full">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <h1 className="text-2xl font-semibold break-all">{file.name}</h1>
+                                        <h1 className="truncate text-2xl font-semibold" title={file.name}>{file.name}</h1>
                                     </div>
                                     {typeof file.size === "number" && (
                                         <p className="mt-1 text-sm text-white/50">{formatSize(file.size, t)}</p>

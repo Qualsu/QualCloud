@@ -17,6 +17,7 @@ export async function getAllFiles(account_id: string) {
       name: file.file_name,
       orgId: account_id,
       type: getMimeType(file.file_type),
+      contentType: file.file_type,
       fileId: file.short_id as Id<"_storage">,
       userId: deterministicId,
       linkId: file.short_id,

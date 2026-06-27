@@ -115,6 +115,7 @@ export function RenameDialog({
               onChange={(e) => setNewName(e.target.value)}
               placeholder={t("rename.placeholder")}
               disabled={isLoading}
+              maxLength={100}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();

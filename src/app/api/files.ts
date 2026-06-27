@@ -50,6 +50,7 @@ function mapFile(file: FilesFileResponse, fallbackAccountId?: string): FileDoc {
     name: file.file_name,
     orgId: accountId,
     type: getMimeType(file.file_type),
+    contentType: file.file_type,
     fileId: file.file_id as Id<"_storage">,
     userId: deterministicId,
     linkId: file.file_id,

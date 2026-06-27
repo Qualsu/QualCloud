@@ -339,11 +339,17 @@ export function FilesBrowser({
         new Date(b._creationTime).valueOf() - new Date(a._creationTime).valueOf()
     );
 
+    const sortedByStatus = [...filteredFiles].sort(
+      (a, b) => Number(b.isPublic) - Number(a.isPublic)
+    );
+
     let result = sortedByDate;
     if (sort === "alphabet") {
       result = sortedByAlphabet;
     } else if (sort === "types") {
       result = sortedByType;
+    } else if (sort === "status") {
+      result = sortedByStatus;
     }
 
     if (typeSort === "reverse") {
@@ -354,6 +360,11 @@ export function FilesBrowser({
       (a, b) => (Number(b.isFolder) || Number(b.type === "folder")) - (Number(a.isFolder) || Number(a.type === "folder"))
     );
   })();
+
+  const currentPreviewFile = useMemo(() => {
+    if (!previewFile) return null;
+    return sortedFiles.find((f) => f._id === previewFile._id) ?? previewFile;
+  }, [previewFile, sortedFiles]);
 
   const selectedItems = useMemo(
     () => sortedFiles.filter((file) => selectedIds.has(file._id as string)),
@@ -777,9 +788,10 @@ export function FilesBrowser({
                     }
                     className={
                       index === parts.length - 1
-                        ? "text-white"
-                        : "hover:text-white"
+                        ? "truncate text-white"
+                        : "truncate hover:text-white"
                     }
+                    title={part}
                   >
                     {part}
                   </button>
@@ -835,10 +847,10 @@ export function FilesBrowser({
           <Placeholder message={emptyMessage} />
         )}
 
-      {previewFile && (
+      {currentPreviewFile && (
         <FilePreviewModal
-          file={previewFile}
-          open={!!previewFile}
+          file={currentPreviewFile}
+          open={!!currentPreviewFile}
           onOpenChange={(open) => {
             if (!open) setPreviewFile(null);
           }}

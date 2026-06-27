@@ -124,6 +124,7 @@
     "sortDate": "По дате",
     "sortAlphabet": "По алфавиту",
     "sortType": "По типу файла",
+    "sortStatus": "По доступу",
     "sortNewFirst": "Сначала новые",
     "sortReverse": "В обратном порядке",
     "expired": "Истекшие",
