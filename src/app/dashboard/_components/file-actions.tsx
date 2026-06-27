@@ -448,6 +448,24 @@ export function FileCardActions({
                             </>
                         )}
 
+                        {!expired && !deletedOnly && (
+                            <DropdownMenuItem
+                                className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                onClick={handleTogglePublic}
+                                disabled={isPublicLoading}
+                            >
+                                {file.isPublic ? (
+                                    <>
+                                        <Lock className="w-4 h-4" /> {t("fileActions.makePrivate")}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Globe className="w-4 h-4" /> {t("fileActions.makePublic")}
+                                    </>
+                                )}
+                            </DropdownMenuItem>
+                        )}
+
                         {useFilesApi && (
                             <>
                                 {!expired && !deletedOnly && (
@@ -482,24 +500,6 @@ export function FileCardActions({
                                         onClick={() => setIsMoveOpen(true)}
                                     >
                                         <FolderInput className="w-4 h-4" /> {t("fileActions.moveToFolder")}
-                                    </DropdownMenuItem>
-                                )}
-
-                                {!expired && !deletedOnly && (
-                                    <DropdownMenuItem
-                                        className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                                        onClick={handleTogglePublic}
-                                        disabled={isPublicLoading}
-                                    >
-                                        {file.isPublic ? (
-                                            <>
-                                                <Lock className="w-4 h-4" /> {t("fileActions.makePrivate")}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Globe className="w-4 h-4" /> {t("fileActions.makePublic")}
-                                            </>
-                                        )}
                                     </DropdownMenuItem>
                                 )}
 
