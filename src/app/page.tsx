@@ -6,22 +6,9 @@ import { ServicesShowcase } from "./_component/services-showcase"
 import { CTASection } from "./_component/cta-section"
 import { HomeRedirect } from "./_component/home-redirect"
 
-const INSTANT_REDIRECT_SCRIPT = `
-(function () {
-  try {
-    const raw = localStorage.getItem('qualcloud-settings');
-    const settings = raw ? JSON.parse(raw) : {};
-    if (settings.redirectHomeToDashboard !== false) {
-      location.replace('/dashboard');
-    }
-  } catch (e) {}
-})();
-`;
-
 export default async function Landing(){
     return (
         <>
-            <script dangerouslySetInnerHTML={{ __html: INSTANT_REDIRECT_SCRIPT }} />
             <div className="relative isolate min-h-screen text-white overflow-x-hidden">
                 <HomeRedirect />
                 <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[42rem] bg-[radial-gradient(circle_at_top,rgba(164,93,255,0.18),transparent_55%)]" />

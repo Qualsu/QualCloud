@@ -1,20 +1,46 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSettings } from "@/components/context/settings-context";
+import { useUser } from "@clerk/nextjs";
 import { pages } from "@/config/routing/pages.route";
+
+const STORAGE_KEY = "qualcloud-settings";
+
+interface StoredSettings {
+  redirectHomeToDashboard?: boolean;
+}
+
+function getStoredRedirectPreference(): boolean {
+  if (typeof window === "undefined") return true;
+
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return true;
+
+    const parsed = JSON.parse(raw) as StoredSettings;
+    return parsed.redirectHomeToDashboard !== false;
+  } catch {
+    return true;
+  }
+}
 
 export function HomeRedirect() {
   const router = useRouter();
-  const { initialized, redirectHomeToDashboard } = useSettings();
+  const { isLoaded, isSignedIn } = useUser();
+  const [redirectEnabled, setRedirectEnabled] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!initialized) return;
-    if (redirectHomeToDashboard) {
+    setRedirectEnabled(getStoredRedirectPreference());
+  }, []);
+
+  useEffect(() => {
+    if (!isLoaded || redirectEnabled === null) return;
+
+    if (redirectEnabled && isSignedIn) {
       router.replace(pages.DASHBOARD.ROOT);
     }
-  }, [initialized, redirectHomeToDashboard, router]);
+  }, [isLoaded, isSignedIn, redirectEnabled, router]);
 
   return null;
 }
