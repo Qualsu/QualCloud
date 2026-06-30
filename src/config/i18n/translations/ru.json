@@ -41,7 +41,14 @@
       "allInOne": "Все в одном месте",
       "allInOneDesc": "Файлы всех приложений QualCloud в одном месте",
       "archive": "Архив KenyCloud",
-      "archiveDesc": "Пользовались KenyCloud? Все ваши файлы сохранены и доступны в QualCloud"
+      "archiveDesc": "Пользовались KenyCloud? Все ваши файлы сохранены и доступны в QualCloud",
+      "pwaTitle": "Удобное PWA-приложение",
+      "pwaButton": "Установить",
+      "pwaInstalled": "Приложение уже установлено",
+      "pwaInstallHint": "Установка доступна через меню браузера: Поделиться → На экран «Домой»",
+      "pwaInstallStarted": "Установка началась",
+      "goTitle": "Переходи и загружай файлы уже сейчас",
+      "goButton": "Перейти"
     }
   },
   "landingFeatureCards": {

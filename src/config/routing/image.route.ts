@@ -19,6 +19,7 @@ export const images = {
         TRASH: "/image/Trash.png",
         BANNER: "/image/banner.png",
         ARCHIVE: "/image/archive.png",
+        PHONE: "/image/phone.png",
     },
     QUAL_ID: "https://id.qual.su/image/icon.svg",
     NOT_FOUND: "/image/404.png",

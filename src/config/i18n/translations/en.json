@@ -41,7 +41,14 @@
       "allInOne": "All in one place",
       "allInOneDesc": "Files from all QualCloud apps in one place",
       "archive": "KenyCloud archive",
-      "archiveDesc": "Used KenyCloud? All your files are saved and available in QualCloud"
+      "archiveDesc": "Used KenyCloud? All your files are saved and available in QualCloud",
+      "pwaTitle": "Convenient PWA app",
+      "pwaButton": "Install",
+      "pwaInstalled": "App is already installed",
+      "pwaInstallHint": "Install via browser menu: Share → Add to Home Screen",
+      "pwaInstallStarted": "Installation started",
+      "goTitle": "Go and upload files right now",
+      "goButton": "Go"
     }
   },
   "landingFeatureCards": {
