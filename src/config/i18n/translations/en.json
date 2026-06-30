@@ -6,6 +6,7 @@
     "heroTitle": "Convenient file storage",
     "heroSubtitle": "Upload, store, and share files — all in one reliable cloud",
     "heroCta": "Get started",
+    "heroDownload": "Install",
     "featureAnyFormat": "Any formats",
     "featureAnyFormatDesc": "Images, videos, documents, and more",
     "featureReliable": "Reliable",
@@ -32,7 +33,23 @@
     "capAccessAnywhereDesc": "Open, download, and manage files from any device — in a browser or app",
     "ctaTitle": "Get started right now",
     "ctaSubtitle": "Free cloud storage — start using it right now",
-    "ctaButton": "Start"
+    "ctaButton": "Start",
+    "featureCards": {
+      "safe": "Secure",
+      "sync": "Synchronized",
+      "team": "Shared storage",
+      "allInOne": "All in one place",
+      "allInOneDesc": "Files from all QualCloud apps in one place",
+      "archive": "KenyCloud archive",
+      "archiveDesc": "Used KenyCloud? All your files are saved and available in QualCloud",
+      "pwaTitle": "Convenient PWA app",
+      "pwaButton": "Install",
+      "pwaInstalled": "App is already installed",
+      "pwaInstallHint": "Install via browser menu: Share → Add to Home Screen",
+      "pwaInstallStarted": "Installation started",
+      "goTitle": "Go and upload files right now",
+      "goButton": "Go"
+    }
   },
   "landingFeatureCards": {
     "unifiedAccess": "Unified access",
@@ -59,7 +76,8 @@
     "cloud": "Cloud",
     "services": "Services",
     "navigation": "Navigation",
-    "root": "Root"
+    "root": "Root",
+    "install": "Install"
   },
   "nav": {
     "home": "Home",
@@ -68,7 +86,7 @@
     "favorites": "Favorites",
     "trash": "Trash",
     "notter": "Notter",
-    "shrtl": "Shrtl://",
+    "shrtl": "Shrtl",
     "kenycloud": "KenyCloud"
   },
   "search": {
@@ -109,7 +127,7 @@
       "favorites": "Favorites",
       "trash": "Trash",
       "kenycloud": "KenyCloud (Archive)",
-      "shrtl": "Shrtl://",
+      "shrtl": "Shrtl",
       "notter": "Notter"
     },
     "show": "Show",

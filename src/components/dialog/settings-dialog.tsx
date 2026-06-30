@@ -14,6 +14,7 @@ import { LogOut, Settings, Settings2 } from "lucide-react";
 import { useClerk } from "@clerk/nextjs";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "@/components/hooks/use-translation";
+import { useIsPwa } from "@/components/hooks/use-is-pwa";
 import { LANGUAGES, type Language } from "@/config/i18n";
 import {
   Select,
@@ -36,6 +37,7 @@ export function SettingsDialog({ children }: SettingsDialogProps) {
     setLanguage,
   } = useSettings();
   const { t } = useTranslation();
+  const isPwa = useIsPwa();
   const { openUserProfile, signOut } = useClerk();
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -84,19 +86,21 @@ export function SettingsDialog({ children }: SettingsDialogProps) {
             </Select>
           </div>
 
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-white">{t("settings.redirect")}</h3>
-              <p className="text-xs leading-relaxed text-white/50">
-                {t("settings.redirectDescription")}
-              </p>
+          {!isPwa && (
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold text-white">{t("settings.redirect")}</h3>
+                <p className="text-xs leading-relaxed text-white/50">
+                  {t("settings.redirectDescription")}
+                </p>
+              </div>
+              <Switch
+                checked={redirectHomeToDashboard}
+                onCheckedChange={setRedirectHomeToDashboard}
+                aria-label={t("settings.redirectAria")}
+              />
             </div>
-            <Switch
-              checked={redirectHomeToDashboard}
-              onCheckedChange={setRedirectHomeToDashboard}
-              aria-label={t("settings.redirectAria")}
-            />
-          </div>
+          )}
         </div>
 
         <div className="flex items-center gap-3 border-t border-white/10 px-6 py-4">

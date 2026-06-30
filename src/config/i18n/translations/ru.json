@@ -6,6 +6,7 @@
     "heroTitle": "Удобное файловое хранилище",
     "heroSubtitle": "Загружайте, храните и делитесь файлами — всё в одном надёжном облаке",
     "heroCta": "Перейти",
+    "heroDownload": "Установить",
     "featureAnyFormat": "Любые форматы",
     "featureAnyFormatDesc": "Изображения, видео, документы и не только",
     "featureReliable": "Надёжно",
@@ -32,7 +33,23 @@
     "capAccessAnywhereDesc": "Открывайте, скачивайте и управляйте файлами с любого устройства — в браузере или приложении",
     "ctaTitle": "Начните прямо сейчас",
     "ctaSubtitle": "Бесплатное облачное хранилище — начните пользоваться прямо сейчас",
-    "ctaButton": "Начать"
+    "ctaButton": "Начать",
+    "featureCards": {
+      "safe": "Безопасно",
+      "sync": "Синхронизируется",
+      "team": "Совместное хранилище",
+      "allInOne": "Все в одном месте",
+      "allInOneDesc": "Файлы всех приложений QualCloud в одном месте",
+      "archive": "Архив KenyCloud",
+      "archiveDesc": "Пользовались KenyCloud? Все ваши файлы сохранены и доступны в QualCloud",
+      "pwaTitle": "Удобное PWA-приложение",
+      "pwaButton": "Установить",
+      "pwaInstalled": "Приложение уже установлено",
+      "pwaInstallHint": "Установка доступна через меню браузера: Поделиться → На экран «Домой»",
+      "pwaInstallStarted": "Установка началась",
+      "goTitle": "Переходи и загружай файлы уже сейчас",
+      "goButton": "Перейти"
+    }
   },
   "landingFeatureCards": {
     "unifiedAccess": "Единый доступ",
@@ -59,7 +76,8 @@
     "cloud": "Облако",
     "services": "Сервисы",
     "navigation": "Навигация",
-    "root": "Корень"
+    "root": "Корень",
+    "install": "Установить"
   },
   "nav": {
     "home": "Главная",
@@ -68,7 +86,7 @@
     "favorites": "Избранное",
     "trash": "Корзина",
     "notter": "Notter",
-    "shrtl": "Shrtl://",
+    "shrtl": "Shrtl",
     "kenycloud": "KenyCloud"
   },
   "search": {
@@ -109,7 +127,7 @@
       "favorites": "Избранное",
       "trash": "Корзина",
       "kenycloud": "KenyCloud (Архив)",
-      "shrtl": "Shrtl://",
+      "shrtl": "Shrtl",
       "notter": "Notter"
     },
     "show": "Показать",

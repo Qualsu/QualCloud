@@ -4,7 +4,7 @@ import { OrganizationSwitcher } from "@clerk/nextjs"
 import { useMobileNav } from "@/components/context/mobile-nav-context"
 import { navItems, utilityNavItems } from "@/config/const/components.const"
 import { images } from "@/config/routing/image.route"
-import { Upload, X } from "lucide-react"
+import { Download, Upload, X } from "lucide-react"
 import { UploadDialog } from "@/components/dialog/upload-dialog"
 import {
   SettingsDialog,
@@ -15,6 +15,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
 import { useTranslation } from "@/components/hooks/use-translation"
+import { usePwaInstall } from "@/components/hooks/use-pwa-install"
+import { useIsPwa } from "@/components/hooks/use-is-pwa"
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -97,6 +99,28 @@ export function SideNav() {
     </UploadDialog>
   )
 
+  const InstallNavButton = ({ onClick }: { onClick?: () => void }) => {
+    const { t } = useTranslation()
+    const { install } = usePwaInstall()
+    const isPwa = useIsPwa()
+
+    if (isPwa) return null
+
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          install()
+          onClick?.()
+        }}
+        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-white/60 transition-all duration-200 hover:bg-white/[0.06] hover:text-white"
+      >
+        <Download size={18} className="shrink-0" />
+        <span>{t("sideNav.install")}</span>
+      </button>
+    )
+  }
+
   const NavContent = ({ onClick }: { onClick?: () => void }) => (
     <div className="flex flex-col gap-1">
       <UploadNavButton onClick={onClick} />
@@ -112,19 +136,22 @@ export function SideNav() {
     <nav>
       <aside className="hidden w-60 shrink-0 overflow-y-auto md:fixed md:top-[7.5rem] md:left-6 lg:left-8 xl:left-10 md:flex md:flex-col md:h-[calc(100vh-7.5rem)] md:pt-1 md:pb-3">
         <NavContent />
-        <div className="mt-auto border-t border-white/10 px-2 pt-3">
-          <OrganizationSwitcher
-            appearance={{
-              elements: {
-                rootBox: "w-full",
-                organizationSwitcherTrigger:
-                  "w-full justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white/80 hover:bg-white/[0.08] hover:text-white",
-              },
-            }}
-          />
-          <SettingsDialog>
-            <SettingsDialogTrigger />
-          </SettingsDialog>
+        <div className="mt-auto px-2 pt-3">
+          <InstallNavButton />
+          <div className="mt-3 border-t border-white/10 pt-3">
+            <OrganizationSwitcher
+              appearance={{
+                elements: {
+                  rootBox: "w-full",
+                  organizationSwitcherTrigger:
+                    "w-full justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white/80 hover:bg-white/[0.08] hover:text-white",
+                },
+              }}
+            />
+            <SettingsDialog>
+              <SettingsDialogTrigger />
+            </SettingsDialog>
+          </div>
         </div>
       </aside>
 
@@ -165,19 +192,22 @@ export function SideNav() {
 
             <NavContent onClick={close} />
 
-            <div className="mt-auto mb-3 border-t border-white/10 px-2 pt-3">
-              <OrganizationSwitcher
-                appearance={{
-                  elements: {
-                    rootBox: "w-full",
-                    organizationSwitcherTrigger:
-                      "w-full justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white/80 hover:bg-white/[0.08] hover:text-white",
-                  },
-                }}
-              />
-              <SettingsDialog>
-                <SettingsDialogTrigger onClick={close} />
-              </SettingsDialog>
+            <div className="mt-auto mb-3 px-2 pt-3">
+              <InstallNavButton onClick={close} />
+              <div className="mt-3 border-t border-white/10 pt-3">
+                <OrganizationSwitcher
+                  appearance={{
+                    elements: {
+                      rootBox: "w-full",
+                      organizationSwitcherTrigger:
+                        "w-full justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white/80 hover:bg-white/[0.08] hover:text-white",
+                    },
+                  }}
+                />
+                <SettingsDialog>
+                  <SettingsDialogTrigger onClick={close} />
+                </SettingsDialog>
+              </div>
             </div>
           </div>
         </div>

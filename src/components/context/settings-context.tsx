@@ -8,6 +8,11 @@ import {
   type ReactNode,
 } from "react";
 import { isLanguage, type Language } from "@/config/i18n";
+import { isPwa } from "@/components/hooks/use-is-pwa";
+import {
+  COOKIE_REDIRECT_HOME,
+  setCookie,
+} from "@/lib/pwa-cookies";
 
 const STORAGE_KEY = "qualcloud-settings";
 
@@ -74,6 +79,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     } catch {
       // игнорируем ошибки записи
     }
+
+    // В PWA редирект с лендинга всегда включён, поэтому кука принудительно true.
+    // В браузере кука отражает пользовательскую настройку.
+    setCookie(COOKIE_REDIRECT_HOME, isPwa() ? "true" : String(settings.redirectHomeToDashboard));
   }, [settings, initialized]);
 
   const setRedirectHomeToDashboard = (value: boolean) => {

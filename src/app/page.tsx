@@ -1,27 +1,12 @@
 import { Footer } from "./_component/footer"
 import { Header } from "./_component/header"
 import Main from "./_component/main"
-import { HowItWorks } from "./_component/how-it-works"
-import { ServicesShowcase } from "./_component/services-showcase"
-import { CTASection } from "./_component/cta-section"
+import FeatureCards from "./_component/feature-cards"
 import { HomeRedirect } from "./_component/home-redirect"
-
-const INSTANT_REDIRECT_SCRIPT = `
-(function () {
-  try {
-    const raw = localStorage.getItem('qualcloud-settings');
-    const settings = raw ? JSON.parse(raw) : {};
-    if (settings.redirectHomeToDashboard !== false) {
-      location.replace('/dashboard');
-    }
-  } catch (e) {}
-})();
-`;
 
 export default async function Landing(){
     return (
         <>
-            <script dangerouslySetInnerHTML={{ __html: INSTANT_REDIRECT_SCRIPT }} />
             <div className="relative isolate min-h-screen text-white overflow-x-hidden">
                 <HomeRedirect />
                 <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[42rem] bg-[radial-gradient(circle_at_top,rgba(164,93,255,0.18),transparent_55%)]" />
@@ -30,9 +15,7 @@ export default async function Landing(){
                 <Header/>
                 <div className="h-20 md:h-24" />
                 <Main/>
-                <HowItWorks/>
-                <ServicesShowcase/>
-                <CTASection/>
+                <FeatureCards/>
                 <Footer/>
             </div>
         </>

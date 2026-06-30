@@ -1,16 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { Skeleton } from "@/components/ui/skeleton";
 import { images } from "@/config/routing/image.route";
 import { pages } from "@/config/routing/pages.route";
 import { useConvexAuth } from "convex/react";
-import { ArrowRight, Cloud, FileText, ShieldCheck } from "lucide-react";
-import { FeatureCards } from "./feature-cards";
+import { ArrowRight, Download } from "lucide-react";
 import { useTranslation } from "@/components/hooks/use-translation";
+import { usePwaInstall } from "@/components/hooks/use-pwa-install";
 
 function ParticleField() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -72,128 +71,65 @@ function ParticleField() {
     )
 }
 
-function MainSkeleton() {
-    return (
-        <>
-            <section className="section-shell py-16 sm:py-20 md:py-28">
-                <Skeleton className="relative mx-auto h-20 w-full max-w-[600px] rounded-3xl sm:h-24 md:h-28" />
-
-                <div className="mx-auto mt-6 flex max-w-[520px] flex-col items-center gap-3 px-2 sm:mt-8">
-                    <Skeleton className="h-8 w-full max-w-[420px] rounded-xl" />
-                    <Skeleton className="h-5 w-full max-w-[300px] rounded-lg" />
-                </div>
-
-                <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                    <Skeleton className="h-14 w-40 rounded-xl" />
-                </div>
-
-                <div className="mt-12 flex justify-center gap-6">
-                    {[1, 2, 3].map((i) => (
-                        <Skeleton key={i} className="h-24 w-32 rounded-2xl" />
-                    ))}
-                </div>
-            </section>
-
-            <div className="mx-4 sm:mx-6 md:mx-8 lg:mx-10">
-                <hr className="rounded-2xl border-white/10" />
-            </div>
-
-            <section className="section-shell py-12">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                    {[1, 2, 3].map((i) => (
-                        <div
-                            key={i}
-                            className="relative overflow-hidden rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-600/20 to-purple-900/20 p-6"
-                        >
-                            <div className="flex flex-col items-center gap-4 text-center">
-                                <Skeleton className="h-14 w-14 rounded-xl" />
-                                <div className="space-y-2">
-                                    <Skeleton className="mx-auto h-5 w-32 rounded-lg" />
-                                    <Skeleton className="mx-auto h-4 w-full max-w-[200px] rounded-lg" />
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </section>
-        </>
-    );
-}
-
 export default function Main() {
     const { t } = useTranslation();
-    const { isAuthenticated, isLoading } = useConvexAuth()
-
-    if (isLoading) {
-        return <MainSkeleton />;
-    }
-
-    const features = [
-        { name: t("landing.featureAnyFormat"), icon: FileText, desc: t("landing.featureAnyFormatDesc") },
-        { name: t("landing.featureReliable"), icon: ShieldCheck, desc: t("landing.featureReliableDesc") },
-        { name: t("landing.featureAlwaysAtHand"), icon: Cloud, desc: t("landing.featureAlwaysAtHandDesc") },
-    ];
+    const { isAuthenticated } = useConvexAuth()
+    const { install } = usePwaInstall();
 
     return (
-        <>
-            <section className="section-shell relative py-16 sm:py-20 md:py-28">
-                <ParticleField />
+        <section className="section-shell relative py-16 sm:py-20 md:py-24 lg:py-32">
+            <ParticleField />
 
-                <div className="pointer-events-none absolute -top-20 left-1/2 -z-10 h-60 w-60 -translate-x-1/2 rounded-full bg-purple-500/20 blur-[100px] animate-pulse" />
+            <div className="pointer-events-none absolute -top-20 right-1/4 -z-10 h-60 w-60 rounded-full bg-purple-500/20 blur-[100px] animate-pulse" />
+
+            <div className="relative grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-20">
+                <div className="flex flex-col items-start text-left">
+                    <h1>
+                        <Image
+                            src={images.LOGO}
+                            width={750}
+                            height={195}
+                            alt="QualCloud"
+                            className="w-full max-w-[630px] drop-shadow-[0_18px_45px_rgba(0,0,0,0.35)] transition-all duration-700 hover:scale-[1.02]"
+                            priority
+                        />
+                    </h1>
+
+                    <p className="mt-7 max-w-[680px] text-2xl leading-relaxed text-white/70 sm:text-3xl">
+                        {t("landing.heroSubtitle")}
+                    </p>
+
+                    <div className="mt-10 flex flex-wrap items-center gap-5">
+                        <Link
+                            href={isAuthenticated ? pages.DASHBOARD.ROOT : pages.AUTH}
+                            className="group inline-flex items-center justify-center gap-3 rounded-xl bg-white px-10 py-3 text-lg font-medium text-black shadow-lg shadow-white/5 transition-all duration-300 hover:bg-white/90 hover:shadow-white/10"
+                        >
+                            <span>{t("landing.heroCta")}</span>
+                            <ArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
+                        </Link>
+
+                        <button
+                            type="button"
+                            onClick={install}
+                            className="primary-button inline-flex items-center justify-center gap-3 px-10 py-4 text-lg"
+                        >
+                            <Download size={20} />
+                            <span>{t("landing.heroDownload")}</span>
+                        </button>
+                    </div>
+                </div>
 
                 <div className="relative">
                     <Image
-                        src={images.LOGO}
-                        width={500}
-                        height={130}
-                        alt="QualCloud"
-                        className="relative mx-auto w-full max-w-[600px] drop-shadow-[0_18px_45px_rgba(0,0,0,0.35)] transition-all duration-700 hover:scale-[1.02]"
+                        src={images.IMAGE.BANNER}
+                        width={1590}
+                        height={936}
+                        alt="QualCloud dashboard"
+                        className="relative w-full rounded-2xl"
                         priority
                     />
                 </div>
-
-                <h1 className="relative mx-auto mt-6 max-w-[600px] px-2 text-center text-2xl leading-tight text-white/80 sm:mt-8 sm:text-3xl sm:leading-snug">
-                    {t("landing.heroTitle")}
-                    <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-purple-300 bg-clip-text text-transparent"> QualCloud</span>
-                </h1>
-
-                <p className="relative mx-auto mt-4 max-w-[460px] px-4 text-center text-sm leading-relaxed text-white/50 sm:text-base">
-                    {t("landing.heroSubtitle")}
-                </p>
-
-                <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                    <Link
-                        href={isAuthenticated ? pages.DASHBOARD.ROOT : pages.AUTH}
-                        className="group primary-button px-8 py-3 text-lg"
-                    >
-                        <span>{t("landing.heroCta")}</span>
-                        <ArrowRight size={20} className="ml-2 transition-transform duration-300 group-hover:translate-x-1" />
-                    </Link>
-                </div>
-
-                <div className="relative mt-12 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-                    {features.map((s) => (
-                        <div
-                            key={s.name}
-                            className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 backdrop-blur-sm transition-all duration-300 hover:border-purple-500/30 hover:bg-white/[0.06]"
-                        >
-                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500/30 to-blue-500/30">
-                                <s.icon size={18} className="text-purple-300" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-white/80">{s.name}</p>
-                                <p className="text-xs text-white/40">{s.desc}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-            <div className="mx-4 sm:mx-6 md:mx-8 lg:mx-10">
-                <hr className="border-white/10 rounded-2xl" />
             </div>
-
-            <FeatureCards />
-        </>
+        </section>
     );
 }
