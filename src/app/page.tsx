@@ -1,6 +1,7 @@
 import { Footer } from "./_component/footer"
 import { Header } from "./_component/header"
 import Main from "./_component/main"
+import FeatureCards from "./_component/feature-cards"
 import { HomeRedirect } from "./_component/home-redirect"
 
 export default async function Landing(){
@@ -14,6 +15,7 @@ export default async function Landing(){
                 <Header/>
                 <div className="h-20 md:h-24" />
                 <Main/>
+                <FeatureCards/>
                 <Footer/>
             </div>
         </>

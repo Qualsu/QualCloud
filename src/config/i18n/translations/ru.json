@@ -33,7 +33,16 @@
     "capAccessAnywhereDesc": "Открывайте, скачивайте и управляйте файлами с любого устройства — в браузере или приложении",
     "ctaTitle": "Начните прямо сейчас",
     "ctaSubtitle": "Бесплатное облачное хранилище — начните пользоваться прямо сейчас",
-    "ctaButton": "Начать"
+    "ctaButton": "Начать",
+    "featureCards": {
+      "safe": "Безопасно",
+      "sync": "Синхронизируется",
+      "team": "Совместное хранилище",
+      "allInOne": "Все в одном месте",
+      "allInOneDesc": "Файлы всех приложений QualCloud в одном месте",
+      "archive": "Архив KenyCloud",
+      "archiveDesc": "Пользовались KenyCloud? Все ваши файлы сохранены и доступны в QualCloud"
+    }
   },
   "landingFeatureCards": {
     "unifiedAccess": "Единый доступ",

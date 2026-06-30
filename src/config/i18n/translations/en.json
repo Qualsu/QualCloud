@@ -33,7 +33,16 @@
     "capAccessAnywhereDesc": "Open, download, and manage files from any device — in a browser or app",
     "ctaTitle": "Get started right now",
     "ctaSubtitle": "Free cloud storage — start using it right now",
-    "ctaButton": "Start"
+    "ctaButton": "Start",
+    "featureCards": {
+      "safe": "Secure",
+      "sync": "Synchronized",
+      "team": "Shared storage",
+      "allInOne": "All in one place",
+      "allInOneDesc": "Files from all QualCloud apps in one place",
+      "archive": "KenyCloud archive",
+      "archiveDesc": "Used KenyCloud? All your files are saved and available in QualCloud"
+    }
   },
   "landingFeatureCards": {
     "unifiedAccess": "Unified access",
