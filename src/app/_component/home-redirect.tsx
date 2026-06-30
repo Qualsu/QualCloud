@@ -36,8 +36,9 @@ export function HomeRedirect() {
 
   useEffect(() => {
     if (!isLoaded || redirectEnabled === null) return;
+    if (!isSignedIn) return;
 
-    if (redirectEnabled && isSignedIn) {
+    if (redirectEnabled) {
       router.replace(pages.DASHBOARD.ROOT);
     }
   }, [isLoaded, isSignedIn, redirectEnabled, router]);
