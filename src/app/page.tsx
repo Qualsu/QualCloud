@@ -1,9 +1,6 @@
 import { Footer } from "./_component/footer"
 import { Header } from "./_component/header"
 import Main from "./_component/main"
-import { HowItWorks } from "./_component/how-it-works"
-import { ServicesShowcase } from "./_component/services-showcase"
-import { CTASection } from "./_component/cta-section"
 import { HomeRedirect } from "./_component/home-redirect"
 
 export default async function Landing(){
@@ -17,9 +14,6 @@ export default async function Landing(){
                 <Header/>
                 <div className="h-20 md:h-24" />
                 <Main/>
-                <HowItWorks/>
-                <ServicesShowcase/>
-                <CTASection/>
                 <Footer/>
             </div>
         </>

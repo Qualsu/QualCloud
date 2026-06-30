@@ -9,6 +9,7 @@ export const images = {
     IMAGE: {
         EMPTY: "/image/empty.png",
         TRASH: "/image/Trash.png",
+        BANNER: "/image/banner.png",
     },
     QUAL_ID: "https://id.qual.su/image/icon.svg",
     NOT_FOUND: "/image/404.png",
