@@ -86,7 +86,7 @@
     "favorites": "Favorites",
     "trash": "Trash",
     "notter": "Notter",
-    "shrtl": "Shrtl://",
+    "shrtl": "Shrtl",
     "kenycloud": "KenyCloud"
   },
   "search": {
@@ -127,7 +127,7 @@
       "favorites": "Favorites",
       "trash": "Trash",
       "kenycloud": "KenyCloud (Archive)",
-      "shrtl": "Shrtl://",
+      "shrtl": "Shrtl",
       "notter": "Notter"
     },
     "show": "Show",

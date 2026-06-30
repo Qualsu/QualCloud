@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { pages } from "@/config/routing/pages.route";
+import { isPwa } from "@/components/hooks/use-is-pwa";
 
 const STORAGE_KEY = "qualcloud-settings";
 
@@ -13,6 +14,7 @@ interface StoredSettings {
 
 function getStoredRedirectPreference(): boolean {
   if (typeof window === "undefined") return true;
+  if (isPwa()) return true;
 
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);

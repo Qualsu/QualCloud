@@ -2,7 +2,7 @@
   "name": "QualCloud",
   "short_name": "QualCloud",
   "description": "Удобное файловое хранилище - загружайте, храните и делитесь файлами в облаке QualCloud",
-  "start_url": "/",
+  "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
   "background_color": "#1b121c",

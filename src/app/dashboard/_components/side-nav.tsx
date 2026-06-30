@@ -16,6 +16,7 @@ import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
 import { useTranslation } from "@/components/hooks/use-translation"
 import { usePwaInstall } from "@/components/hooks/use-pwa-install"
+import { useIsPwa } from "@/components/hooks/use-is-pwa"
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -101,6 +102,9 @@ export function SideNav() {
   const InstallNavButton = ({ onClick }: { onClick?: () => void }) => {
     const { t } = useTranslation()
     const { install } = usePwaInstall()
+    const isPwa = useIsPwa()
+
+    if (isPwa) return null
 
     return (
       <button
