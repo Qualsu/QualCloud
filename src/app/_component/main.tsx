@@ -4,12 +4,12 @@ import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { Skeleton } from "@/components/ui/skeleton";
 import { images } from "@/config/routing/image.route";
 import { pages } from "@/config/routing/pages.route";
 import { useConvexAuth } from "convex/react";
 import { ArrowRight, Download } from "lucide-react";
 import { useTranslation } from "@/components/hooks/use-translation";
+import { usePwaInstall } from "@/components/hooks/use-pwa-install";
 
 function ParticleField() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -71,35 +71,10 @@ function ParticleField() {
     )
 }
 
-function MainSkeleton() {
-    return (
-        <section className="section-shell relative py-16 sm:py-20 md:py-24 lg:py-32">
-            <div className="relative grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-20">
-                <div className="flex flex-col items-start gap-6">
-                    <Skeleton className="h-24 w-full max-w-[630px] rounded-3xl" />
-                    <div className="w-full max-w-[680px] space-y-4">
-                        <Skeleton className="h-8 w-full rounded-xl" />
-                        <Skeleton className="h-8 w-4/5 rounded-xl" />
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-5">
-                        <Skeleton className="h-14 w-44 rounded-xl" />
-                        <Skeleton className="h-14 w-44 rounded-xl" />
-                    </div>
-                </div>
-
-                <Skeleton className="aspect-[1590/936] w-full rounded-2xl" />
-            </div>
-        </section>
-    );
-}
-
 export default function Main() {
     const { t } = useTranslation();
-    const { isAuthenticated, isLoading } = useConvexAuth()
-
-    if (isLoading) {
-        return <MainSkeleton />;
-    }
+    const { isAuthenticated } = useConvexAuth()
+    const { install } = usePwaInstall();
 
     return (
         <section className="section-shell relative py-16 sm:py-20 md:py-24 lg:py-32">
@@ -135,7 +110,7 @@ export default function Main() {
 
                         <button
                             type="button"
-                            onClick={() => {}}
+                            onClick={install}
                             className="primary-button inline-flex items-center justify-center gap-3 px-10 py-4 text-lg"
                         >
                             <Download size={20} />

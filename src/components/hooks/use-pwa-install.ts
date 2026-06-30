@@ -11,6 +11,22 @@ interface BeforeInstallPromptEvent extends Event {
     prompt(): Promise<void>;
 }
 
+let serviceWorkerRegistration: Promise<ServiceWorkerRegistration | undefined> | null = null;
+
+async function registerServiceWorker() {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
+        return undefined;
+    }
+
+    if (!serviceWorkerRegistration) {
+        serviceWorkerRegistration = navigator.serviceWorker
+            .register("/sw.js")
+            .catch(() => undefined);
+    }
+
+    return serviceWorkerRegistration;
+}
+
 export function usePwaInstall() {
     const { t } = useTranslation();
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -18,6 +34,8 @@ export function usePwaInstall() {
 
     useEffect(() => {
         if (typeof window === "undefined") return;
+
+        registerServiceWorker();
 
         const handleBeforeInstallPrompt = (event: Event) => {
             event.preventDefault();
@@ -43,13 +61,7 @@ export function usePwaInstall() {
     }, []);
 
     const install = useCallback(async () => {
-        if (isInstalled) {
-            toast.success(t("landing.featureCards.pwaInstalled"));
-            return;
-        }
-
-        if (!deferredPrompt) {
-            toast.error(t("landing.featureCards.pwaInstallHint"));
+        if (isInstalled || !deferredPrompt) {
             return;
         }
 

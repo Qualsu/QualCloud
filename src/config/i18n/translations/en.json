@@ -76,7 +76,8 @@
     "cloud": "Cloud",
     "services": "Services",
     "navigation": "Navigation",
-    "root": "Root"
+    "root": "Root",
+    "install": "Install"
   },
   "nav": {
     "home": "Home",

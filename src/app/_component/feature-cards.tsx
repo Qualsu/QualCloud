@@ -105,7 +105,7 @@ export default function FeatureCards() {
                             {t("landing.featureCards.archiveDesc")}
                         </p>
                     </div>
-                    <div className="relative h-52 w-52 shrink-0 sm:h-64 sm:w-64">
+                    <div className="relative h-52 w-52 shrink-0 sm:h-80 sm:w-80">
                         <Image
                             src={images.IMAGE.ARCHIVE}
                             alt={t("landing.featureCards.archive")}
