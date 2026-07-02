@@ -13,8 +13,7 @@ export const links = {
   },
   NOTTER: {
     SITE: "https://notter.su",
-    GET_FILE: (fileId: string) => `${process.env.NEXT_PUBLIC_NOTTER_API}/files/uploads/${fileId}`,
-    GET_NOTE: (documentId: string) => `${links.NOTTER.SITE}/view/${documentId}`,
+    GET_NOTE: (documentId: string) => `${links.NOTTER.SITE}/dashboard/${documentId}`,
   },
   KENYCLOUD: {
     GET_FILE: (fileId: Id<"_storage">) => `${process.env.NEXT_PUBLIC_CONVEX_ACTION_URL}/getImage?storageId=${fileId}`,

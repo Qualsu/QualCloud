@@ -306,13 +306,14 @@ export function FilesBrowser({
       }
     }
 
-    if (shrtl && !checked) {
+    if (shrtl) {
       result = result.filter((file) => {
         const expiresInSeconds =
           "_expiresInSeconds" in file
             ? ((file._expiresInSeconds as number | null | undefined) ?? null)
             : null;
-        return expiresInSeconds !== null;
+        const isExpired = expiresInSeconds === null || expiresInSeconds <= 0;
+        return checked ? isExpired : !isExpired;
       });
     }
 

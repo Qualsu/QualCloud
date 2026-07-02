@@ -91,7 +91,7 @@ export function FileCard({
         : shrtl
         ? (file.fileUrl ?? links.SHRTL.GET_FILE(file.fileId as string))
         : notter
-        ? links.NOTTER.GET_FILE(file.fileId as string)
+        ? (file.fileUrl ?? "")
         : useFilesApi
         ? (file.fileUrl ?? links.FILES.GET_FILE(file.fileId as string))
         : links.KENYCLOUD.GET_FILE(file.fileId as Id<"_storage">);
