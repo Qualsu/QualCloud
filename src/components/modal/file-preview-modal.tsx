@@ -29,6 +29,7 @@ import {
 import { typeIcons } from "@/config/const/components.const";
 import type { FileDoc } from "@/config/types/components.types";
 import { useOrigin } from "@/components/hooks/use-origin";
+import { normalizeFileUrl } from "@/lib/file-url";
 import {
     getFilesEditor,
     getLastEditorDisplayName,
@@ -120,7 +121,7 @@ export function FilePreviewModal({
         : shrtl
         ? file.fileUrl ?? links.SHRTL.GET_FILE(file.fileId as string)
         : notter
-        ? (file.fileUrl ?? "")
+        ? (normalizeFileUrl(file.fileUrl) ?? "")
         : useFilesApi
         ? file.fileUrl ?? links.FILES.GET_FILE(file.fileId as string)
         : links.KENYCLOUD.GET_FILE(file.fileId as Id<"_storage">);
@@ -142,7 +143,7 @@ export function FilePreviewModal({
         : shrtl
         ? file.fileUrl || links.SHRTL.GET_FILE(file.fileId as string)
         : notter
-        ? (file.fileUrl ?? "")
+        ? (normalizeFileUrl(file.fileUrl) ?? "")
         : links.KENYCLOUD.GET_FILE(file.fileId as Id<"_storage">);
 
     const shareLink = isFolder && file.folderId

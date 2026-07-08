@@ -26,6 +26,7 @@ import { FilePreview } from "./file-preview";
 import { FilePreviewModal } from "@/components/modal/file-preview-modal";
 import { formatExpiresIn, isFileExpired } from "./file-helpers";
 import { useTranslation } from "@/components/hooks/use-translation";
+import { normalizeFileUrl } from "@/lib/file-url";
 
 function getFileTimeDisplay(
     file: FileCardProps["file"],
@@ -91,7 +92,7 @@ export function FileCard({
         : shrtl
         ? (file.fileUrl ?? links.SHRTL.GET_FILE(file.fileId as string))
         : notter
-        ? (file.fileUrl ?? "")
+        ? (normalizeFileUrl(file.fileUrl) ?? "")
         : useFilesApi
         ? (file.fileUrl ?? links.FILES.GET_FILE(file.fileId as string))
         : links.KENYCLOUD.GET_FILE(file.fileId as Id<"_storage">);
