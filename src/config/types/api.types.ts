@@ -16,7 +16,7 @@ export interface NotterFileResponse {
   username: string;
   avatar: string;
   type: string;
-  fileid: string;
+  url: string;
   created: string;
 }
 

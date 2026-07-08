@@ -3,6 +3,7 @@
 import {
     Copy,
     Download,
+    ExternalLink,
     FileIcon,
     FolderInput,
     FolderOpen,
@@ -430,25 +431,36 @@ export function FileCardActions({
                     </>
                 ) : (
                     <>
-                        {!expired && openLink && file.isPublic && (
+                        {notter && !expired && openLink && (
+                            <DropdownMenuItem
+                                className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                onClick={() => window.open(openLink, "_blank")}
+                            >
+                                <ExternalLink className="w-4 h-4" /> {t("fileActions.openNote")}
+                            </DropdownMenuItem>
+                        )}
+
+                        {!notter && !expired && openLink && file.isPublic && (
                             <>
-                                <DropdownMenuItem className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white" onClick={() => {
-                                    window.open(openLink, "_blank")
-                                }}>
-                                    <FileIcon className="w-4 h-4" /> {t("fileActions.open")} {notter && t("fileActions.openNote")}
+                                <DropdownMenuItem
+                                    className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                    onClick={() => window.open(openLink, "_blank")}
+                                >
+                                    <FileIcon className="w-4 h-4" /> {t("fileActions.open")}
                                 </DropdownMenuItem>
 
-                                {(!useFilesApi || file.isPublic) && !notter && (
-                                    <DropdownMenuItem className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white" onClick={() => {
-                                        handleShare()
-                                    }}>
+                                {(!useFilesApi || file.isPublic) && (
+                                    <DropdownMenuItem
+                                        className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                        onClick={handleShare}
+                                    >
                                         <Share2Icon className="w-4 h-4" /> {t("fileActions.share")}
                                     </DropdownMenuItem>
                                 )}
                             </>
                         )}
 
-                        {!expired && !deletedOnly && (
+                        {!notter && !expired && !deletedOnly && (
                             <DropdownMenuItem
                                 className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
                                 onClick={handleTogglePublic}

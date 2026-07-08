@@ -9,31 +9,31 @@ export async function getAllFiles(account_id: string) {
   const notterFiles: NotterFileResponse[] = res.data;
 
   const uniqueFiles = notterFiles.filter((file, index, files) => {
-    const fileKey = `${file.documentid}:${file.fileid}`;
-    return index === files.findIndex((item) => `${item.documentid}:${item.fileid}` === fileKey);
+    const fileKey = `${file.documentid}:${file.url}`;
+    return index === files.findIndex((item) => `${item.documentid}:${item.url}` === fileKey);
   });
 
   return uniqueFiles.map((file) => {
     const deterministicId = `notter_${file._id}` as unknown as Id<"users">;
-    const uniqueFileId = `notter_${file.documentid}_${file.fileid}` as unknown as Id<"files">;
+    const uniqueFileId = `notter_${file.documentid}_${file._id}` as unknown as Id<"files">;
 
     return {
       _id: uniqueFileId,
-      _creationTime: new Date(file.created).getTime(),
+      _creationTime: new Date(file.created || Date.now()).getTime(),
       name: file.filename,
       orgId: account_id,
       type: getMimeType(file.type),
       contentType: file.type,
-      fileId: file.fileid as Id<"_storage">,
+      fileId: file._id as Id<"_storage">,
       userId: deterministicId,
       linkId: "",
       isFavorited: false,
       _isFromApi: true,
       downloads: 0,
-      _expiresInSeconds: 1,
       avatar: file.avatar,
       username: file.username,
       noteId: file.documentid,
+      fileUrl: file.url,
     };
   });
 }

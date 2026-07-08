@@ -6,7 +6,7 @@ export function formatExpiresIn(
   seconds: number | null,
   t: (key: string, params?: Record<string, string | number>) => string
 ): string {
-  if (seconds === null) return t("expiresIn.expired");
+  if (seconds === null || seconds <= 0) return t("expiresIn.expired");
 
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);

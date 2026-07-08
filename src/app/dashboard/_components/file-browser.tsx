@@ -44,6 +44,7 @@ import { toast } from "@/lib/toast";
 import { useFilesRefresh } from "@/components/context/files-refresh-context";
 import { useSyncBackendUser } from "@/components/hooks/use-sync-backend-user";
 import { getFilesEditor } from "@/lib/files-editor";
+import { normalizeFileUrl } from "@/lib/file-url";
 import { links } from "@/config/routing/links.route";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -306,13 +307,14 @@ export function FilesBrowser({
       }
     }
 
-    if (shrtl && !checked) {
+    if (shrtl) {
       result = result.filter((file) => {
         const expiresInSeconds =
           "_expiresInSeconds" in file
             ? ((file._expiresInSeconds as number | null | undefined) ?? null)
             : null;
-        return expiresInSeconds !== null;
+        const isExpired = expiresInSeconds === null || expiresInSeconds <= 0;
+        return checked ? isExpired : !isExpired;
       });
     }
 
@@ -410,7 +412,9 @@ export function FilesBrowser({
           a.remove();
           window.URL.revokeObjectURL(url);
         } else {
-          const link = item.fileUrl || links.FILES.GET_FILE(item.fileId as string);
+          const link = notter
+            ? normalizeFileUrl(item.fileUrl) || links.FILES.GET_FILE(item.fileId as string)
+            : item.fileUrl || links.FILES.GET_FILE(item.fileId as string);
           window.open(link, "_blank");
         }
         successCount++;

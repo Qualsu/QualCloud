@@ -18,3 +18,27 @@ export const notter = axios.create({
 export const files = axios.create({
   baseURL: API,
 });
+
+let clerkTokenGetter: (() => Promise<string | null>) | null = null;
+
+export function setClerkTokenGetter(getter: () => Promise<string | null>) {
+  clerkTokenGetter = getter;
+}
+
+notter.interceptors.request.use(async (config) => {
+  if (!clerkTokenGetter || config.headers.Authorization) {
+    return config;
+  }
+
+  try {
+    const token = await clerkTokenGetter();
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch {
+    // Leave request unauthenticated so the caller's error handling applies.
+  }
+
+  return config;
+});
