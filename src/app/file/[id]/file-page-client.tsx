@@ -75,7 +75,6 @@ export default function FilePageClient() {
                     return;
                 }
             } catch {
-                // ignore convex error and try API files
             }
 
             try {

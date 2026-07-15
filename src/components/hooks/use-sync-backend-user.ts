@@ -24,13 +24,11 @@ export function useSyncBackendUser(account_id?: string | null) {
 
     if (name && !isClerkUserId(name)) {
       setUsername(account_id, name).catch(() => {
-        // ignore — non-critical sync
       });
     }
 
     if (avatar) {
       setAvatar(account_id, avatar).catch(() => {
-        // ignore — non-critical sync
       });
     }
   }, [isLoaded, user, account_id]);

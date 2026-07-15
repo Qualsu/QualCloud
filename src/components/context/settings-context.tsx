@@ -40,7 +40,6 @@ function getStoredSettings(): SettingsState {
       return settings;
     }
   } catch {
-    // localStorage может быть недоступен или данные повреждены
   }
 
   return DEFAULT_SETTINGS;
@@ -77,11 +76,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     } catch {
-      // игнорируем ошибки записи
     }
 
-    // В PWA редирект с лендинга всегда включён, поэтому кука принудительно true.
-    // В браузере кука отражает пользовательскую настройку.
     setCookie(COOKIE_REDIRECT_HOME, isPwa() ? "true" : String(settings.redirectHomeToDashboard));
   }, [settings, initialized]);
 

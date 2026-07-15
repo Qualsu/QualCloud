@@ -11,7 +11,6 @@ type FolderPageProps = {
 function parseFolderId(raw: string): string | null {
   if (!raw) return null;
 
-  // Backward compatibility: old links were base64-encoded JSON payloads.
   try {
     const decoded = base64Decode(raw);
     if (decoded) {
@@ -19,7 +18,6 @@ function parseFolderId(raw: string): string | null {
       if (payload?.folderId) return payload.folderId;
     }
   } catch {
-    // Not a base64 JSON payload — treat as plain folderId.
   }
 
   return raw;
@@ -45,7 +43,6 @@ export async function generateMetadata({
       return { title: folderName };
     }
   } catch {
-    // ignore and fall back to default title
   }
 
   return { title: "Folder" };
