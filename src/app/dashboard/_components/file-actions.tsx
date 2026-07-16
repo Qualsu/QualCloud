@@ -40,6 +40,8 @@ import { MoveToFolderDialog } from "@/components/dialog/move-to-folder-dialog";
 import { ConfirmDialog } from "@/components/dialog/confirm-dialog";
 import { useCurrentOrg } from "@/components/hooks/use-current-org";
 import { useTranslation } from "@/components/hooks/use-translation";
+import { useRouter, usePathname } from "next/navigation";
+import { useFilesRefresh } from "@/components/context/files-refresh-context";
 import {
     addToFavorites,
     removeFromFavorites,
@@ -64,8 +66,11 @@ export function FileCardActions({
     onOpenFolder,
 }: FileCardProps) {
     const { t } = useTranslation();
+    const router = useRouter();
+    const pathname = usePathname();
     const { user } = useUser();
     const { isOrgAdmin } = useCurrentOrg();
+    const { setCurrentFolder } = useFilesRefresh();
     const origin = useOrigin();
     const [isRenameOpen, setIsRenameOpen] = useState(false);
     const [isMoveOpen, setIsMoveOpen] = useState(false);
@@ -300,6 +305,14 @@ export function FileCardActions({
         } catch {}
     };
 
+    const handleGoToFileLocation = () => {
+        const targetFolder = file.folder || null;
+        setCurrentFolder(targetFolder);
+        if (pathname !== pages.DASHBOARD.CLOUD) {
+            router.push(pages.DASHBOARD.CLOUD);
+        }
+    };
+
     const handleShareFolder = async () => {
         try {
             await navigator.clipboard.writeText(folderShareLink);
@@ -369,6 +382,12 @@ export function FileCardActions({
                                     onClick={() => setIsMoveOpen(true)}
                                 >
                                     <FolderInput className="w-4 h-4" /> {t("fileActions.moveToFolder")}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                    onClick={handleGoToFileLocation}
+                                >
+                                    <FolderOpen className="w-4 h-4" /> {t("fileActions.goToFileLocation")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
@@ -460,6 +479,15 @@ export function FileCardActions({
                             </>
                         )}
 
+                        {!expired && !deletedOnly && (
+                            <DropdownMenuItem
+                                className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                onClick={handleGoToFileLocation}
+                            >
+                                <FolderOpen className="w-4 h-4" /> {t("fileActions.goToFileLocation")}
+                            </DropdownMenuItem>
+                        )}
+
                         {!notter && !expired && !deletedOnly && (
                             <DropdownMenuItem
                                 className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
@@ -514,6 +542,7 @@ export function FileCardActions({
                                         <FolderInput className="w-4 h-4" /> {t("fileActions.moveToFolder")}
                                     </DropdownMenuItem>
                                 )}
+
 
                                 <DropdownMenuItem
                                     className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"

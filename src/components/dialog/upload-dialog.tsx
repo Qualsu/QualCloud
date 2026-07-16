@@ -1,6 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
+import { useRouter, usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FileIcon, Loader2, Upload, X } from "lucide-react";
 import { toast } from "@/lib/toast";
@@ -22,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useFilesRefresh } from "@/components/context/files-refresh-context";
 import { useUploadProgress } from "@/components/context/upload-progress-context";
+import { pages } from "@/config/routing/pages.route";
 import { FolderTree } from "@/app/dashboard/_components/folder-tree";
 import { FILE_SIZE_LABELS } from "@/config/const/files.const";
 import { useTranslation } from "@/components/hooks/use-translation";
@@ -53,13 +55,15 @@ export function UploadDialog({
   autoStart = false,
 }: UploadDialogProps) {
   const { t } = useTranslation();
+  const router = useRouter();
+  const pathname = usePathname();
   const { user } = useUser();
   const currentOrg = useCurrentOrg();
-  const { refreshFiles } = useFilesRefresh();
+  const { refreshFiles, currentFolder, setCurrentFolder } = useFilesRefresh();
   const isOpenControlled = open !== undefined;
   const [internalOpen, setInternalOpen] = useState(open ?? false);
   const [files, setFiles] = useState<UploadFile[]>([]);
-  const [folder, setFolder] = useState<string>(folderProp ?? "/");
+  const [folder, setFolder] = useState<string>(folderProp ?? currentFolder ?? "/");
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -91,6 +95,12 @@ export function UploadDialog({
       previewUrlsRef.current = {};
     };
   }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      router.prefetch(pages.DASHBOARD.CLOUD);
+    }
+  }, [isOpen, router]);
 
   useEffect(() => {
     if (!isUploading) return;
@@ -170,8 +180,8 @@ export function UploadDialog({
     setFiles([]);
     Object.values(previewUrlsRef.current).forEach(URL.revokeObjectURL);
     previewUrlsRef.current = {};
-    setFolder(folderProp ?? "/");
-  }, [folderProp]);
+    setFolder(folderProp ?? currentFolder ?? "/");
+  }, [folderProp, currentFolder]);
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -241,6 +251,10 @@ export function UploadDialog({
       Object.values(previewUrlsRef.current).forEach(URL.revokeObjectURL);
       previewUrlsRef.current = {};
       handleOpenChange(false);
+      setCurrentFolder(folder === "/" ? null : folder);
+      if (pathname !== pages.DASHBOARD.CLOUD) {
+        router.push(pages.DASHBOARD.CLOUD);
+      }
       refreshFiles();
       onUploadComplete?.();
     } catch {
@@ -254,7 +268,7 @@ export function UploadDialog({
       uploadTrackIdRef.current = null;
       dialogClosedDuringUpload.current = false;
     }
-  }, [files, account_id, folder, handleOpenChange, refreshFiles, onUploadComplete, editor, registerUpload, updateProgress, completeUpload, failUpload, t]);
+  }, [files, account_id, folder, handleOpenChange, refreshFiles, setCurrentFolder, router, pathname, onUploadComplete, editor, registerUpload, updateProgress, completeUpload, failUpload, t]);
 
   const handleUploadRef = useRef(handleUpload);
   useEffect(() => {

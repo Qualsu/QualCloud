@@ -110,10 +110,9 @@ export function FilesBrowser({
   const [typeSort, setTypeSort] = useState<FileSortDirection>("new");
   const [checked, setChecked] = useState<boolean>(false);
   const [view, setView] = useFilesView();
-  const { refreshKey, refreshFiles } = useFilesRefresh();
+  const { refreshKey, refreshFiles, currentFolder, setCurrentFolder } = useFilesRefresh();
   const [apiFiles, setApiFiles] = useState<FileDoc[] | undefined>(undefined);
   const [isFilesLoading, setIsFilesLoading] = useState(false);
-  const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [trashEmptyInSeconds, setTrashEmptyInSeconds] = useState<number | null>(null);
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
@@ -535,7 +534,7 @@ export function FilesBrowser({
         onOpenFolder: setCurrentFolder,
         t,
       }),
-    [shrtl, notter, useFilesApi, deletedOnly, enableSelection, refreshFiles, t]
+    [shrtl, notter, useFilesApi, deletedOnly, enableSelection, refreshFiles, setCurrentFolder, t]
   );
 
   const autocompleteSuggestions = useMemo(

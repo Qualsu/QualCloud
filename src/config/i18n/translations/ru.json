@@ -230,6 +230,7 @@
     "downloadsCount": "{count} скачиваний",
     "copyLink": "Ссылка скопирована",
     "copyFolderPath": "Путь к папке скопирован",
+    "goToFileLocation": "Перейти к файлу",
     "copyError": "Не удалось скопировать путь",
     "downloadUnavailable": "Ссылка для скачивания недоступна",
     "moveToTrashTitle": "Переместить в корзину",

@@ -230,6 +230,7 @@
     "downloadsCount": "{count} downloads",
     "copyLink": "Link copied",
     "copyFolderPath": "Folder path copied",
+    "goToFileLocation": "Go to file location",
     "copyError": "Failed to copy path",
     "downloadUnavailable": "Download link unavailable",
     "moveToTrashTitle": "Move to trash",
