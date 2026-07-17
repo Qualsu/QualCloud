@@ -1,9 +1,9 @@
 "use client";
 
 import { useMutation } from "convex/react";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams } from "next/navigation";
-import { Loader2, FileIcon, AudioLinesIcon } from "lucide-react";
+import { Loader2, FileIcon, AudioLinesIcon, KeyRound } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import NotFound from "@/app/not-found";
@@ -18,6 +18,8 @@ import { FileType } from "@/config/types/components.types";
 import { FilesFileResponse } from "@/config/types/api.types";
 import { FILE_SIZE_LABELS } from "@/config/const/files.const";
 import { useTranslation } from "@/components/hooks/use-translation";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 type ConvexFile = Doc<"files">;
 type ApiFile = FilesFileResponse;
@@ -51,62 +53,117 @@ export default function FilePageClient() {
     const id = Array.isArray(params?.id) ? params.id[0] : (params?.id ?? "");
     const accountId = searchParams.get("account_id") || undefined;
 
-    useEffect(() => {
-        const fetchLink = async () => {
-            if (!id) {
-                setFound(false);
-                setLoading(false);
-                return;
-            }
+    const [password, setPassword] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    const [isPasswordRequired, setIsPasswordRequired] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
-            try {
-                const convexResult = await fileLink({ linkId: id });
-                const convexFile = convexResult?.[0];
-
-                if (convexFile) {
-                    setFile({
-                        name: convexFile.name,
-                        type: convexFile.type,
-                        url: links.KENYCLOUD.GET_FILE(convexFile.fileId as Id<"_storage">),
-                        isConvex: true,
-                    });
-                    setFound(true);
-                    setLoading(false);
-                    return;
-                }
-            } catch {
-            }
-
-            try {
-                const apiFile: ApiFile = await getFileInfo(id, accountId);
-
-                if (apiFile && apiFile.file_id) {
-                    const downloadUrl =
-                        apiFile.file_url ||
-                        `${links.FILES.GET_FILE(apiFile.file_id)}${
-                            accountId ? `?account_id=${encodeURIComponent(accountId)}` : ""
-                        }`;
-                    setFile({
-                        name: apiFile.file_name,
-                        type: getMimeType(apiFile.file_type),
-                        url: downloadUrl,
-                        size: apiFile.file_size,
-                        isConvex: false,
-                        isPublic: apiFile.is_public,
-                    });
-                    setFound(true);
-                    setLoading(false);
-                    return;
-                }
-            } catch {
-                setFound(false);
-            } finally {
-                setLoading(false);
-            }
+    const fetchLink = useCallback(async (pw?: string) => {
+        if (!id) {
+            setFound(false);
+            setLoading(false);
+            return;
         }
 
+        if (pw) {
+            setSubmitting(true);
+        } else {
+            setLoading(true);
+        }
+
+        try {
+            const convexResult = await fileLink({ linkId: id });
+            const convexFile = convexResult?.[0];
+
+            if (convexFile) {
+                setFile({
+                    name: convexFile.name,
+                    type: convexFile.type,
+                    url: links.KENYCLOUD.GET_FILE(convexFile.fileId as Id<"_storage">),
+                    isConvex: true,
+                });
+                setFound(true);
+                setIsPasswordRequired(false);
+                setLoading(false);
+                setSubmitting(false);
+                return;
+            }
+        } catch {
+        }
+
+        try {
+            const apiFile: ApiFile = await getFileInfo(id, accountId, pw);
+
+            if (apiFile && apiFile.file_id) {
+                const downloadUrl =
+                    `${links.FILES.GET_FILE(apiFile.file_id)}${
+                        accountId || pw
+                            ? `?${accountId ? `account_id=${encodeURIComponent(accountId)}` : ""}${accountId && pw ? "&" : ""}${pw ? `password=${encodeURIComponent(pw)}` : ""}`
+                            : ""
+                    }`;
+                setFile({
+                    name: apiFile.file_name,
+                    type: getMimeType(apiFile.file_type),
+                    url: downloadUrl,
+                    size: apiFile.file_size,
+                    isConvex: false,
+                    isPublic: apiFile.is_public,
+                });
+                setFound(true);
+                setIsPasswordRequired(false);
+            }
+        } catch (err: any) {
+            if (err?.response?.status === 401) {
+                setIsPasswordRequired(true);
+                if (pw) {
+                    setPasswordError(t("errors.incorrectPassword") || "Неверный пароль");
+                }
+            } else {
+                setFound(false);
+            }
+        } finally {
+            setLoading(false);
+            setSubmitting(false);
+        }
+    }, [fileLink, id, accountId, t]);
+
+    useEffect(() => {
         fetchLink();
-    }, [fileLink, id, accountId]);
+    }, [fetchLink]);
+
+    if (isPasswordRequired) {
+        return (
+            <div className="flex min-h-screen flex-col items-center justify-center m-3">
+                <section className="w-full max-w-md mx-auto p-6 bg-background/60 border border-border/90 rounded-3xl shadow-[0_16px_80px_-45px_rgba(0,0,0,0.7)] text-white text-center">
+                    <KeyRound className="h-12 w-12 text-purple mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold mb-2">Требуется пароль</h2>
+                    <p className="text-sm text-white/60 mb-6">Этот файл защищен паролем. Пожалуйста, введите его для доступа к файлу.</p>
+                    
+                    <form onSubmit={(e) => {
+                        e.preventDefault();
+                        fetchLink(password);
+                    }} className="space-y-4">
+                        <Input
+                            type="password"
+                            value={password}
+                            onChange={(e) => {
+                                setPassword(e.target.value);
+                                setPasswordError("");
+                            }}
+                            placeholder="Введите пароль"
+                            className="border-white/10 bg-white/5 text-white placeholder:text-white/40 focus-visible:ring-purple text-center"
+                        />
+                        {passwordError && (
+                            <p className="text-xs text-red-400">{passwordError}</p>
+                        )}
+                        <Button type="submit" disabled={submitting} className="w-full bg-purple hover:bg-purple/90">
+                            {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Подтвердить"}
+                        </Button>
+                    </form>
+                </section>
+            </div>
+        );
+    }
 
     if (!found) {
         return <NotFound />

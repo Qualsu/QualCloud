@@ -47,7 +47,7 @@ QualCloud/
 │   │   └── page.tsx            # Main landing page
 │   ├── components/             # Reusable UI component modules
 │   │   ├── context/            # React providers (Theme, Translation, Mobile nav, refresh keys)
-│   │   ├── dialog/             # Popups (Move, Create folder, Upload, Settings)
+│   │   ├── dialog/             # Popups (Move, Create folder, Upload, Settings, Access)
 │   │   ├── hooks/              # Custom React hooks (Translation, Current Organization, PWA install)
 │   │   ├── modal/              # Contextual modals (File preview, detailed metadata)
 │   │   └── ui/                 # Atomic shadcn UI styles (buttons, dropdowns, inputs, tables)

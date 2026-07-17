@@ -59,6 +59,7 @@ import { FilePreview } from "@/app/dashboard/_components/file-preview";
 import { RenameDialog } from "@/components/dialog/rename-dialog";
 import { MoveToFolderDialog } from "@/components/dialog/move-to-folder-dialog";
 import { ConfirmDialog } from "@/components/dialog/confirm-dialog";
+import { AccessDialog } from "@/components/dialog/access-dialog";
 import { formatExpiresIn, formatSize, getFileFormatDisplay, isFileExpired } from "@/app/dashboard/_components/file-helpers";
 import { useTranslation } from "@/components/hooks/use-translation";
 
@@ -108,6 +109,7 @@ export function FilePreviewModal({
     const [isPublic, setIsPublic] = useState(file.isPublic ?? false);
     const [isPublicLoading, setIsPublicLoading] = useState(false);
     const [isArchiveLoading, setIsArchiveLoading] = useState(false);
+    const [isAccessOpen, setIsAccessOpen] = useState(false);
     const [isFavorited, setIsFavorited] = useState(file.isFavorited ?? false);
     const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
 
@@ -518,21 +520,11 @@ export function FilePreviewModal({
                             {canTogglePublic ? (
                                 <div className="flex w-full gap-2">
                                     <button
-                                        onClick={handleTogglePublic}
-                                        disabled={isPublicLoading}
-                                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-purple px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple/90 disabled:opacity-50 disabled:cursor-not-allowed md:py-2.5"
+                                        onClick={() => setIsAccessOpen(true)}
+                                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-purple px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple/90 md:py-2.5"
                                     >
-                                        {isPublic ? (
-                                            <>
-                                                <Lock className="h-4 w-4" />
-                                                {t("filePreview.makePrivate")}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Globe className="h-4 w-4" />
-                                                {t("filePreview.makePublic")}
-                                            </>
-                                        )}
+                                        <Globe className="h-4 w-4" />
+                                        {t("filePreview.changeAccess")}
                                     </button>
                                     {isPublic && canOpen && (
                                         <button
@@ -667,6 +659,16 @@ export function FilePreviewModal({
                 onConfirm={handleDeletePermanently}
                 isLoading={isConfirmLoading}
                 destructive={true}
+            />
+            <AccessDialog
+                file={file}
+                open={isAccessOpen}
+                onOpenChange={setIsAccessOpen}
+                onUpdated={() => {
+                    onRefresh?.();
+                    // Sync local state if isPublic field was updated
+                    // We can close this preview modal or let onRefresh handle it
+                }}
             />
         </Dialog>
     );

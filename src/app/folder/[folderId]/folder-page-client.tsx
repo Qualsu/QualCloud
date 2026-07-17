@@ -11,7 +11,10 @@ import {
   Folder,
   FolderOpen,
   Loader2,
+  KeyRound,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 import { downloadFolder, getFolderById } from "@/app/api/files";
 import type { FileDoc } from "@/config/types/components.types";
@@ -52,10 +55,12 @@ function FolderTreeNode({
   node,
   depth,
   onToggle,
+  password,
 }: {
   node: TreeNode;
   depth: number;
   onToggle: (node: TreeNode) => void;
+  password?: string;
 }) {
   const isFolder = node.file.isFolder;
   const hasChildren = isFolder && (node.children === undefined || node.children.length > 0);
@@ -68,7 +73,9 @@ function FolderTreeNode({
 
   const fileLink = isFolder
     ? undefined
-    : node.file.fileUrl || links.FILES.GET_FILE(node.file.fileId as string);
+    : node.file.fileUrl
+    ? `${node.file.fileUrl}${node.file.fileUrl.includes("?") ? "&" : "?"}password=${encodeURIComponent(password || "")}`
+    : `${links.FILES.GET_FILE(node.file.fileId as string)}?password=${encodeURIComponent(password || "")}`;
 
   return (
     <div>
@@ -144,6 +151,7 @@ function FolderTreeNode({
             node={child}
             depth={depth + 1}
             onToggle={onToggle}
+            password={password}
           />
         ))}
     </div>
@@ -167,53 +175,66 @@ export default function FolderPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [isPasswordRequired, setIsPasswordRequired] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
   const requesterId = user?.id;
 
   const loadChildrenByFolderId = useCallback(
     async (id: string): Promise<FileDoc[]> => {
-      const data = await getFolderById(id, requesterId);
+      const data = await getFolderById(id, requesterId, password);
       return [...(data.folders ?? []), ...(data.files ?? [])];
     },
-    [requesterId]
+    [requesterId, password]
   );
 
-  useEffect(() => {
+  const fetchFolderData = useCallback(async (pw?: string) => {
     if (!folderId) {
       setLoading(false);
       return;
     }
 
-    let cancelled = false;
-    setLoading(true);
+    if (pw) {
+      setSubmitting(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
 
-    getFolderById(folderId, requesterId)
-      .then((data) => {
-        if (cancelled) return;
-        setAccountId(data.account_id ?? "");
-        setFolderPath(data.folder?.name ?? "");
-        const items = [...(data.folders ?? []), ...(data.files ?? [])];
-        setTree(
-          items.map((file) => ({
-            file,
-            isExpanded: false,
-            isLoading: false,
-          }))
-        );
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
+    try {
+      const data = await getFolderById(folderId, requesterId, pw);
+      setAccountId(data.account_id ?? "");
+      setFolderPath(data.folder?.name ?? "");
+      const items = [...(data.folders ?? []), ...(data.files ?? [])];
+      setTree(
+        items.map((file) => ({
+          file,
+          isExpanded: false,
+          isLoading: false,
+        }))
+      );
+      setIsPasswordRequired(false);
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        setIsPasswordRequired(true);
+        if (pw) {
+          setPasswordError(t("errors.incorrectPassword") || "Неверный пароль");
+        }
+      } else {
         const message = err instanceof Error ? err.message : t("files.folderLoadError");
         setError(message);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+      }
+    } finally {
+      setLoading(false);
+      setSubmitting(false);
+    }
   }, [folderId, requesterId, t]);
+
+  useEffect(() => {
+    fetchFolderData();
+  }, [fetchFolderData]);
 
   const updateNode = (
     nodes: TreeNode[],
@@ -266,7 +287,7 @@ export default function FolderPageClient() {
     if (!accountId || !folderPath || isDownloading) return;
     setIsDownloading(true);
     try {
-      const blob = await downloadFolder(accountId, folderPath, requesterId);
+      const blob = await downloadFolder(accountId, folderPath, requesterId, password);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -288,6 +309,40 @@ export default function FolderPageClient() {
       <div className="flex min-h-screen flex-col items-center justify-center text-white">
         <Loader2 className="h-10 w-10 animate-spin text-white/50" />
         <p className="mt-4 text-sm text-white/50">{t("files.folderLoading")}</p>
+      </div>
+    );
+  }
+
+  if (isPasswordRequired) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center m-3">
+        <section className="w-full max-w-md mx-auto p-6 bg-background/60 border border-border/90 rounded-3xl shadow-[0_16px_80px_-45px_rgba(0,0,0,0.7)] text-white text-center">
+          <KeyRound className="h-12 w-12 text-purple mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Требуется пароль</h2>
+          <p className="text-sm text-white/60 mb-6">Эта папка защищена паролем. Пожалуйста, введите его для доступа к содержимому.</p>
+          
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            fetchFolderData(password);
+          }} className="space-y-4">
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setPasswordError("");
+              }}
+              placeholder="Введите пароль"
+              className="border-white/10 bg-white/5 text-white placeholder:text-white/40 focus-visible:ring-purple text-center"
+            />
+            {passwordError && (
+              <p className="text-xs text-red-400">{passwordError}</p>
+            )}
+            <Button type="submit" disabled={submitting} className="w-full bg-purple hover:bg-purple/90">
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Подтвердить"}
+            </Button>
+          </form>
+        </section>
       </div>
     );
   }
@@ -340,6 +395,7 @@ export default function FolderPageClient() {
                 node={node}
                 depth={0}
                 onToggle={handleToggle}
+                password={password}
               />
             ))
           )}

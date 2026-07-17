@@ -216,10 +216,14 @@ export async function getRecentFiles(account_id: string): Promise<FileDoc[]> {
 
 export async function getFileInfo(
   file_id: string,
-  account_id?: string
+  account_id?: string,
+  password?: string
 ): Promise<FilesFileResponse> {
   const res = await files.get(api.FILES.INFO(file_id), {
-    params: account_id ? { account_id } : undefined,
+    params: {
+      ...(account_id ? { account_id } : {}),
+      ...(password ? { password } : {}),
+    },
   });
   return res.data;
 }
@@ -233,10 +237,14 @@ export interface FilesFolderContentsResponse {
 
 export async function getFolderById(
   folder_id: string,
-  requester_id?: string
+  requester_id?: string,
+  password?: string
 ): Promise<FilesFolderContentsResponse> {
   const res = await files.get(api.FILES.GET_FOLDER(folder_id), {
-    params: requester_id ? { requester_id } : undefined,
+    params: {
+      ...(requester_id ? { requester_id } : {}),
+      ...(password ? { password } : {}),
+    },
   });
   const data: { account_id?: string; folder: FilesFolderItem; files: FilesFileResponse[]; folders: FilesFolderItem[] } = res.data;
   const accountId = data.account_id ?? "";
@@ -251,10 +259,14 @@ export async function getFolderById(
 
 export async function downloadFile(
   file_id: string,
-  account_id?: string
+  account_id?: string,
+  password?: string
 ): Promise<Blob> {
   const res = await files.get(api.FILES.DOWNLOAD(file_id), {
-    params: account_id ? { account_id } : undefined,
+    params: {
+      ...(account_id ? { account_id } : {}),
+      ...(password ? { password } : {}),
+    },
     responseType: "blob",
   });
   return res.data;
@@ -283,9 +295,12 @@ export async function renameFile(
 export async function updateFilePublic(
   file_id: string,
   is_public: boolean,
-  editor?: FilesApiEditor
+  editor?: FilesApiEditor,
+  password?: string | null,
+  expires_at?: string | null,
+  rotate_id?: boolean
 ): Promise<FilesFileResponse> {
-  const body: FilesPublicBody = { file_id, is_public, ...editorBody(editor) };
+  const body: FilesPublicBody = { file_id, is_public, password, expires_at, rotate_id, ...editorBody(editor) };
   const res = await files.post(api.FILES.PUBLIC, body);
   return res.data;
 }
@@ -425,11 +440,17 @@ export async function updateFolderPublic(
   account_id: string,
   is_public: boolean,
   editor: FilesApiEditor | undefined,
-  identifier: { name: string } | { folder_id: string }
+  identifier: { name: string } | { folder_id: string },
+  password?: string | null,
+  expires_at?: string | null,
+  rotate_id?: boolean
 ): Promise<unknown> {
   const body: FilesFolderPublicBody = {
     account_id,
     is_public,
+    password,
+    expires_at,
+    rotate_id,
     ...editorBody(editor),
     ...identifier,
   };
@@ -440,12 +461,14 @@ export async function updateFolderPublic(
 export async function downloadFolder(
   account_id: string,
   folder: string,
-  requester_id?: string
+  requester_id?: string,
+  password?: string
 ): Promise<Blob> {
   const res = await files.get(api.FILES.DOWNLOAD_FOLDER(account_id), {
     params: {
       folder,
       requester_id,
+      password,
     },
     responseType: "blob",
   });

@@ -145,6 +145,9 @@ export interface FilesRenameBody extends FilesEditorBody {
 export interface FilesPublicBody extends FilesEditorBody {
   file_id: string;
   is_public: boolean;
+  password?: string | null;
+  expires_at?: string | null;
+  rotate_id?: boolean;
 }
 
 export interface FilesFolderPublicBody extends FilesEditorBody {
@@ -152,6 +155,9 @@ export interface FilesFolderPublicBody extends FilesEditorBody {
     name?: string;
     folder_id?: string;
     is_public: boolean;
+    password?: string | null;
+    expires_at?: string | null;
+    rotate_id?: boolean;
 }
 
 export interface FilesUserStatsResponse {

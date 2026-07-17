@@ -38,6 +38,7 @@ import { useUser } from "@clerk/nextjs";
 import { RenameDialog } from "@/components/dialog/rename-dialog";
 import { MoveToFolderDialog } from "@/components/dialog/move-to-folder-dialog";
 import { ConfirmDialog } from "@/components/dialog/confirm-dialog";
+import { AccessDialog } from "@/components/dialog/access-dialog";
 import { useCurrentOrg } from "@/components/hooks/use-current-org";
 import { useTranslation } from "@/components/hooks/use-translation";
 import { useRouter, usePathname } from "next/navigation";
@@ -78,6 +79,7 @@ export function FileCardActions({
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [isFolderTrashConfirmOpen, setIsFolderTrashConfirmOpen] = useState(false);
     const [isFolderDeleteConfirmOpen, setIsFolderDeleteConfirmOpen] = useState(false);
+    const [isAccessOpen, setIsAccessOpen] = useState(false);
     const [isConfirmLoading, setIsConfirmLoading] = useState(false);
     const [isPublicLoading, setIsPublicLoading] = useState(false);
     const [isArchiveLoading, setIsArchiveLoading] = useState(false);
@@ -435,18 +437,9 @@ export function FileCardActions({
                                         )}
                                         <DropdownMenuItem
                                             className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                                            onClick={handleTogglePublic}
-                                            disabled={isPublicLoading}
+                                            onClick={() => setIsAccessOpen(true)}
                                         >
-                                            {file.isPublic ? (
-                                                <>
-                                                    <Lock className="w-4 h-4" /> {t("fileActions.makePrivateFolder")}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Globe className="w-4 h-4" /> {t("fileActions.makePublicFolder")}
-                                                </>
-                                            )}
+                                            <Globe className="w-4 h-4" /> {t("fileActions.changeAccess")}
                                         </DropdownMenuItem>
                                     </>
                                 )}
@@ -507,18 +500,9 @@ export function FileCardActions({
                         {!notter && !expired && !deletedOnly && (
                             <DropdownMenuItem
                                 className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                                onClick={handleTogglePublic}
-                                disabled={isPublicLoading}
+                                onClick={() => setIsAccessOpen(true)}
                             >
-                                {file.isPublic ? (
-                                    <>
-                                        <Lock className="w-4 h-4" /> {t("fileActions.makePrivate")}
-                                    </>
-                                ) : (
-                                    <>
-                                        <Globe className="w-4 h-4" /> {t("fileActions.makePublic")}
-                                    </>
-                                )}
+                                <Globe className="w-4 h-4" /> {t("fileActions.changeAccess")}
                             </DropdownMenuItem>
                         )}
 
@@ -673,6 +657,12 @@ export function FileCardActions({
             onConfirm={handleDeleteFolder}
             isLoading={isConfirmLoading}
             destructive={true}
+        />
+        <AccessDialog
+            file={file}
+            open={isAccessOpen}
+            onOpenChange={setIsAccessOpen}
+            onUpdated={onRefresh}
         />
         </>
     );
