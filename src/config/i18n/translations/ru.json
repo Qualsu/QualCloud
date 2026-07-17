@@ -399,5 +399,13 @@
   "expiresIn": {
     "expired": "Истек",
     "remaining": "Осталось: {days}д {hours}ч {minutes}м"
+  },
+  "dragDrop": {
+    "movingSingle": "Перемещение «{name}» в «{folder}»…",
+    "movingMultiple": "Перемещение {count} элементов в «{folder}»…",
+    "movedSingle": "«{name}» перемещён в «{folder}»",
+    "movedMultiple": "{count} элементов перемещено в «{folder}»",
+    "moveError": "Не удалось переместить {failed} из {total} элементов",
+    "moveErrorGeneric": "Не удалось переместить элементы"
   }
 }

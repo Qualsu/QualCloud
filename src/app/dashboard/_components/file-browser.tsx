@@ -6,7 +6,7 @@ import { CheckedState } from "@radix-ui/react-checkbox";
 import { useQuery } from "convex/react";
 import { LayoutGrid, Loader2, PackageOpen, Table as TableIcon, ArrowLeft, Trash2, Clock3 } from "lucide-react";
 import type { RowSelectionState } from "@tanstack/react-table";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 
 import { getAllFiles as getNotterFiles } from "@/app/api/notter";
 import { getAllFiles as getShrtlFiles } from "@/app/api/shrtl";
@@ -21,6 +21,8 @@ import {
   deleteFilePermanently,
   deleteFolder,
   downloadFolder,
+  moveFile,
+  moveFolder,
 } from "@/app/api/files";
 import { useCurrentOrg } from "@/components/hooks/use-current-org";
 import {
@@ -537,6 +539,74 @@ export function FilesBrowser({
     [shrtl, notter, useFilesApi, deletedOnly, enableSelection, refreshFiles, setCurrentFolder, t]
   );
 
+  const handleDropOnFolder = useCallback(
+    async (draggedFiles: FileDoc[], targetFolder: FileDoc) => {
+      if (!useFilesApi || deletedOnly) return;
+
+      const targetPath = targetFolder.name;
+      const folderDisplayName = targetFolder.displayName || targetFolder.name.split("/").pop() || targetFolder.name;
+
+      // Filter out files that are already in the target folder
+      const filesToMove = draggedFiles.filter((f) => {
+        if (f._id === targetFolder._id) return false;
+        if (f.isFolder && targetPath.startsWith(f.name + "/")) return false;
+        if (f.folder === targetPath) return false;
+        return true;
+      });
+
+      if (filesToMove.length === 0) return;
+
+      const moveAll = async () => {
+        const promises = filesToMove.map((item) =>
+          item.isFolder
+            ? moveFolder(item.orgId, item.name, targetPath, editor)
+            : moveFile(item._id as string, targetPath, editor)
+        );
+
+        const results = await Promise.allSettled(promises);
+        const failed = results.filter((r) => r.status === "rejected").length;
+
+        if (failed > 0) {
+          throw new Error(
+            t("dragDrop.moveError", { failed, total: filesToMove.length })
+          );
+        }
+      };
+
+      const successMessage =
+        filesToMove.length === 1
+          ? t("dragDrop.movedSingle", {
+              name: filesToMove[0].displayName || filesToMove[0].name,
+              folder: folderDisplayName,
+            })
+          : t("dragDrop.movedMultiple", {
+              count: filesToMove.length,
+              folder: folderDisplayName,
+            });
+
+      const loadingMessage =
+        filesToMove.length === 1
+          ? t("dragDrop.movingSingle", {
+              name: filesToMove[0].displayName || filesToMove[0].name,
+              folder: folderDisplayName,
+            })
+          : t("dragDrop.movingMultiple", {
+              count: filesToMove.length,
+              folder: folderDisplayName,
+            });
+
+      await toast.promise(moveAll(), {
+        loading: loadingMessage,
+        success: successMessage,
+        error: (err: Error) => err?.message || t("dragDrop.moveErrorGeneric"),
+      });
+
+      clearSelection();
+      refreshFiles();
+    },
+    [useFilesApi, deletedOnly, editor, t, clearSelection, refreshFiles]
+  );
+
   const autocompleteSuggestions = useMemo(
     () =>
       Array.from(new Set(autocompleteFiles.map((file) => file.name.trim()).filter(Boolean)))
@@ -825,6 +895,10 @@ export function FilesBrowser({
                     selected={selectedIds.has(file._id as string)}
                     onSelect={enableSelection ? toggleSelection : undefined}
                     onClearSelection={enableSelection ? clearSelection : undefined}
+                    allFiles={sortedFiles}
+                    selectedFiles={selectedItems}
+                    onDropOnFolder={useFilesApi && !deletedOnly ? handleDropOnFolder : undefined}
+                    enableDragDrop={useFilesApi && !deletedOnly}
                   />
                 ))}
               </div>
@@ -838,6 +912,9 @@ export function FilesBrowser({
                 rowSelection={rowSelection}
                 onRowSelectionChange={handleRowSelectionChange}
                 getRowId={(row) => row._id as string}
+                enableDragDrop={useFilesApi && !deletedOnly}
+                selectedFiles={selectedItems}
+                onDropOnFolder={useFilesApi && !deletedOnly ? handleDropOnFolder : undefined}
               />
             </TabsContent>
           </>

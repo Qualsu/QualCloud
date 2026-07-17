@@ -29,6 +29,7 @@ import { FilePreviewModal } from "@/components/modal/file-preview-modal";
 import { formatExpiresIn, isFileExpired } from "./file-helpers";
 import { useTranslation } from "@/components/hooks/use-translation";
 import { normalizeFileUrl } from "@/lib/file-url";
+import { useDragSource, useDropTarget } from "@/components/hooks/use-drag-drop";
 
 function getFileTimeDisplay(
     file: FileCardProps["file"],
@@ -82,6 +83,10 @@ export function FileCard({
     selected,
     onSelect,
     onClearSelection,
+    allFiles = [],
+    selectedFiles = [],
+    onDropOnFolder,
+    enableDragDrop = false,
 }: FileCardProps) {
     const { t } = useTranslation();
     const { user } = useUser();
@@ -130,6 +135,19 @@ export function FileCard({
 
     const displayName = file.displayName?.trim() || file.name?.trim() || t("filePreview.noName");
     const canFavorite = useFilesApi && !isFolder && !deletedOnly && !isFileExpired(file);
+
+    const { isDragging, dragProps } = useDragSource(
+        file,
+        selectedFiles,
+        enableDragDrop
+    );
+
+    const { isOver, dropProps } = useDropTarget(
+        file,
+        allFiles,
+        onDropOnFolder ?? (() => {}),
+        enableDragDrop && !!onDropOnFolder
+    );
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleCardClick = (e?: React.MouseEvent<HTMLDivElement>) => {
@@ -178,12 +196,16 @@ export function FileCard({
                 "group surface-panel relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_24px_70px_rgba(0,0,0,0.35)] cursor-pointer",
                 selected
                     ? "border-purple/40 bg-purple/[0.06]"
-                    : "border-transparent"
+                    : "border-transparent",
+                isDragging && "opacity-40 scale-95",
+                isOver && "border-purple/60 bg-purple/[0.12] ring-2 ring-purple/40 scale-[1.02] shadow-[0_0_30px_rgba(139,92,246,0.2)]"
             )}
             onClick={handleCardClick}
             role="button"
             tabIndex={0}
             onKeyDown={handleKeyDown}
+            {...dragProps}
+            {...dropProps}
         >
             <div className="relative flex items-start justify-between gap-2 px-5 pt-5 pb-3">
                 <div className="flex items-center gap-2 text-sm text-white/80 font-medium break-all min-w-0">

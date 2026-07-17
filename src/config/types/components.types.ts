@@ -52,6 +52,10 @@ export interface FileCardProps {
   selected?: boolean;
   onSelect?: (id: string, selected: boolean) => void;
   onClearSelection?: () => void;
+  allFiles?: FileDoc[];
+  selectedFiles?: FileDoc[];
+  onDropOnFolder?: (draggedFiles: FileDoc[], targetFolder: FileDoc) => void;
+  enableDragDrop?: boolean;
 }
 
 export interface UserCellProps {
@@ -71,6 +75,9 @@ export interface DataTableProps<TData, TValue> {
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: (updater: Updater<RowSelectionState>) => void;
   getRowId?: (row: TData) => string;
+  enableDragDrop?: boolean;
+  selectedFiles?: TData[];
+  onDropOnFolder?: (draggedFiles: TData[], targetFolder: TData) => void;
 }
 
 export interface HeaderProps {

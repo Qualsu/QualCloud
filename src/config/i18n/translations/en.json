@@ -399,5 +399,13 @@
   "expiresIn": {
     "expired": "Expired",
     "remaining": "Remaining: {days}d {hours}h {minutes}m"
+  },
+  "dragDrop": {
+    "movingSingle": "Moving \"{name}\" to \"{folder}\"…",
+    "movingMultiple": "Moving {count} items to \"{folder}\"…",
+    "movedSingle": "\"{name}\" moved to \"{folder}\"",
+    "movedMultiple": "{count} items moved to \"{folder}\"",
+    "moveError": "Failed to move {failed} of {total} items",
+    "moveErrorGeneric": "Failed to move items"
   }
 }

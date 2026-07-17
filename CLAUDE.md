@@ -1,4 +1,4 @@
-# QualClou
+# QualCloud
 
 QualCloud is a unified cloud file manager and explorer application. It aggregates files from multiple backends: the QualCloud central API, Convex-native storage (KenyCloud), Notter, and SHRTL.
 
@@ -105,3 +105,33 @@ Hardcoded strings in user-facing elements are **not allowed**.
 ### 4. UI / UX & Design
 * All interactive panels use Tailwind classes styled alongside the dark background gradient rules declared in `globals.css`.
 * Follow smooth transitional animations (e.g. `transition-all duration-200`) on hovers and modal displays.
+
+---
+
+## AI Agent Self-Maintenance
+
+> **Important for AI Agents**: This file (`CLAUDE.md`) is a living project documentation. You **must** update it automatically whenever significant changes are made — without explicit requests from the user.
+
+### When to Update This File
+
+Update `CLAUDE.md` **immediately after** making any of the following changes to the project:
+
+| Change Type | What to Update in CLAUDE.md |
+| :--- | :--- |
+| Adding a new file or folder | **Project Structure** section — add the entry with a short description |
+| Deleting a file or folder | **Project Structure** section — remove the corresponding entry |
+| Renaming or moving a file | **Project Structure** section and all file links |
+| Adding a new npm dependency | **Technology Stack** section — add the library and its purpose |
+| Adding a new npm command | **Run & Build Commands** section — add the command to the table |
+| Introducing new architectural rules/patterns | **Key Coding Guidelines** section — add a new item |
+| Modifying existing rules/patterns | **Key Coding Guidelines** section — update the corresponding item |
+| Adding a new backend endpoint | The corresponding file description in the structure (`convex/`, `api/`) |
+| Modifying the Convex schema | **Technology Stack** or **Project Structure** sections |
+
+### Update Rules
+
+1. **Relevance**: The documentation must accurately reflect the current state of the codebase.
+2. **Conciseness**: Descriptions should be brief (1–2 sentences) and informative.
+3. **Links**: When referencing files, use markdown links in the format `[filename](file:///Z:/script/JS/QualCloud/path/to/file)`.
+4. **Language**: Keep the entire file, including comments and instructions, in English.
+5. **No Extra Prompts**: Do not notify the user about every update to this file — just perform it automatically.
