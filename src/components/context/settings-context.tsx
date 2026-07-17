@@ -19,36 +19,44 @@ const STORAGE_KEY = "qualcloud-settings";
 interface SettingsState {
   redirectHomeToDashboard: boolean;
   language: Language;
+  timezone: string;
 }
 
 const DEFAULT_SETTINGS: SettingsState = {
   redirectHomeToDashboard: true,
   language: "ru",
+  timezone: "UTC",
 };
 
 function getStoredSettings(): SettingsState {
-  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  const systemTimeZone = typeof window !== "undefined"
+    ? (Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC")
+    : "UTC";
+  const defaultWithSystemTz = { ...DEFAULT_SETTINGS, timezone: systemTimeZone };
+
+  if (typeof window === "undefined") return defaultWithSystemTz;
 
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<SettingsState>;
-      const settings = { ...DEFAULT_SETTINGS, ...parsed };
+      const settings = { ...defaultWithSystemTz, ...parsed };
       if (!isLanguage(settings.language)) {
-        settings.language = DEFAULT_SETTINGS.language;
+        settings.language = defaultWithSystemTz.language;
       }
       return settings;
     }
   } catch {
   }
 
-  return DEFAULT_SETTINGS;
+  return defaultWithSystemTz;
 }
 
 interface SettingsContextValue extends SettingsState {
   initialized: boolean;
   setRedirectHomeToDashboard: (value: boolean) => void;
   setLanguage: (value: Language) => void;
+  setTimezone: (value: string) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -89,6 +97,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings((prev) => ({ ...prev, language: value }));
   };
 
+  const setTimezone = (value: string) => {
+    setSettings((prev) => ({ ...prev, timezone: value }));
+  };
+
   return (
     <SettingsContext.Provider
       value={{
@@ -96,6 +108,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         initialized,
         setRedirectHomeToDashboard,
         setLanguage,
+        setTimezone,
       }}
     >
       {children}

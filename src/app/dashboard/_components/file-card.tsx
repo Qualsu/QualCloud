@@ -9,6 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatRelative } from 'date-fns';
+import { useSettings } from "@/components/context/settings-context";
+import { formatRelativeZoned } from "@/lib/timezones";
 import { useQuery } from "convex/react";
 import { Globe, Heart, Lock } from "lucide-react";
 import { useState } from "react";
@@ -30,6 +32,8 @@ import { normalizeFileUrl } from "@/lib/file-url";
 
 function getFileTimeDisplay(
     file: FileCardProps["file"],
+    timezone: string,
+    language: "ru" | "en",
     shrtl?: boolean,
     t?: (key: string, params?: Record<string, string | number>) => string
 ): string {
@@ -37,7 +41,7 @@ function getFileTimeDisplay(
         const expiresInSeconds = "_expiresInSeconds" in file ? (file._expiresInSeconds as number | null | undefined) ?? null : null;
         return formatExpiresIn(expiresInSeconds, t ?? ((key) => key));
     }
-    return formatRelative(new Date(file._creationTime), new Date());
+    return formatRelativeZoned(file._creationTime, timezone, language);
 }
 
 export function FileCardSkeleton() {
@@ -80,6 +84,7 @@ export function FileCard({
 }: FileCardProps) {
     const { t } = useTranslation();
     const { user } = useUser();
+    const { timezone, language } = useSettings();
     const isFromApi = "_isFromApi" in file && file._isFromApi;
     const isApiSource = shrtl || notter || useFilesApi || isFromApi;
     const isFolder = file.isFolder;
@@ -262,12 +267,12 @@ export function FileCard({
                     </Avatar>
                     <span>{username}</span>
                 </div>
-                <div className="text-xs text-white/30">
+                 <div className="text-xs text-white/30">
                     {isFolder
                         ? (file.updatedAt
-                            ? formatRelative(new Date(file.updatedAt), new Date())
+                            ? formatRelativeZoned(file.updatedAt, timezone, language)
                             : "")
-                        : getFileTimeDisplay(file, shrtl, t)}
+                        : getFileTimeDisplay(file, timezone, language, shrtl, t)}
                 </div>
             </div>
         </div>

@@ -147,13 +147,18 @@ function TypeCell({ file }: { file: FileDoc }) {
   );
 }
 
+import { useSettings } from "@/components/context/settings-context";
+import { formatRelativeZoned } from "@/lib/timezones";
+
 function DateCell({ file, shrtl }: { file: FileDoc; shrtl?: boolean }) {
   const { t } = useTranslation();
+  const { timezone, language } = useSettings();
+
   if (file.isFolder) {
     return (
       <div className="text-white/50">
         {file.updatedAt
-          ? formatRelative(new Date(file.updatedAt), new Date())
+          ? formatRelativeZoned(file.updatedAt, timezone, language)
           : t("common.empty")}
       </div>
     );
@@ -169,7 +174,7 @@ function DateCell({ file, shrtl }: { file: FileDoc; shrtl?: boolean }) {
 
   return (
     <div className="text-white/50">
-      {formatRelative(new Date(file._creationTime), new Date())}
+      {formatRelativeZoned(file._creationTime, timezone, language)}
     </div>
   );
 }

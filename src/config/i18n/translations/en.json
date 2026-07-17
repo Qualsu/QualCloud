@@ -95,6 +95,7 @@
   "settings": {
     "title": "Settings",
     "language": "Language",
+    "timezone": "Time zone",
     "redirect": "Redirect",
     "redirectDescription": "Redirect from the home page '/' to the dashboard",
     "redirectAria": "Redirect from the home page to the dashboard",

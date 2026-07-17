@@ -3,6 +3,8 @@
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { formatRelative } from "date-fns";
+import { useSettings } from "@/components/context/settings-context";
+import { formatRelativeZoned } from "@/lib/timezones";
 import {
     Download,
     ExternalLink,
@@ -83,6 +85,7 @@ export function FilePreviewModal({
 }) {
     const { t } = useTranslation();
     const { user } = useUser();
+    const { timezone, language } = useSettings();
     const { isOrgAdmin } = useCurrentOrg();
     const editor = getFilesEditor(user);
     const origin = useOrigin();
@@ -181,7 +184,7 @@ export function FilePreviewModal({
 
     const dateDisplay = isFolder
         ? file.updatedAt
-            ? formatRelative(new Date(file.updatedAt), new Date())
+            ? formatRelativeZoned(file.updatedAt, timezone, language)
             : t("common.empty")
         : shrtl
         ? formatExpiresIn(
@@ -190,7 +193,7 @@ export function FilePreviewModal({
                   : null,
               t
           )
-        : formatRelative(new Date(file._creationTime), new Date());
+        : formatRelativeZoned(file._creationTime, timezone, language);
 
     const canFavorite = useFilesApi && !isFolder && !deletedOnly && !expired;
     const canRename =

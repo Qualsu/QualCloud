@@ -12,10 +12,11 @@ import { useSettings } from "@/components/context/settings-context";
 import { ConfirmDialog } from "@/components/dialog/confirm-dialog";
 import { LogOut, Settings, Settings2 } from "lucide-react";
 import { useClerk } from "@clerk/nextjs";
-import { useState, type ReactNode } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { useTranslation } from "@/components/hooks/use-translation";
 import { useIsPwa } from "@/components/hooks/use-is-pwa";
 import { LANGUAGES, type Language } from "@/config/i18n";
+import { getTimeZones } from "@/lib/timezones";
 import {
   Select,
   SelectContent,
@@ -35,12 +36,16 @@ export function SettingsDialog({ children }: SettingsDialogProps) {
     setRedirectHomeToDashboard,
     language,
     setLanguage,
+    timezone,
+    setTimezone,
   } = useSettings();
   const { t } = useTranslation();
   const isPwa = useIsPwa();
   const { openUserProfile, signOut } = useClerk();
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const timeZones = useMemo(() => getTimeZones(), []);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -80,6 +85,34 @@ export function SettingsDialog({ children }: SettingsDialogProps) {
                     className="focus:bg-white/10"
                   >
                     {lang.flag} {lang.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="timezone-select" className="text-sm font-semibold text-white">
+              {t("settings.timezone")}
+            </Label>
+            <Select
+              value={timezone}
+              onValueChange={setTimezone}
+            >
+              <SelectTrigger
+                id="timezone-select"
+                className="w-full border-white/10 bg-white/5 text-white hover:bg-white/10"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="border-white/10 bg-[#211428] text-white">
+                {timeZones.map((tz) => (
+                  <SelectItem
+                    key={tz.value}
+                    value={tz.value}
+                    className="focus:bg-white/10"
+                  >
+                    {tz.label} {tz.offset && <span className="opacity-60 text-xs ml-1">({tz.offset})</span>}
                   </SelectItem>
                 ))}
               </SelectContent>
