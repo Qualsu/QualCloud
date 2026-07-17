@@ -112,6 +112,7 @@ function mapFolder(
       : undefined,
     isDeleted: folder.is_deleted ?? false,
     isPublic: folder.is_public ?? false,
+    isFavorited: folder.is_favorite ?? false,
   };
 }
 
@@ -184,7 +185,9 @@ export async function uploadMultipleFiles(
 ): Promise<FilesUploadResponse[]> {
   const formData = new FormData();
   formData.append("account_id", account_id);
-  filesList.forEach((file) => formData.append("files", file));
+  filesList.forEach((file) =>
+    formData.append("files", file, (file as any).webkitRelativePath || file.name)
+  );
   if (folder !== undefined && folder !== null) {
     formData.append("folder", folder);
   }

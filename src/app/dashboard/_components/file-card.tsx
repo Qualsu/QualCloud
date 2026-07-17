@@ -134,7 +134,7 @@ export function FileCard({
     }
 
     const displayName = file.displayName?.trim() || file.name?.trim() || t("filePreview.noName");
-    const canFavorite = useFilesApi && !isFolder && !deletedOnly && !isFileExpired(file);
+    const canFavorite = useFilesApi && !deletedOnly && !isFileExpired(file);
 
     const { isDragging, dragProps } = useDragSource(
         file,

@@ -35,6 +35,7 @@ export interface FilesFolderItem {
   updated_by?: string | null;
   last_editor?: FilesLastEditor | null;
   is_public?: boolean;
+  is_favorite?: boolean;
   is_deleted?: boolean;
   deleted_at?: string | null;
 }

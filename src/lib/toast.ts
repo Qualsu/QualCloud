@@ -18,7 +18,7 @@ export const toast = {
   dismiss: hotToast.dismiss,
   promise: <T>(
     promise: Promise<T>,
-    messages: { loading: string; success: string; error: string },
+    messages: { loading: string; success: string; error: string | ((err: any) => string) },
   ) =>
     hotToast.promise(promise, messages, {
       loading: getOptions("loading"),

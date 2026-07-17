@@ -371,6 +371,22 @@ export function FileCardActions({
                             </>
                         ) : (
                             <>
+                                {useFilesApi && (
+                                    <DropdownMenuItem
+                                        className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                        onClick={handleToggleFavorite}
+                                    >
+                                        {file.isFavorited ? (
+                                            <>
+                                                <Heart className="w-4 h-4" /> {t("fileActions.removeFromFavorites")}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Heart className="w-4 h-4" /> {t("fileActions.addToFavorites")}
+                                            </>
+                                        )}
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem
                                     className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
                                     onClick={() => setIsRenameOpen(true)}

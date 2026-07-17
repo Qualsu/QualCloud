@@ -76,7 +76,7 @@
     "cloud": "Cloud",
     "services": "Services",
     "navigation": "Navigation",
-    "root": "Root",
+    "root": "/",
     "install": "Install"
   },
   "nav": {
@@ -300,6 +300,8 @@
     "dropHint": "Release files to upload them to the cloud",
     "clickOrDrop": "{click} or drag files here",
     "click": "Click",
+    "selectFiles": "Select Files",
+    "selectFolder": "Select Folder",
     "selectedFiles": "Selected files",
     "removeFile": "Remove file",
     "destinationFolder": "Destination folder",
@@ -331,7 +333,8 @@
     "cancel": "Cancel",
     "loading": "Creating folder…",
     "success": "Folder «{name}» created",
-    "error": "Failed to create folder"
+    "error": "Failed to create folder",
+    "alreadyExists": "Folder with this name already exists"
   },
   "rename": {
     "folderTitle": "Rename folder",

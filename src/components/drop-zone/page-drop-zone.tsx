@@ -5,6 +5,7 @@ import { Upload } from "lucide-react";
 
 import { UploadDialog } from "@/components/dialog/upload-dialog";
 import { cn } from "@/lib/utils";
+import { getFilesFromDataTransferItems } from "@/lib/upload-utils";
 import { useTranslation } from "@/components/hooks/use-translation";
 
 interface PageDropZoneProps {
@@ -25,7 +26,7 @@ export function PageDropZone({ children }: PageDropZoneProps) {
 
   const handleDragEnter = useCallback((event: DragEvent) => {
     event.preventDefault();
-    if (dialogOpenRef.current) return;
+    if (dialogOpenRef.current || (window as any).__qualcloud_upload_dialog_open) return;
     if (event.dataTransfer?.types.includes("Files")) {
       dragCounter.current += 1;
       setIsDragging(true);
@@ -45,16 +46,18 @@ export function PageDropZone({ children }: PageDropZoneProps) {
     }
   }, []);
 
-  const handleDrop = useCallback((event: DragEvent) => {
+  const handleDrop = useCallback(async (event: DragEvent) => {
     event.preventDefault();
     dragCounter.current = 0;
     setIsDragging(false);
-    if (dialogOpenRef.current) return;
+    if (dialogOpenRef.current || (window as any).__qualcloud_upload_dialog_open) return;
 
-    const files = event.dataTransfer?.files;
-    if (files && files.length > 0) {
-      setDroppedFiles(Array.from(files));
-      setDialogOpen(true);
+    if (event.dataTransfer?.items) {
+      const files = await getFilesFromDataTransferItems(event.dataTransfer.items);
+      if (files.length > 0) {
+        setDroppedFiles(files);
+        setDialogOpen(true);
+      }
     }
   }, []);
 
