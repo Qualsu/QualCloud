@@ -34,6 +34,7 @@ function getFileTimeDisplay(
     file: FileCardProps["file"],
     timezone: string,
     language: "ru" | "en",
+    timeFormat: "12h" | "24h",
     shrtl?: boolean,
     t?: (key: string, params?: Record<string, string | number>) => string
 ): string {
@@ -41,7 +42,7 @@ function getFileTimeDisplay(
         const expiresInSeconds = "_expiresInSeconds" in file ? (file._expiresInSeconds as number | null | undefined) ?? null : null;
         return formatExpiresIn(expiresInSeconds, t ?? ((key) => key));
     }
-    return formatRelativeZoned(file._creationTime, timezone, language);
+    return formatRelativeZoned(file._creationTime, timezone, language, timeFormat);
 }
 
 export function FileCardSkeleton() {
@@ -84,7 +85,7 @@ export function FileCard({
 }: FileCardProps) {
     const { t } = useTranslation();
     const { user } = useUser();
-    const { timezone, language } = useSettings();
+    const { timezone, language, timeFormat } = useSettings();
     const isFromApi = "_isFromApi" in file && file._isFromApi;
     const isApiSource = shrtl || notter || useFilesApi || isFromApi;
     const isFolder = file.isFolder;
@@ -270,9 +271,9 @@ export function FileCard({
                  <div className="text-xs text-white/30">
                     {isFolder
                         ? (file.updatedAt
-                            ? formatRelativeZoned(file.updatedAt, timezone, language)
+                            ? formatRelativeZoned(file.updatedAt, timezone, language, timeFormat)
                             : "")
-                        : getFileTimeDisplay(file, timezone, language, shrtl, t)}
+                        : getFileTimeDisplay(file, timezone, language, timeFormat, shrtl, t)}
                 </div>
             </div>
         </div>

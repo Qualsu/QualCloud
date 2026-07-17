@@ -20,12 +20,14 @@ interface SettingsState {
   redirectHomeToDashboard: boolean;
   language: Language;
   timezone: string;
+  timeFormat: "12h" | "24h";
 }
 
 const DEFAULT_SETTINGS: SettingsState = {
   redirectHomeToDashboard: true,
   language: "ru",
   timezone: "UTC",
+  timeFormat: "24h",
 };
 
 function getStoredSettings(): SettingsState {
@@ -44,6 +46,9 @@ function getStoredSettings(): SettingsState {
       if (!isLanguage(settings.language)) {
         settings.language = defaultWithSystemTz.language;
       }
+      if (settings.timeFormat !== "12h" && settings.timeFormat !== "24h") {
+        settings.timeFormat = "24h";
+      }
       return settings;
     }
   } catch {
@@ -57,6 +62,7 @@ interface SettingsContextValue extends SettingsState {
   setRedirectHomeToDashboard: (value: boolean) => void;
   setLanguage: (value: Language) => void;
   setTimezone: (value: string) => void;
+  setTimeFormat: (value: "12h" | "24h") => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -101,6 +107,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings((prev) => ({ ...prev, timezone: value }));
   };
 
+  const setTimeFormat = (value: "12h" | "24h") => {
+    setSettings((prev) => ({ ...prev, timeFormat: value }));
+  };
+
   return (
     <SettingsContext.Provider
       value={{
@@ -109,6 +119,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setRedirectHomeToDashboard,
         setLanguage,
         setTimezone,
+        setTimeFormat,
       }}
     >
       {children}

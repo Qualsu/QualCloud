@@ -117,10 +117,29 @@ export function toZonedTime(date: Date | number | string, timeZone: string): Dat
 export function formatRelativeZoned(
   date: Date | number | string,
   timeZone: string,
-  language: "ru" | "en" = "ru"
+  language: "ru" | "en" = "ru",
+  timeFormat: "12h" | "24h" = "24h"
 ): string {
   const zonedDate = toZonedTime(date, timeZone);
   const zonedBaseDate = toZonedTime(new Date(), timeZone);
-  const locale = language === "ru" ? ru : enUS;
-  return formatRelative(zonedDate, zonedBaseDate, { locale });
+  const baseLocale = language === "ru" ? ru : enUS;
+
+  const customLocale = {
+    ...baseLocale,
+    formatRelative: (token: string, date: Date, baseDate: Date, options?: any) => {
+      const originalPattern = baseLocale.formatRelative(token, date, baseDate, options);
+      const timePattern = timeFormat === "12h" ? "h:mm a" : "HH:mm";
+      return originalPattern.replace(/\bp\b/g, timePattern);
+    },
+    localize: {
+      ...baseLocale.localize,
+      dayPeriod: (token: string, options?: any) => {
+        if (token === "am") return "AM";
+        if (token === "pm") return "PM";
+        return baseLocale.localize?.dayPeriod?.(token, options) ?? "";
+      }
+    }
+  };
+
+  return formatRelative(zonedDate, zonedBaseDate, { locale: customLocale as any });
 }

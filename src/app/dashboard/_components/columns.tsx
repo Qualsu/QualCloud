@@ -152,13 +152,13 @@ import { formatRelativeZoned } from "@/lib/timezones";
 
 function DateCell({ file, shrtl }: { file: FileDoc; shrtl?: boolean }) {
   const { t } = useTranslation();
-  const { timezone, language } = useSettings();
+  const { timezone, language, timeFormat } = useSettings();
 
   if (file.isFolder) {
     return (
       <div className="text-white/50">
         {file.updatedAt
-          ? formatRelativeZoned(file.updatedAt, timezone, language)
+          ? formatRelativeZoned(file.updatedAt, timezone, language, timeFormat)
           : t("common.empty")}
       </div>
     );
@@ -174,7 +174,7 @@ function DateCell({ file, shrtl }: { file: FileDoc; shrtl?: boolean }) {
 
   return (
     <div className="text-white/50">
-      {formatRelativeZoned(file._creationTime, timezone, language)}
+      {formatRelativeZoned(file._creationTime, timezone, language, timeFormat)}
     </div>
   );
 }

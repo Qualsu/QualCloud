@@ -85,7 +85,7 @@ export function FilePreviewModal({
 }) {
     const { t } = useTranslation();
     const { user } = useUser();
-    const { timezone, language } = useSettings();
+    const { timezone, language, timeFormat } = useSettings();
     const { isOrgAdmin } = useCurrentOrg();
     const editor = getFilesEditor(user);
     const origin = useOrigin();
@@ -184,7 +184,7 @@ export function FilePreviewModal({
 
     const dateDisplay = isFolder
         ? file.updatedAt
-            ? formatRelativeZoned(file.updatedAt, timezone, language)
+            ? formatRelativeZoned(file.updatedAt, timezone, language, timeFormat)
             : t("common.empty")
         : shrtl
         ? formatExpiresIn(
@@ -193,7 +193,7 @@ export function FilePreviewModal({
                   : null,
               t
           )
-        : formatRelativeZoned(file._creationTime, timezone, language);
+        : formatRelativeZoned(file._creationTime, timezone, language, timeFormat);
 
     const canFavorite = useFilesApi && !isFolder && !deletedOnly && !expired;
     const canRename =
