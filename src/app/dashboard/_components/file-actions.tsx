@@ -39,6 +39,7 @@ import { RenameDialog } from "@/components/dialog/rename-dialog";
 import { MoveToFolderDialog } from "@/components/dialog/move-to-folder-dialog";
 import { ConfirmDialog } from "@/components/dialog/confirm-dialog";
 import { AccessDialog } from "@/components/dialog/access-dialog";
+import { FilePreviewModal } from "@/components/modal/file-preview-modal";
 import { useCurrentOrg } from "@/components/hooks/use-current-org";
 import { useTranslation } from "@/components/hooks/use-translation";
 import { useRouter, usePathname } from "next/navigation";
@@ -80,6 +81,7 @@ export function FileCardActions({
     const [isFolderTrashConfirmOpen, setIsFolderTrashConfirmOpen] = useState(false);
     const [isFolderDeleteConfirmOpen, setIsFolderDeleteConfirmOpen] = useState(false);
     const [isAccessOpen, setIsAccessOpen] = useState(false);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isConfirmLoading, setIsConfirmLoading] = useState(false);
     const [isPublicLoading, setIsPublicLoading] = useState(false);
     const [isArchiveLoading, setIsArchiveLoading] = useState(false);
@@ -301,10 +303,26 @@ export function FileCardActions({
     };
 
     const handleShare = async () => {
+        const title = file.displayName || file.name;
+        if (typeof navigator !== "undefined" && navigator.share) {
+            try {
+                await navigator.share({
+                    title: title,
+                    url: shareLink,
+                });
+                return;
+            } catch (err: any) {
+                if (err.name === "AbortError") {
+                    return;
+                }
+            }
+        }
         try {
             await navigator.clipboard.writeText(shareLink);
             toast.success(t("fileActions.copyLink"));
-        } catch {}
+        } catch {
+            toast.error(t("fileActions.copyError"));
+        }
     };
 
     const handleGoToFileLocation = () => {
@@ -316,10 +334,26 @@ export function FileCardActions({
     };
 
     const handleShareFolder = async () => {
+        const title = file.displayName || file.name;
+        if (typeof navigator !== "undefined" && navigator.share) {
+            try {
+                await navigator.share({
+                    title: title,
+                    url: folderShareLink,
+                });
+                return;
+            } catch (err: any) {
+                if (err.name === "AbortError") {
+                    return;
+                }
+            }
+        }
         try {
             await navigator.clipboard.writeText(folderShareLink);
             toast.success(t("fileActions.copyLink"));
-        } catch {}
+        } catch {
+            toast.error(t("fileActions.copyError"));
+        }
     };
 
     return (
@@ -389,6 +423,24 @@ export function FileCardActions({
                                         )}
                                     </DropdownMenuItem>
                                 )}
+                                {useFilesApi && (
+                                    <>
+                                        {file.isPublic && (
+                                            <DropdownMenuItem
+                                                className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                                onClick={handleShareFolder}
+                                            >
+                                                <Share2Icon className="w-4 h-4" /> {t("fileActions.share")}
+                                            </DropdownMenuItem>
+                                        )}
+                                        <DropdownMenuItem
+                                            className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                            onClick={() => setIsAccessOpen(true)}
+                                        >
+                                            <Globe className="w-4 h-4" /> {t("fileActions.changeAccess")}
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
                                 <DropdownMenuItem
                                     className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
                                     onClick={() => setIsRenameOpen(true)}
@@ -427,24 +479,6 @@ export function FileCardActions({
                                 </DropdownMenuItem>
                                 {useFilesApi && (
                                     <>
-                                        {file.isPublic && (
-                                            <DropdownMenuItem
-                                                className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                                                onClick={handleShareFolder}
-                                            >
-                                                <Share2Icon className="w-4 h-4" /> {t("fileActions.share")}
-                                            </DropdownMenuItem>
-                                        )}
-                                        <DropdownMenuItem
-                                            className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                                            onClick={() => setIsAccessOpen(true)}
-                                        >
-                                            <Globe className="w-4 h-4" /> {t("fileActions.changeAccess")}
-                                        </DropdownMenuItem>
-                                    </>
-                                )}
-                                {useFilesApi && (
-                                    <>
                                         <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />
                                         <DropdownMenuItem
                                             className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
@@ -462,38 +496,44 @@ export function FileCardActions({
                         {notter && !expired && openLink && (
                             <DropdownMenuItem
                                 className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                                onClick={() => window.open(openLink, "_blank")}
+                                onClick={() => setIsPreviewOpen(true)}
                             >
                                 <ExternalLink className="w-4 h-4" /> {t("fileActions.openNote")}
                             </DropdownMenuItem>
                         )}
 
                         {!notter && !expired && openLink && file.isPublic && (
-                            <>
-                                <DropdownMenuItem
-                                    className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                                    onClick={() => window.open(openLink, "_blank")}
-                                >
-                                    <FileIcon className="w-4 h-4" /> {t("fileActions.open")}
-                                </DropdownMenuItem>
-
-                                {(!useFilesApi || file.isPublic) && (
-                                    <DropdownMenuItem
-                                        className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                                        onClick={handleShare}
-                                    >
-                                        <Share2Icon className="w-4 h-4" /> {t("fileActions.share")}
-                                    </DropdownMenuItem>
-                                )}
-                            </>
-                        )}
-
-                        {!expired && !deletedOnly && (
                             <DropdownMenuItem
                                 className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                                onClick={handleGoToFileLocation}
+                                onClick={() => setIsPreviewOpen(true)}
                             >
-                                <FolderOpen className="w-4 h-4" /> {t("fileActions.goToFileLocation")}
+                                <FileIcon className="w-4 h-4" /> {t("fileActions.open")}
+                            </DropdownMenuItem>
+                        )}
+
+                        {useFilesApi && !expired && !deletedOnly && (
+                            <DropdownMenuItem
+                                className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                onClick={handleToggleFavorite}
+                            >
+                                {file.isFavorited ? (
+                                    <>
+                                        <Heart className="w-4 h-4" /> {t("fileActions.removeFromFavorites")}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Heart className="w-4 h-4" /> {t("fileActions.addToFavorites")}
+                                    </>
+                                )}
+                            </DropdownMenuItem>
+                        )}
+
+                        {!notter && !expired && openLink && file.isPublic && (!useFilesApi || file.isPublic) && (
+                            <DropdownMenuItem
+                                className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                onClick={handleShare}
+                            >
+                                <Share2Icon className="w-4 h-4" /> {t("fileActions.share")}
                             </DropdownMenuItem>
                         )}
 
@@ -506,25 +546,17 @@ export function FileCardActions({
                             </DropdownMenuItem>
                         )}
 
+                        {!expired && !deletedOnly && (
+                            <DropdownMenuItem
+                                className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                onClick={handleGoToFileLocation}
+                            >
+                                <FolderOpen className="w-4 h-4" /> {t("fileActions.goToFileLocation")}
+                            </DropdownMenuItem>
+                        )}
+
                         {useFilesApi && (
                             <>
-                                {!expired && !deletedOnly && (
-                                    <DropdownMenuItem
-                                        className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
-                                        onClick={handleToggleFavorite}
-                                    >
-                                        {file.isFavorited ? (
-                                            <>
-                                                <Heart className="w-4 h-4" /> {t("fileActions.removeFromFavorites")}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Heart className="w-4 h-4" /> {t("fileActions.addToFavorites")}
-                                            </>
-                                        )}
-                                    </DropdownMenuItem>
-                                )}
-
                                 {!expired && !deletedOnly && (
                                     <DropdownMenuItem
                                         className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
@@ -542,7 +574,6 @@ export function FileCardActions({
                                         <FolderInput className="w-4 h-4" /> {t("fileActions.moveToFolder")}
                                     </DropdownMenuItem>
                                 )}
-
 
                                 <DropdownMenuItem
                                     className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
@@ -663,6 +694,17 @@ export function FileCardActions({
             open={isAccessOpen}
             onOpenChange={setIsAccessOpen}
             onUpdated={onRefresh}
+        />
+        <FilePreviewModal
+            file={file}
+            open={isPreviewOpen}
+            onOpenChange={setIsPreviewOpen}
+            shrtl={shrtl}
+            notter={notter}
+            useFilesApi={useFilesApi}
+            deletedOnly={deletedOnly}
+            onRefresh={onRefresh}
+            onOpenFolder={onOpenFolder}
         />
         </>
     );

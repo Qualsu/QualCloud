@@ -217,11 +217,27 @@ export function FilePreviewModal({
         if (downloadLink) window.open(downloadLink, "_blank");
     };
 
-    const handleShare = () => {
-        if (shareLink) {
-            navigator.clipboard.writeText(shareLink).then(() => {
-                toast.success(t("fileActions.copyLink"));
-            });
+    const handleShare = async () => {
+        if (!shareLink) return;
+        const title = file.displayName || file.name;
+        if (typeof navigator !== "undefined" && navigator.share) {
+            try {
+                await navigator.share({
+                    title: title,
+                    url: shareLink,
+                });
+                return;
+            } catch (err: any) {
+                if (err.name === "AbortError") {
+                    return;
+                }
+            }
+        }
+        try {
+            await navigator.clipboard.writeText(shareLink);
+            toast.success(t("fileActions.copyLink"));
+        } catch {
+            toast.error(t("fileActions.copyError"));
         }
     };
 
