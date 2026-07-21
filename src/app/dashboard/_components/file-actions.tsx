@@ -57,6 +57,7 @@ import {
     updateFolderPublic,
     downloadFolder,
 } from "@/app/api/files";
+import { deleteFile as deleteShrtlFile } from "@/app/api/shrtl";
 
 export function FileCardActions({
     file,
@@ -97,7 +98,9 @@ export function FileCardActions({
         ? pages.FILE.BY_ID(file.fileId as string)
         : pages.FILE.COPY(origin, file.linkId || "");
 
-    const downloadLink = useFilesApi
+    const downloadLink = shrtl
+        ? (file.fileUrl || links.SHRTL.GET_FILE(file.fileId as string))
+        : useFilesApi
         ? (file.fileUrl || links.FILES.GET_FILE(file.fileId as string))
         : undefined;
 
@@ -154,6 +157,25 @@ export function FileCardActions({
     };
 
     const handleDeletePermanently = async () => {
+        if (shrtl) {
+            setIsConfirmLoading(true);
+            try {
+                await toast.promise(
+                    deleteShrtlFile(file._id as string),
+                    {
+                        loading: t("filePreview.deleted") + "…",
+                        success: t("filePreview.deleted"),
+                        error: t("filePreview.deleteError"),
+                    },
+                );
+                setIsDeleteConfirmOpen(false);
+                onRefresh?.();
+            } catch {} finally {
+                setIsConfirmLoading(false);
+            }
+            return;
+        }
+
         if (!canPermanentlyDelete) {
             toast.error(t("files.adminOnlyDelete"));
             return;
@@ -617,6 +639,22 @@ export function FileCardActions({
                         {shrtl && (
                             <>
                                 {!expired && <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />}
+
+                                <DropdownMenuItem
+                                    className="flex gap-1 items-center cursor-pointer text-white/70 focus:bg-white/10 focus:text-white"
+                                    onClick={handleDownload}
+                                >
+                                    <Download className="w-4 h-4" /> {t("filePreview.download")}
+                                </DropdownMenuItem>
+
+                                <DropdownMenuItem
+                                    className="flex gap-1 items-center cursor-pointer text-red-400 focus:bg-white/10 focus:text-red-400"
+                                    onClick={() => setIsDeleteConfirmOpen(true)}
+                                >
+                                    <Trash className="w-4 h-4" /> {t("filePreview.deleteForever")}
+                                </DropdownMenuItem>
+
+                                <DropdownMenuSeparator className="bg-white/5 h-0.5 my-1" />
 
                                 <div className="flex gap-1 items-center cursor-default text-white/70 px-2 py-1.5 text-sm">
                                     <Download className="w-4 h-4" /> {t("fileActions.downloadsCount", { count: file.downloads ?? 0 })}
