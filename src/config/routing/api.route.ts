@@ -1,7 +1,7 @@
 export const api = {
     SHRTL: {
         ROOT: "/",
-        GET_ALL: (account_id: string) => `/files/get_all/${account_id}`
+        GET_ALL: (account_id: string) => `/files/get_all`
     },
     NOTTER: {
         ROOT: "/",

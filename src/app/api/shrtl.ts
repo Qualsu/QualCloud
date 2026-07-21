@@ -30,3 +30,21 @@ export async function getAllFiles(account_id: string) {
     };
   });
 }
+
+export async function uploadFile(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await shrtl.post("/files/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data;
+}
+
+export async function deleteFile(shortId: string) {
+  const res = await shrtl.delete("/files/delete", {
+    data: { short_id: shortId },
+  });
+  return res.data;
+}
