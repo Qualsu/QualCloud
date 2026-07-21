@@ -126,14 +126,14 @@ export function formatRelativeZoned(
 
   const customLocale = {
     ...baseLocale,
-    formatRelative: (token: string, date: Date, baseDate: Date, options?: any) => {
+    formatRelative: (token: any, date: Date, baseDate: Date, options?: any) => {
       const originalPattern = baseLocale.formatRelative(token, date, baseDate, options);
       const timePattern = timeFormat === "12h" ? "h:mm a" : "HH:mm";
       return originalPattern.replace(/\bp\b/g, timePattern);
     },
     localize: {
       ...baseLocale.localize,
-      dayPeriod: (token: string, options?: any) => {
+      dayPeriod: (token: any, options?: any) => {
         if (token === "am") return "AM";
         if (token === "pm") return "PM";
         return baseLocale.localize?.dayPeriod?.(token, options) ?? "";

@@ -38,6 +38,8 @@ export interface FilesFolderItem {
   is_favorite?: boolean;
   is_deleted?: boolean;
   deleted_at?: string | null;
+  password?: string | null;
+  expires_at?: string | null;
 }
 
 export interface FilesFileResponse {
@@ -57,6 +59,8 @@ export interface FilesFileResponse {
   last_editor?: FilesLastEditor | null;
   file_url?: string;
   is_public?: boolean;
+  password?: string | null;
+  expires_at?: string | null;
 }
 
 export type FilesListItem = FilesFileResponse | FilesFolderItem;

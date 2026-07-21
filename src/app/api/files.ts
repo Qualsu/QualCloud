@@ -70,6 +70,8 @@ function mapFile(file: FilesFileResponse, fallbackAccountId?: string): FileDoc {
       ? new Date(file.uploaded_at).getTime()
       : undefined,
     isPublic: file.is_public ?? false,
+    password: file.password ?? null,
+    expiresAt: file.expires_at ?? null,
   };
 }
 
@@ -113,6 +115,8 @@ function mapFolder(
     isDeleted: folder.is_deleted ?? false,
     isPublic: folder.is_public ?? false,
     isFavorited: folder.is_favorite ?? false,
+    password: folder.password ?? null,
+    expiresAt: folder.expires_at ?? null,
   };
 }
 
