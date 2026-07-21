@@ -61,7 +61,7 @@ export function AccessDialog({
   const editor = getFilesEditor(user);
 
   const [currentFile, setCurrentFile] = useState<FileDoc>(file);
-  const [isPublic, setIsPublic] = useState(file.isPublic);
+  const [isPublic, setIsPublic] = useState(file.isPublic ?? false);
   const [password, setPassword] = useState(file.password ?? "");
   const [expiresAt, setExpiresAt] = useState(formatToDatetimeLocal(file.expiresAt));
   
@@ -72,7 +72,7 @@ export function AccessDialog({
   useEffect(() => {
     if (open) {
       setCurrentFile(file);
-      setIsPublic(file.isPublic);
+      setIsPublic(file.isPublic ?? false);
       setPassword(file.password ?? "");
       setExpiresAt(formatToDatetimeLocal(file.expiresAt));
     }

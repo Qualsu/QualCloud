@@ -24,6 +24,8 @@ export type FileDoc = Omit<Doc<"files">, "type"> & {
   updatedBy?: string | null;
   updatedAt?: number | null;
   displayName?: string;
+  password?: string | null;
+  expiresAt?: string | null;
 };
 export type FavoritedFile = FileDoc;
 export type FileType = Doc<"files">["type"] | "folder";
