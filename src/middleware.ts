@@ -15,8 +15,6 @@ export default clerkMiddleware((auth, req) => {
   const { userId } = auth()
   const pathname = req.nextUrl.pathname
 
-  // Мгновенный редирект с лендинга на дашборд до рендера страницы.
-  // В PWA редирект всегда включён. В браузере — по настройке (по умолчанию включён).
   if (userId && pathname === '/') {
     const isPwa = req.cookies.get(COOKIE_DISPLAY_MODE)?.value === 'standalone'
     const redirectCookie = req.cookies.get(COOKIE_REDIRECT_HOME)?.value

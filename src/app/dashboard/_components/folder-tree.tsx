@@ -20,6 +20,7 @@ interface FolderTreeProps {
   onChange: (path: string) => void;
   disableDescendantsOf?: string | string[];
   disabledPaths?: string[];
+  refreshTrigger?: number;
 }
 
 type ChildrenMap = Record<string, FilesFolderItem[]>;
@@ -38,6 +39,7 @@ export function FolderTree({
   onChange,
   disableDescendantsOf,
   disabledPaths,
+  refreshTrigger,
 }: FolderTreeProps) {
   const { t } = useTranslation();
   const [childrenMap, setChildrenMap] = useState<ChildrenMap>({});
@@ -75,8 +77,9 @@ export function FolderTree({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account_id, selectedPath]);
 
-  const loadChildren = async (parentPath: string) => {
-    if (!account_id || childrenMap[parentPath] !== undefined) return;
+  const loadChildren = async (parentPath: string, force = false) => {
+    if (!account_id) return;
+    if (!force && childrenMap[parentPath] !== undefined) return;
 
     setLoading((prev) => new Set(prev).add(parentPath));
     try {
@@ -92,6 +95,19 @@ export function FolderTree({
       });
     }
   };
+
+  useEffect(() => {
+    if (!account_id || refreshTrigger === undefined || refreshTrigger === 0) return;
+
+    const refresh = async () => {
+      await loadChildren("", true);
+      for (const path of Array.from(expanded)) {
+        await loadChildren(path, true);
+      }
+    };
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshTrigger, account_id]);
 
   const toggleExpand = async (path: string) => {
     const next = new Set(expanded);

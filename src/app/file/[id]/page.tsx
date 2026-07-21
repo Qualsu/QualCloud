@@ -25,7 +25,6 @@ export async function generateMetadata({
       return { title: file.file_name };
     }
   } catch {
-    // ignore and fall back to default title
   }
 
   return { title: "File" };

@@ -76,7 +76,7 @@
     "cloud": "Cloud",
     "services": "Services",
     "navigation": "Navigation",
-    "root": "Root",
+    "root": "/",
     "install": "Install"
   },
   "nav": {
@@ -95,6 +95,10 @@
   "settings": {
     "title": "Settings",
     "language": "Language",
+    "timezone": "Time zone",
+    "timeFormat": "Time format",
+    "timeFormat12": "12-hour",
+    "timeFormat24": "24-hour",
     "redirect": "Redirect",
     "redirectDescription": "Redirect from the home page '/' to the dashboard",
     "redirectAria": "Redirect from the home page to the dashboard",
@@ -224,12 +228,14 @@
     "makePrivateFolder": "Make private",
     "makePublic": "Make public",
     "makePublicFolder": "Make public",
+    "changeAccess": "Change access",
     "delete": "Delete",
     "addToFavorites": "Add to favorites",
     "removeFromFavorites": "Remove from favorites",
     "downloadsCount": "{count} downloads",
     "copyLink": "Link copied",
     "copyFolderPath": "Folder path copied",
+    "goToFileLocation": "Go to file location",
     "copyError": "Failed to copy path",
     "downloadUnavailable": "Download link unavailable",
     "moveToTrashTitle": "Move to trash",
@@ -261,6 +267,7 @@
     "deleteForever": "Delete forever",
     "makePrivate": "Make private",
     "makePublic": "Make public",
+    "changeAccess": "Change access",
     "removeFromFavorites": "Remove from favorites",
     "addToFavorites": "Add to favorites",
     "share": "Share",
@@ -295,6 +302,8 @@
     "dropHint": "Release files to upload them to the cloud",
     "clickOrDrop": "{click} or drag files here",
     "click": "Click",
+    "selectFiles": "Select Files",
+    "selectFolder": "Select Folder",
     "selectedFiles": "Selected files",
     "removeFile": "Remove file",
     "destinationFolder": "Destination folder",
@@ -326,7 +335,8 @@
     "cancel": "Cancel",
     "loading": "Creating folder…",
     "success": "Folder «{name}» created",
-    "error": "Failed to create folder"
+    "error": "Failed to create folder",
+    "alreadyExists": "Folder with this name already exists"
   },
   "rename": {
     "folderTitle": "Rename folder",
@@ -394,5 +404,13 @@
   "expiresIn": {
     "expired": "Expired",
     "remaining": "Remaining: {days}d {hours}h {minutes}m"
+  },
+  "dragDrop": {
+    "movingSingle": "Moving \"{name}\" to \"{folder}\"…",
+    "movingMultiple": "Moving {count} items to \"{folder}\"…",
+    "movedSingle": "\"{name}\" moved to \"{folder}\"",
+    "movedMultiple": "{count} items moved to \"{folder}\"",
+    "moveError": "Failed to move {failed} of {total} items",
+    "moveErrorGeneric": "Failed to move items"
   }
 }

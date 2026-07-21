@@ -70,9 +70,6 @@ async function detectMimeType(blob: Blob): Promise<string> {
     return "application/octet-stream";
   }
 
-  // Avoid `blob.slice()` — it can throw "offset is out of bounds" on Convex
-  // storage Blobs. Read the whole buffer (small files only) and take the
-  // first bytes from the resulting Uint8Array.
   const arr = new Uint8Array(await blob.arrayBuffer()).slice(0, 4);
   if (arr.length < 4) return "application/octet-stream";
 

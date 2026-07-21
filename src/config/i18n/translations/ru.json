@@ -76,7 +76,7 @@
     "cloud": "Облако",
     "services": "Сервисы",
     "navigation": "Навигация",
-    "root": "Корень",
+    "root": "/",
     "install": "Установить"
   },
   "nav": {
@@ -95,6 +95,10 @@
   "settings": {
     "title": "Настройки",
     "language": "Язык",
+    "timezone": "Часовой пояс",
+    "timeFormat": "Формат времени",
+    "timeFormat12": "12-часовой",
+    "timeFormat24": "24-часовой",
     "redirect": "Редирект",
     "redirectDescription": "При переходе на главную страницу '/' перенаправлять на дашборд",
     "redirectAria": "Перенаправлять на дашборд с главной страницы",
@@ -224,12 +228,14 @@
     "makePrivateFolder": "Сделать приватной",
     "makePublic": "Сделать публичным",
     "makePublicFolder": "Сделать публичной",
+    "changeAccess": "Изменить доступ",
     "delete": "Удалить",
     "addToFavorites": "В избранное",
     "removeFromFavorites": "Убрать из избранного",
     "downloadsCount": "{count} скачиваний",
     "copyLink": "Ссылка скопирована",
     "copyFolderPath": "Путь к папке скопирован",
+    "goToFileLocation": "Перейти к файлу",
     "copyError": "Не удалось скопировать путь",
     "downloadUnavailable": "Ссылка для скачивания недоступна",
     "moveToTrashTitle": "Переместить в корзину",
@@ -261,6 +267,7 @@
     "deleteForever": "Удалить навсегда",
     "makePrivate": "Сделать приватным",
     "makePublic": "Сделать публичным",
+    "changeAccess": "Изменить доступ",
     "removeFromFavorites": "Убрать из избранного",
     "addToFavorites": "В избранное",
     "share": "Поделиться",
@@ -295,6 +302,8 @@
     "dropHint": "Отпустите файлы, чтобы загрузить их в облако",
     "clickOrDrop": "{click} или перетащите файлы сюда",
     "click": "Нажмите",
+    "selectFiles": "Выберите файлы",
+    "selectFolder": "Выберите папку",
     "selectedFiles": "Выбранные файлы",
     "removeFile": "Удалить файл",
     "destinationFolder": "Папка назначения",
@@ -326,7 +335,8 @@
     "cancel": "Отмена",
     "loading": "Создание папки…",
     "success": "Папка «{name}» создана",
-    "error": "Не удалось создать папку"
+    "error": "Не удалось создать папку",
+    "alreadyExists": "Папка с таким названием уже существует"
   },
   "rename": {
     "folderTitle": "Переименовать папку",
@@ -394,5 +404,13 @@
   "expiresIn": {
     "expired": "Истек",
     "remaining": "Осталось: {days}д {hours}ч {minutes}м"
+  },
+  "dragDrop": {
+    "movingSingle": "Перемещение «{name}» в «{folder}»…",
+    "movingMultiple": "Перемещение {count} элементов в «{folder}»…",
+    "movedSingle": "«{name}» перемещён в «{folder}»",
+    "movedMultiple": "{count} элементов перемещено в «{folder}»",
+    "moveError": "Не удалось переместить {failed} из {total} элементов",
+    "moveErrorGeneric": "Не удалось переместить элементы"
   }
 }

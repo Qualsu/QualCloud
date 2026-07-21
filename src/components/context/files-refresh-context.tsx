@@ -10,6 +10,8 @@ import {
 interface FilesRefreshContextValue {
   refreshKey: number;
   refreshFiles: () => void;
+  currentFolder: string | null;
+  setCurrentFolder: (folder: string | null) => void;
 }
 
 const FilesRefreshContext = createContext<FilesRefreshContextValue | null>(
@@ -18,13 +20,14 @@ const FilesRefreshContext = createContext<FilesRefreshContextValue | null>(
 
 export function FilesRefreshProvider({ children }: { children: ReactNode }) {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [currentFolder, setCurrentFolder] = useState<string | null>(null);
 
   const refreshFiles = () => {
     setRefreshKey((key) => key + 1);
   };
 
   return (
-    <FilesRefreshContext.Provider value={{ refreshKey, refreshFiles }}>
+    <FilesRefreshContext.Provider value={{ refreshKey, refreshFiles, currentFolder, setCurrentFolder }}>
       {children}
     </FilesRefreshContext.Provider>
   );

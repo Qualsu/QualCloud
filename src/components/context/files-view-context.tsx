@@ -19,7 +19,6 @@ function getStoredView(): FileView {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw === "grid" || raw === "table") return raw;
   } catch {
-    // localStorage может быть недоступен
   }
 
   return "grid";
@@ -59,7 +58,6 @@ export function FilesViewProvider({ children }: { children: ReactNode }) {
     try {
       window.localStorage.setItem(STORAGE_KEY, view);
     } catch {
-      // игнорируем ошибки записи
     }
   }, [view, initialized]);
 

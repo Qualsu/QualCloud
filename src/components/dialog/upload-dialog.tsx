@@ -1,15 +1,18 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
+import { useRouter, usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FileIcon, Loader2, Upload, X } from "lucide-react";
+import { FileIcon, Loader2, Upload, X, FolderPlus } from "lucide-react";
 import { toast } from "@/lib/toast";
 import Image from "next/image";
 
-import { uploadFile, uploadMultipleFiles } from "@/app/api/files";
+import { uploadFile, uploadMultipleFiles, createFolder } from "@/app/api/files";
+import { getFilesFromDataTransferItems } from "@/lib/upload-utils";
 import { getFilesEditor } from "@/lib/files-editor";
 import { useCurrentOrg } from "@/components/hooks/use-current-org";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useFilesRefresh } from "@/components/context/files-refresh-context";
 import { useUploadProgress } from "@/components/context/upload-progress-context";
+import { pages } from "@/config/routing/pages.route";
 import { FolderTree } from "@/app/dashboard/_components/folder-tree";
 import { FILE_SIZE_LABELS } from "@/config/const/files.const";
 import { useTranslation } from "@/components/hooks/use-translation";
@@ -53,17 +57,24 @@ export function UploadDialog({
   autoStart = false,
 }: UploadDialogProps) {
   const { t } = useTranslation();
+  const router = useRouter();
+  const pathname = usePathname();
   const { user } = useUser();
   const currentOrg = useCurrentOrg();
-  const { refreshFiles } = useFilesRefresh();
+  const { refreshFiles, currentFolder, setCurrentFolder } = useFilesRefresh();
   const isOpenControlled = open !== undefined;
   const [internalOpen, setInternalOpen] = useState(open ?? false);
   const [files, setFiles] = useState<UploadFile[]>([]);
-  const [folder, setFolder] = useState<string>(folderProp ?? "/");
+  const [folder, setFolder] = useState<string>(folderProp ?? currentFolder ?? "/");
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [isCreatingFolderLoading, setIsCreatingFolderLoading] = useState(false);
+  const [treeRefreshTrigger, setTreeRefreshTrigger] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
   const previewUrlsRef = useRef<Record<string, string>>({});
   const uploadTrackIdRef = useRef<string | null>(null);
   const dialogClosedDuringUpload = useRef(false);
@@ -91,6 +102,20 @@ export function UploadDialog({
       previewUrlsRef.current = {};
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as any).__qualcloud_upload_dialog_open = !!isOpen;
+    }
+    if (isOpen) {
+      router.prefetch(pages.DASHBOARD.CLOUD);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        (window as any).__qualcloud_upload_dialog_open = false;
+      }
+    };
+  }, [isOpen, router]);
 
   useEffect(() => {
     if (!isUploading) return;
@@ -148,10 +173,11 @@ export function UploadDialog({
   }, []);
 
   const handleDrop = useCallback(
-    (event: React.DragEvent<HTMLDivElement>) => {
+    async (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
       setIsDragging(false);
-      addFiles(event.dataTransfer.files);
+      const droppedFiles = await getFilesFromDataTransferItems(event.dataTransfer.items);
+      addFiles(droppedFiles);
     },
     [addFiles]
   );
@@ -170,8 +196,50 @@ export function UploadDialog({
     setFiles([]);
     Object.values(previewUrlsRef.current).forEach(URL.revokeObjectURL);
     previewUrlsRef.current = {};
-    setFolder(folderProp ?? "/");
-  }, [folderProp]);
+    setFolder(folderProp ?? currentFolder ?? "/");
+    setIsCreatingFolder(false);
+    setNewFolderName("");
+  }, [folderProp, currentFolder]);
+
+  const handleInlineCreateFolder = useCallback(async () => {
+    const trimmed = newFolderName.trim();
+    if (!trimmed || !account_id) return;
+
+    setIsCreatingFolderLoading(true);
+    const parentPath = folder === "/" ? null : folder;
+    try {
+      await toast.promise(
+        createFolder(account_id, trimmed, parentPath, editor),
+        {
+          loading: t("createFolder.loading"),
+          success: t("createFolder.success", { name: trimmed }),
+          error: (err: any) => {
+            if (err?.response?.status === 409) {
+              return t("createFolder.alreadyExists") || "Папка с таким названием уже существует";
+            }
+            const detail = err?.response?.data?.detail || err?.response?.data?.message || err?.response?.data?.error;
+            if (detail && typeof detail === "string") {
+              const lowerDetail = detail.toLowerCase();
+              if (lowerDetail.includes("already exists") || lowerDetail.includes("already exist") || lowerDetail.includes("exists")) {
+                return t("createFolder.alreadyExists") || "Папка с таким названием уже существует";
+              }
+              return detail;
+            }
+            return t("createFolder.error");
+          }
+        }
+      );
+      const newPath = parentPath ? `${parentPath}/${trimmed}` : trimmed;
+      setFolder(newPath);
+      setNewFolderName("");
+      setIsCreatingFolder(false);
+      setTreeRefreshTrigger((prev) => prev + 1);
+    } catch {
+      // handled by toast
+    } finally {
+      setIsCreatingFolderLoading(false);
+    }
+  }, [newFolderName, account_id, folder, editor, t]);
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -241,6 +309,10 @@ export function UploadDialog({
       Object.values(previewUrlsRef.current).forEach(URL.revokeObjectURL);
       previewUrlsRef.current = {};
       handleOpenChange(false);
+      setCurrentFolder(folder === "/" ? null : folder);
+      if (pathname !== pages.DASHBOARD.CLOUD) {
+        router.push(pages.DASHBOARD.CLOUD);
+      }
       refreshFiles();
       onUploadComplete?.();
     } catch {
@@ -254,7 +326,7 @@ export function UploadDialog({
       uploadTrackIdRef.current = null;
       dialogClosedDuringUpload.current = false;
     }
-  }, [files, account_id, folder, handleOpenChange, refreshFiles, onUploadComplete, editor, registerUpload, updateProgress, completeUpload, failUpload, t]);
+  }, [files, account_id, folder, handleOpenChange, refreshFiles, setCurrentFolder, router, pathname, onUploadComplete, editor, registerUpload, updateProgress, completeUpload, failUpload, t]);
 
   const handleUploadRef = useRef(handleUpload);
   useEffect(() => {
@@ -325,6 +397,15 @@ export function UploadDialog({
               className="hidden"
               onChange={handleInputChange}
             />
+            <input
+              ref={folderInputRef}
+              type="file"
+              multiple
+              // @ts-expect-error - webkitdirectory is standard but often missing in TS React types
+              webkitdirectory=""
+              className="hidden"
+              onChange={handleInputChange}
+            />
           </div>
 
           {files.length > 0 && (
@@ -375,8 +456,81 @@ export function UploadDialog({
           )}
 
           <div className="grid gap-2">
-            <Label className="text-sm text-white/80">{t("upload.destinationFolder")}</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm text-white/80">{t("upload.destinationFolder")}</Label>
+              {!isCreatingFolder && (
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto p-0 text-xs text-purple hover:text-purple/80"
+                  onClick={() => setIsCreatingFolder(true)}
+                >
+                  <FolderPlus className="mr-1 h-3.5 w-3.5" />
+                  {t("createFolder.create")}
+                </Button>
+              )}
+            </div>
+
+            {isCreatingFolder && (
+              <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-2">
+                <Input
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  placeholder={t("createFolder.placeholder") || "e.g. Documents"}
+                  className="h-8 flex-1 border-white/10 bg-white/5 text-xs text-white placeholder:text-white/40 focus-visible:ring-purple"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleInlineCreateFolder();
+                    } else if (e.key === "Escape") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsCreatingFolder(false);
+                      setNewFolderName("");
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleInlineCreateFolder();
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  disabled={isCreatingFolderLoading || !newFolderName.trim()}
+                  className="h-8 bg-purple hover:bg-purple/90 px-3 text-xs"
+                >
+                  {isCreatingFolderLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    t("createFolder.create")
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsCreatingFolder(false);
+                    setNewFolderName("");
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  disabled={isCreatingFolderLoading}
+                  className="h-8 border-white/10 bg-transparent text-xs text-white hover:bg-white/10"
+                >
+                  {t("createFolder.cancel")}
+                </Button>
+              </div>
+            )}
+
             <FolderTree
+              refreshTrigger={treeRefreshTrigger}
               account_id={account_id}
               value={folder}
               onChange={setFolder}

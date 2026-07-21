@@ -9,6 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatRelative } from 'date-fns';
+import { useSettings } from "@/components/context/settings-context";
+import { formatRelativeZoned } from "@/lib/timezones";
 import { useQuery } from "convex/react";
 import { Globe, Heart, Lock } from "lucide-react";
 import { useState } from "react";
@@ -27,9 +29,13 @@ import { FilePreviewModal } from "@/components/modal/file-preview-modal";
 import { formatExpiresIn, isFileExpired } from "./file-helpers";
 import { useTranslation } from "@/components/hooks/use-translation";
 import { normalizeFileUrl } from "@/lib/file-url";
+import { useDragSource, useDropTarget } from "@/components/hooks/use-drag-drop";
 
 function getFileTimeDisplay(
     file: FileCardProps["file"],
+    timezone: string,
+    language: "ru" | "en",
+    timeFormat: "12h" | "24h",
     shrtl?: boolean,
     t?: (key: string, params?: Record<string, string | number>) => string
 ): string {
@@ -37,7 +43,7 @@ function getFileTimeDisplay(
         const expiresInSeconds = "_expiresInSeconds" in file ? (file._expiresInSeconds as number | null | undefined) ?? null : null;
         return formatExpiresIn(expiresInSeconds, t ?? ((key) => key));
     }
-    return formatRelative(new Date(file._creationTime), new Date());
+    return formatRelativeZoned(file._creationTime, timezone, language, timeFormat);
 }
 
 export function FileCardSkeleton() {
@@ -77,9 +83,14 @@ export function FileCard({
     selected,
     onSelect,
     onClearSelection,
+    allFiles = [],
+    selectedFiles = [],
+    onDropOnFolder,
+    enableDragDrop = false,
 }: FileCardProps) {
     const { t } = useTranslation();
     const { user } = useUser();
+    const { timezone, language, timeFormat } = useSettings();
     const isFromApi = "_isFromApi" in file && file._isFromApi;
     const isApiSource = shrtl || notter || useFilesApi || isFromApi;
     const isFolder = file.isFolder;
@@ -123,7 +134,20 @@ export function FileCard({
     }
 
     const displayName = file.displayName?.trim() || file.name?.trim() || t("filePreview.noName");
-    const canFavorite = useFilesApi && !isFolder && !deletedOnly && !isFileExpired(file);
+    const canFavorite = useFilesApi && !deletedOnly && !isFileExpired(file);
+
+    const { isDragging, dragProps } = useDragSource(
+        file,
+        selectedFiles,
+        enableDragDrop
+    );
+
+    const { isOver, dropProps } = useDropTarget(
+        file,
+        allFiles,
+        onDropOnFolder ?? (() => {}),
+        enableDragDrop && !!onDropOnFolder
+    );
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleCardClick = (e?: React.MouseEvent<HTMLDivElement>) => {
@@ -172,12 +196,16 @@ export function FileCard({
                 "group surface-panel relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_24px_70px_rgba(0,0,0,0.35)] cursor-pointer",
                 selected
                     ? "border-purple/40 bg-purple/[0.06]"
-                    : "border-transparent"
+                    : "border-transparent",
+                isDragging && "opacity-40 scale-95",
+                isOver && "border-purple/60 bg-purple/[0.12] ring-2 ring-purple/40 scale-[1.02] shadow-[0_0_30px_rgba(139,92,246,0.2)]"
             )}
             onClick={handleCardClick}
             role="button"
             tabIndex={0}
             onKeyDown={handleKeyDown}
+            {...dragProps}
+            {...dropProps}
         >
             <div className="relative flex items-start justify-between gap-2 px-5 pt-5 pb-3">
                 <div className="flex items-center gap-2 text-sm text-white/80 font-medium break-all min-w-0">
@@ -262,12 +290,12 @@ export function FileCard({
                     </Avatar>
                     <span>{username}</span>
                 </div>
-                <div className="text-xs text-white/30">
+                 <div className="text-xs text-white/30">
                     {isFolder
                         ? (file.updatedAt
-                            ? formatRelative(new Date(file.updatedAt), new Date())
+                            ? formatRelativeZoned(file.updatedAt, timezone, language, timeFormat)
                             : "")
-                        : getFileTimeDisplay(file, shrtl, t)}
+                        : getFileTimeDisplay(file, timezone, language, timeFormat, shrtl, t)}
                 </div>
             </div>
         </div>

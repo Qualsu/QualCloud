@@ -35,6 +35,7 @@ export interface FilesFolderItem {
   updated_by?: string | null;
   last_editor?: FilesLastEditor | null;
   is_public?: boolean;
+  is_favorite?: boolean;
   is_deleted?: boolean;
   deleted_at?: string | null;
 }
@@ -144,6 +145,9 @@ export interface FilesRenameBody extends FilesEditorBody {
 export interface FilesPublicBody extends FilesEditorBody {
   file_id: string;
   is_public: boolean;
+  password?: string | null;
+  expires_at?: string | null;
+  rotate_id?: boolean;
 }
 
 export interface FilesFolderPublicBody extends FilesEditorBody {
@@ -151,6 +155,9 @@ export interface FilesFolderPublicBody extends FilesEditorBody {
     name?: string;
     folder_id?: string;
     is_public: boolean;
+    password?: string | null;
+    expires_at?: string | null;
+    rotate_id?: boolean;
 }
 
 export interface FilesUserStatsResponse {

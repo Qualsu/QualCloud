@@ -19,37 +19,50 @@ const STORAGE_KEY = "qualcloud-settings";
 interface SettingsState {
   redirectHomeToDashboard: boolean;
   language: Language;
+  timezone: string;
+  timeFormat: "12h" | "24h";
 }
 
 const DEFAULT_SETTINGS: SettingsState = {
   redirectHomeToDashboard: true,
   language: "ru",
+  timezone: "UTC",
+  timeFormat: "24h",
 };
 
 function getStoredSettings(): SettingsState {
-  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  const systemTimeZone = typeof window !== "undefined"
+    ? (Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC")
+    : "UTC";
+  const defaultWithSystemTz = { ...DEFAULT_SETTINGS, timezone: systemTimeZone };
+
+  if (typeof window === "undefined") return defaultWithSystemTz;
 
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<SettingsState>;
-      const settings = { ...DEFAULT_SETTINGS, ...parsed };
+      const settings = { ...defaultWithSystemTz, ...parsed };
       if (!isLanguage(settings.language)) {
-        settings.language = DEFAULT_SETTINGS.language;
+        settings.language = defaultWithSystemTz.language;
+      }
+      if (settings.timeFormat !== "12h" && settings.timeFormat !== "24h") {
+        settings.timeFormat = "24h";
       }
       return settings;
     }
   } catch {
-    // localStorage может быть недоступен или данные повреждены
   }
 
-  return DEFAULT_SETTINGS;
+  return defaultWithSystemTz;
 }
 
 interface SettingsContextValue extends SettingsState {
   initialized: boolean;
   setRedirectHomeToDashboard: (value: boolean) => void;
   setLanguage: (value: Language) => void;
+  setTimezone: (value: string) => void;
+  setTimeFormat: (value: "12h" | "24h") => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -77,11 +90,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     } catch {
-      // игнорируем ошибки записи
     }
 
-    // В PWA редирект с лендинга всегда включён, поэтому кука принудительно true.
-    // В браузере кука отражает пользовательскую настройку.
     setCookie(COOKIE_REDIRECT_HOME, isPwa() ? "true" : String(settings.redirectHomeToDashboard));
   }, [settings, initialized]);
 
@@ -93,6 +103,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings((prev) => ({ ...prev, language: value }));
   };
 
+  const setTimezone = (value: string) => {
+    setSettings((prev) => ({ ...prev, timezone: value }));
+  };
+
+  const setTimeFormat = (value: "12h" | "24h") => {
+    setSettings((prev) => ({ ...prev, timeFormat: value }));
+  };
+
   return (
     <SettingsContext.Provider
       value={{
@@ -100,6 +118,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         initialized,
         setRedirectHomeToDashboard,
         setLanguage,
+        setTimezone,
+        setTimeFormat,
       }}
     >
       {children}

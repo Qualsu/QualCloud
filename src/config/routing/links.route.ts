@@ -19,6 +19,6 @@ export const links = {
     GET_FILE: (fileId: Id<"_storage">) => `${process.env.NEXT_PUBLIC_CONVEX_ACTION_URL}/getImage?storageId=${fileId}`,
   },
   FILES: {
-    GET_FILE: (fileId: string) => `${process.env.NEXT_PUBLIC_FILES_API}/files/download/${fileId}`,
+    GET_FILE: (fileId: string) => `${process.env.NEXT_PUBLIC_API}/files/download/${fileId}`,
   },
 }
